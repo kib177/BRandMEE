@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Склад электронных компонентов</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-logo">
+                <div class="icon">📦</div>
+                <span>Склад электронных компонентов</span>
+            </div>
+            <div class="header-auth" id="headerAuth">
+                <span class="auth-dot locked" id="authDot"></span>
+                <span id="authLabel">Доступ ограничен</span>
+            </div>
+            <div class="header-date">
+                <span>Сегодня</span>
+                <strong id="currentDate"></strong>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="stats-row" id="statsRow">
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-label">Всего позиций</div>
+                <div class="stat-value" id="statTotal">0</div>
+                <div class="stat-sub">номенклатурных единиц</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📐</div>
+                <div class="stat-label">Общий остаток</div>
+                <div class="stat-value" id="statQty">0</div>
+                <div class="stat-sub">единиц на складе</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-label">Низкий остаток (≤2)</div>
+                <div class="stat-value" id="statLow">0</div>
+                <div class="stat-sub">требуют внимания</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-label">Последнее поступление</div>
+                <div class="stat-value" id="statLastDate" style="font-size:1.1rem;">—</div>
+                <div class="stat-sub">дата последней записи</div>
+            </div>
+        </section>
+
+        <section class="toolbar">
+            <div class="search-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Поиск по коду, названию, модели…" autocomplete="off">
+            </div>
+            <select class="filter-select" id="filterType" title="Фильтр по типу запчасти">
+                <option value="">🔧 Все типы</option>
+            </select>
+            <select class="filter-select" id="filterEquipment" title="Фильтр по оборудованию">
+                <option value="">🏭 Всё оборудование</option>
+            </select>
+            <button class="btn btn-primary" id="btnAdd" title="Добавить новую запись (требуется пароль)">
+                ➕ Добавить
+            </button>
+            <button class="btn btn-outline" id="btnExport" title="Экспорт в CSV">
+                📥 Экспорт
+            </button>
+            <button class="btn btn-outline" id="btnImport" title="Импорт из CSV (требуется пароль)">
+                📤 Импорт CSV
+            </button>
+            <button class="btn btn-danger" id="btnDeleteAll" title="Удалить все записи (требуется пароль)">
+                🗑️ Удалить всё
+            </button>
+            <!-- <button class="btn btn-warning" id="btnReset" title="Сбросить к исходным данным (требуется пароль)">
+                🔄 Сброс
+            </button> -->
+            <input type="file" id="importFileInput" accept=".csv" class="import-hidden">
+        </section>
+
+        <section class="table-wrapper">
+            <div class="table-scroll">
+                <table id="inventoryTable">
+                    <thead>
+                        <tr>
+                            <th data-sort="code">Код <span class="sort-arrow">⇅</span></th>
+                            <th data-sort="name">Наименование <span class="sort-arrow">⇅</span></th>
+                            <th data-sort="model">Модель <span class="sort-arrow">⇅</span></th>
+                            <th data-sort="type">Тип <span class="sort-arrow">⇅</span></th>
+                            <th data-sort="equipment">Оборудование <span class="sort-arrow">⇅</span></th>
+                            <th data-sort="location">Расположение <span class="sort-arrow">⇅</span></th>
+                            <th data-sort="unit">Ед.изм. <span class="sort-arrow">⇅</span></th>
+                            <th data-sort="quantity">Кол-во <span class="sort-arrow">⇅</span></th>
+                            <th data-sort="date">Дата <span class="sort-arrow">⇅</span></th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+            <div class="empty-state hidden" id="emptyState">
+                <span class="empty-icon">📭</span>
+                <p>По вашему запросу ничего не найдено</p>
+                <small>Попробуйте изменить параметры поиска или фильтры</small>
+            </div>
+        </section>
+    </main>
+
+    <!-- Модалка пароля -->
+    <div class="modal-overlay hidden" id="passwordOverlay">
+        <div class="modal password-modal">
+            <span class="lock-icon">🔐</span>
+            <h2 id="passwordTitle">Требуется авторизация</h2>
+            <p id="passwordHint">Введите пароль для выполнения этого действия</p>
+            <div class="form-group">
+                <input type="password" class="pw-input" id="passwordInput" placeholder="••••••" maxlength="30" autocomplete="off">
+                <div class="form-error" id="passwordError">Неверный пароль</div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-outline" id="btnPasswordCancel">Отмена</button>
+                <button class="btn btn-primary" id="btnPasswordSubmit">🔓 Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка добавления/редактирования -->
+    <div class="modal-overlay hidden" id="modalOverlay">
+        <div class="modal" id="modal">
+            <h2 id="modalTitle">Добавить позицию</h2>
+            <form id="itemForm" novalidate>
+                <input type="hidden" id="formMode" value="add">
+                <input type="hidden" id="formOriginalCode" value="">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="formCode">Код *</label>
+                        <input type="text" id="formCode" required maxlength="30">
+                        <div class="form-error">Код обязателен и уникален</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="formName">Наименование *</label>
+                        <input type="text" id="formName" required maxlength="200">
+                        <div class="form-error">Наименование обязательно</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="formModel">Модель</label>
+                        <input type="text" id="formModel" maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="formType">Тип *</label>
+                        <select id="formType" required></select>
+                        <div class="form-error">Выберите тип</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="formEquipment">Оборудование</label>
+                        <input type="text" id="formEquipment" maxlength="150">
+                    </div>
+                    <div class="form-group">
+                        <label for="formLocation">Расположение</label>
+                        <input type="text" id="formLocation" maxlength="100">
+                    </div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label for="formUnit">Ед.изм.</label>
+                        <select id="formUnit">
+                            <option value="ШТ">ШТ</option>
+                            <option value="М">М</option>
+                            <option value="КОМПЛ">КОМПЛ</option>
+                            <option value="КГ">КГ</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="formQty">Кол-во *</label>
+                        <input type="number" id="formQty" step="0.01" min="0" required>
+                        <div class="form-error">Введите количество</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="formDate">Дата *</label>
+                        <input type="date" id="formDate" required>
+                        <div class="form-error">Выберите дату</div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" id="btnCancel">Отмена</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmit">💾 Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Подтверждение удаления -->
+    <div class="confirm-overlay hidden" id="confirmOverlay">
+        <div class="confirm-box">
+            <h3>⚠️ Удалить запись?</h3>
+            <p id="confirmMessage"></p>
+            <div class="btn-row">
+                <button class="btn btn-outline" id="btnConfirmCancel">Отмена</button>
+                <button class="btn btn-danger" id="btnConfirmDelete">🗑️ Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="confirm-overlay hidden" id="confirmDeleteAllOverlay">
+        <div class="confirm-box">
+            <h3>⚠️ Удалить ВСЕ записи?</h3>
+            <p>Это действие необратимо.</p>
+            <div class="btn-row">
+                <button class="btn btn-outline" id="btnConfirmDeleteAllCancel">Отмена</button>
+                <button class="btn btn-danger" id="btnConfirmDeleteAll">🗑️ Удалить все</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/filters.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/import.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

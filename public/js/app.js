@@ -1,0 +1,158 @@
+let inventory = [];
+
+async function loadData() {
+    try {
+        inventory = await fetchInventory();
+    } catch {
+        inventory = [];
+        showToast('Сервер недоступен', 'error');
+    }
+    applyFilterAndRender();
+}
+
+function applyFilterAndRender() {
+    applyFilters(inventory);
+    renderTable(filteredInventory);
+    updateStats(inventory);
+    populateFilters(inventory);
+}
+
+async function resetToDefault() {
+    if (!confirm('Сбросить всё?')) return;
+    await deleteAllItems();
+    const defaults = [ /* можно вставить DEFAULT_DATA или загрузить через CSV */ ];
+    if (defaults.length) await saveBulkItems(defaults);
+    await loadData();
+}
+
+// Модалки
+function openAddModal() {
+    $('#formMode').value = 'add';
+    $('#formOriginalCode').value = '';
+    $('#modalTitle').textContent = 'Добавить позицию';
+    ['formCode','formName','formModel','formEquipment','formLocation'].forEach(id => $(`#${id}`).value = '');
+    $('#formType').value = '';
+    $('#formUnit').value = 'ШТ';
+    $('#formQty').value = '1,00';
+    $('#formDate').value = new Date().toISOString().split('T')[0];
+    $('#formCode').readOnly = false;
+    $('#modalOverlay').classList.remove('hidden');
+}
+
+function openEditModal(code) {
+    const item = inventory.find(i => i.code === code);
+    if (!item) return;
+    $('#formMode').value = 'edit';
+    $('#formOriginalCode').value = item.code;
+    $('#modalTitle').textContent = 'Редактировать';
+    $('#formCode').value = item.code; $('#formCode').readOnly = true;
+    $('#formName').value = item.name;
+    $('#formModel').value = item.model;
+    $('#formType').value = item.type || '';
+    $('#formEquipment').value = item.equipment || '';
+    $('#formLocation').value = item.location || '';
+    $('#formUnit').value = item.unit;
+    $('#formQty').value = item.quantity.toString().replace('.', ',');
+    const parts = item.date.split('.');
+    $('#formDate').value = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : '';
+    $('#modalOverlay').classList.remove('hidden');
+}
+
+async function submitForm(e) {
+    e.preventDefault();
+    const mode = $('#formMode').value;
+    const item = {
+        code: $('#formCode').value.trim(),
+        name: $('#formName').value.trim(),
+        model: $('#formModel').value.trim(),
+        type: $('#formType').value,
+        equipment: $('#formEquipment').value.trim(),
+        location: $('#formLocation').value.trim(),
+        unit: $('#formUnit').value,
+        quantity: parseFloat($('#formQty').value.replace(',', '.')),
+        date: $('#formDate').value.split('-').reverse().join('.')
+    };
+    await saveItem(item);
+    $('#modalOverlay').classList.add('hidden');
+    await loadData();
+    showToast(mode === 'add' ? 'Добавлено' : 'Обновлено');
+}
+
+let pendingDeleteCode = null;
+function openConfirmDelete(code) {
+    pendingDeleteCode = code;
+    $('#confirmMessage').textContent = `Удалить ${code}?`;
+    $('#confirmOverlay').classList.remove('hidden');
+}
+async function executeDelete() {
+    if (pendingDeleteCode) {
+        await deleteItem(pendingDeleteCode);
+        pendingDeleteCode = null;
+        await loadData();
+        showToast('Удалено');
+    }
+    $('#confirmOverlay').classList.add('hidden');
+}
+
+function openConfirmDeleteAll() { $('#confirmDeleteAllOverlay').classList.remove('hidden'); }
+async function executeDeleteAll() {
+    await deleteAllItems();
+    $('#confirmDeleteAllOverlay').classList.add('hidden');
+    await loadData();
+    showToast('Всё удалено');
+}
+
+// События
+function bindEvents() {
+    $('#searchInput').oninput = () => { searchQuery = $('#searchInput').value; applyFilterAndRender(); };
+    $('#filterType').onchange = () => { filterType = $('#filterType').value; applyFilterAndRender(); };
+    $('#filterEquipment').onchange = () => { filterEquipment = $('#filterEquipment').value; applyFilterAndRender(); };
+    $$('thead th[data-sort]').forEach(th => th.onclick = () => {
+        const key = th.dataset.sort;
+        if (sortConfig.key === key) sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+        else { sortConfig.key = key; sortConfig.direction = 'asc'; }
+        applyFilterAndRender();
+    });
+    $('#btnAdd').onclick = () => requirePassword('add');
+    $('#btnExport').onclick = () => exportCSV(filteredInventory);
+    $('#btnImport').onclick = () => requirePassword('import');
+    $('#btnDeleteAll').onclick = () => requirePassword('deleteAll');
+   // $('#btnReset').onclick = () => requirePassword('reset');
+    $('#importFileInput').onchange = async (e) => {
+        if (e.target.files[0]) {
+            if (await handleImport(e.target.files[0])) await loadData();
+            e.target.value = '';
+        }
+    };
+    $('#btnSubmit').onclick = submitForm;
+    $('#btnCancel').onclick = () => $('#modalOverlay').classList.add('hidden');
+    $('#btnConfirmDelete').onclick = executeDelete;
+    $('#btnConfirmCancel').onclick = () => $('#confirmOverlay').classList.add('hidden');
+    $('#btnConfirmDeleteAll').onclick = executeDeleteAll;
+    $('#btnConfirmDeleteAllCancel').onclick = () => $('#confirmDeleteAllOverlay').classList.add('hidden');
+    $('#btnPasswordSubmit').onclick = submitPassword;
+    $('#btnPasswordCancel').onclick = () => $('#passwordOverlay').classList.add('hidden');
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            $('#modalOverlay').classList.add('hidden');
+            $('#passwordOverlay').classList.add('hidden');
+            $('#confirmOverlay').classList.add('hidden');
+            $('#confirmDeleteAllOverlay').classList.add('hidden');
+        }
+    });
+}
+
+function updateDate() {
+    $('#currentDate').textContent = new Date().toLocaleDateString('ru-RU', { weekday:'short', day:'2-digit', month:'long', year:'numeric' });
+}
+
+// Инициализация
+(async function init() {
+    const savedToken = sessionStorage.getItem('token');
+    if (savedToken) { token = savedToken; isAuthenticated = true; }
+    updateAuthIndicator();
+    bindEvents();
+    await loadData();
+    updateDate();
+    setInterval(updateDate, 60000);
+})(); 
