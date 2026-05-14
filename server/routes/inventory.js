@@ -4,6 +4,7 @@ const db = require('../db');
 const { authMiddleware, AUTH_PASSWORD } = require('../middleware/auth');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
+const XLSX = require('xlsx');
 
 // Получить все записи
 router.get('/', (req, res) => {
@@ -106,7 +107,6 @@ router.post('/auth', (req, res) => {
   }
 });
 
-// Импорт CSV (принимает файл)
 // Импорт CSV (принимает файл)
 router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => {
   try {
@@ -217,6 +217,109 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
       });
     }
 
+    // Импорт Excel
+router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
+
+    // Читаем Excel из буфера
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // Преобразуем в массив массивов, затем в массив объектов
+    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+    if (rawData.length < 2) return res.status(400).json({ error: 'Файл пуст или содержит только заголовок' });
+
+    // Первая строка — заголовки
+    const header = rawData[0].map(h => String(h).trim().toLowerCase());
+    const idx = (name) => header.findIndex(h => h === name.toLowerCase());
+
+    const codeIndex   = idx('код');
+    const nameIndex   = idx('наименование');
+    const modelIndex  = idx('модель');
+    const typeIndex   = idx('тип');
+    const equipIndex  = idx('оборудование');
+    const locIndex    = idx('расположение');
+    const unitIndex   = idx('ед.изм.');
+    const qtyIndex    = idx('количество');
+    const dateIndex   = idx('дата');
+
+    if (codeIndex === -1 || nameIndex === -1 || unitIndex === -1 || qtyIndex === -1 || dateIndex === -1) {
+      return res.status(400).json({ error: 'Обязательные колонки: Код, Наименование, Ед.изм., Количество, Дата' });
+    }
+
+    const items = [];
+    const skipped = [];
+
+    // Парсинг даты (как и раньше)
+    const parseDate = (raw) => {
+      raw = String(raw).trim();
+      let parts;
+      if (raw.includes('.')) parts = raw.split('.');
+      else if (raw.includes('-')) parts = raw.split('-');
+      else if (raw.includes('/')) parts = raw.split('/');
+      else return null;
+      if (parts.length !== 3) return null;
+      let day, month, year;
+      if (parts[0].length === 4) { year = parts[0]; month = parts[1]; day = parts[2]; }
+      else if (parts[2].length === 4) { day = parts[0]; month = parts[1]; year = parts[2]; }
+      else return null;
+      const d = parseInt(day,10), m = parseInt(month,10), y = parseInt(year,10);
+      if (isNaN(d)||isNaN(m)||isNaN(y)||d<1||d>31||m<1||m>12||y<2000||y>2099) return null;
+      return `${String(d).padStart(2,'0')}.${String(m).padStart(2,'0')}.${y}`;
+    };
+
+    for (let i = 1; i < rawData.length; i++) {
+      const row = rawData[i];
+      const code = String(row[codeIndex] || '').trim();
+      const name = String(row[nameIndex] || '').trim();
+      if (!code || !name) { skipped.push({ row: i+1, reason: 'Пустой код или наименование' }); continue; }
+
+      const model    = modelIndex >= 0 ? String(row[modelIndex] || '').trim() : '';
+      const type     = typeIndex >= 0 ? String(row[typeIndex] || '').trim() : 'Прочее';
+      const equip    = equipIndex >= 0 ? String(row[equipIndex] || '').trim() : '';
+      const location = locIndex >= 0 ? String(row[locIndex] || '').trim() : '';
+      const unit     = String(row[unitIndex] || '').trim();
+      const qtyRaw   = String(row[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
+      const dateRaw  = String(row[dateIndex] || '').trim();
+
+      if (!unit || !qtyRaw || !dateRaw) { skipped.push({ row: i+1, reason: 'Пустые обязательные поля' }); continue; }
+      const quantity = parseFloat(qtyRaw);
+      if (isNaN(quantity) || quantity < 0) { skipped.push({ row: i+1, reason: `Некорректное количество: ${qtyRaw}` }); continue; }
+
+      const formattedDate = parseDate(dateRaw);
+      if (!formattedDate) { skipped.push({ row: i+1, reason: `Некорректная дата: ${dateRaw}` }); continue; }
+
+      items.push({ code, name, model, type: type || 'Прочее', equipment: equip, location, unit, quantity, date: formattedDate });
+    }
+
+    if (items.length === 0) return res.status(400).json({ error: 'Не удалось извлечь корректные записи', skipped });
+
+    // Вставка в БД
+    const stmt = db.prepare(`
+  INSERT INTO inventory (code, name, model, type, equipment, location, unit, quantity, date, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+  ON CONFLICT(code) DO UPDATE SET
+    name=excluded.name, model=excluded.model, type=excluded.type,
+    equipment=excluded.equipment, location=excluded.location,
+    unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
+    updated_at=CURRENT_TIMESTAMP
+`);
+const insertAll = db.transaction((items) => {
+  for (const item of items) {
+    stmt.run(item.code, item.name, item.model, item.type, item.equipment, item.location, item.unit, item.quantity, item.date);
+  }
+});
+insertAll(items);
+    
+    res.json({ ok: true, count: items.length, skipped: skipped.length > 0 ? skipped : undefined });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка импорта Excel' });
+  }
+});
+    
     // Вставка в БД
     const stmt = db.prepare(`
       INSERT INTO inventory (code, name, model, type, equipment, location, unit, quantity, date, updated_at)
