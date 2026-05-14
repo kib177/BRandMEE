@@ -216,8 +216,34 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
         skipped 
       });
     }
+// Вставка в БД
+    const stmt = db.prepare(`
+      INSERT INTO inventory (code, name, model, type, equipment, location, unit, quantity, date, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(code) DO UPDATE SET
+        name=excluded.name, model=excluded.model, type=excluded.type,
+        equipment=excluded.equipment, location=excluded.location,
+        unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
+        updated_at=CURRENT_TIMESTAMP
+    `);
+    const insertAll = db.transaction((items) => {
+      for (const item of items) {
+        stmt.run(item.code, item.name, item.model, item.type, item.equipment, item.location, item.unit, item.quantity, item.date);
+      }
+    });
+    insertAll(items);
 
-    // Импорт Excel
+    res.json({ 
+      ok: true, 
+      count: items.length, 
+      skipped: skipped.length > 0 ? skipped : undefined 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка импорта CSV' });
+  }
+});
+   
 // Импорт Excel
 router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) => {
   try {
@@ -387,32 +413,6 @@ insertAll(items);
   }
 });
     
-    // Вставка в БД
-    const stmt = db.prepare(`
-      INSERT INTO inventory (code, name, model, type, equipment, location, unit, quantity, date, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(code) DO UPDATE SET
-        name=excluded.name, model=excluded.model, type=excluded.type,
-        equipment=excluded.equipment, location=excluded.location,
-        unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
-        updated_at=CURRENT_TIMESTAMP
-    `);
-    const insertAll = db.transaction((items) => {
-      for (const item of items) {
-        stmt.run(item.code, item.name, item.model, item.type, item.equipment, item.location, item.unit, item.quantity, item.date);
-      }
-    });
-    insertAll(items);
-
-    res.json({ 
-      ok: true, 
-      count: items.length, 
-      skipped: skipped.length > 0 ? skipped : undefined 
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Ошибка импорта CSV' });
-  }
-});
+    
 
 module.exports = router; 
