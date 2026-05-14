@@ -14,6 +14,21 @@ async function saveItem(item) {
     });
 }
 
+async function importExcelFile(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch('/api/inventory/import-excel', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${getToken()}` },
+    body: formData
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Ошибка импорта Excel');
+  }
+  return res.json();
+}
+
 async function saveBulkItems(items) {
     await fetch(`${API_BASE}/bulk`, {
         method: 'POST',
