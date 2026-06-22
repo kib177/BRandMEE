@@ -66,6 +66,24 @@
   </main>
 
   <script>
+    if (!token) {
+    window.location.href = '/';
+} else {
+    fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(data => {
+            if (data.user && data.user.role === 'admin') {
+                currentUser = data.user;
+                loadRequests({ status: 'pending' });
+            } else {
+                alert('Доступ запрещён');
+                window.location.href = '/';
+            }
+        })
+        .catch(() => {
+            window.location.href = '/';
+        });
+}
     const $ = (s) => document.querySelector(s);
     const API = '/api/write-offs';
     let token = sessionStorage.getItem('token');
