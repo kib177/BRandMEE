@@ -133,22 +133,26 @@ $('#btnWriteOff').onclick = () => {
     if (selectedRowCode) window.location.href = `/writeoff.html?code=${encodeURIComponent(selectedRowCode)}`;
 };
     $('#importFileInput').onchange = async (e) => {
-        if (e.target.files[0]) {
-            const success = await handleImport(e.target.files[0]);
-            if (success) {
-                // Сброс фильтров и поиска
-                searchQuery = '';
-                filterType = '';
-                filterEquipment = '';
-                $('#searchInput').value = '';
-                $('#filterType').value = '';
-                $('#filterEquipment').value = '';
-                selectedRowCode = null;   // сброс выделения
-                await loadData();
-            }
-            e.target.value = '';
+    if (!currentUser || (currentUser.role !== 'moderator' && currentUser.role !== 'admin')) {
+        showToast('Требуется авторизация', 'error');
+        e.target.value = '';
+        return;
+    }
+    if (e.target.files[0]) {
+        const success = await handleImport(e.target.files[0]);
+        if (success) {
+            searchQuery = '';
+            filterType = '';
+            filterEquipment = '';
+            $('#searchInput').value = '';
+            $('#filterType').value = '';
+            $('#filterEquipment').value = '';
+            selectedRowCode = null;
+            await loadData();
         }
-    };
+        e.target.value = '';
+    }
+};
     $('#btnSubmit').onclick = submitForm;
     $('#btnCancel').onclick = () => $('#modalOverlay').classList.add('hidden');
     $('#btnConfirmDelete').onclick = executeDelete;
