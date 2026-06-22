@@ -12,6 +12,10 @@ async function loadData() {
 
 function applyFilterAndRender() {
     applyFilters(inventory);
+    // Сбрасываем выделение, если выбранная строка исчезла
+    if (selectedRowCode && !filteredInventory.some(item => item.code === selectedRowCode)) {
+        selectedRowCode = null;
+    }
     renderTable(filteredInventory);
     updateStats(inventory);
     populateFilters(inventory);
