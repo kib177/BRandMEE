@@ -3,7 +3,10 @@ const router = express.Router();
 const db = require('../db');
 const { authMiddleware, AUTH_PASSWORD } = require('../middleware/auth');
 const multer = require('multer');
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10 MB
+});
 const XLSX = require('xlsx');
 
 // Получить все записи
@@ -107,7 +110,7 @@ router.post('/auth', (req, res) => {
   }
 });
 
-// Импорт CSV (принимает файл)
+// Импорт CSV
 router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
@@ -116,7 +119,6 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
     if (lines.length < 2) return res.status(400).json({ error: 'Файл пуст или содержит только заголовок' });
 
     const header = lines[0].split(';');
-    // Индексы обязательных колонок (ищем без учёта регистра)
     const idx = (name) => header.findIndex(h => h.trim().toLowerCase() === name.toLowerCase());
     const codeIndex   = idx('код');
     const nameIndex   = idx('наименование');
@@ -135,9 +137,8 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
     }
 
     const items = [];
-    const skipped = [];  // собираем информацию о пропущенных строках
+    const skipped = [];
 
-    // Функция парсинга даты (универсальная)
     const parseDate = (raw) => {
       raw = raw.trim();
       let parts;
@@ -148,11 +149,9 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
       if (parts.length !== 3) return null;
 
       let day, month, year;
-      if (parts[0].length === 4) { // YYYY-MM-DD
-        year = parts[0]; month = parts[1]; day = parts[2];
-      } else if (parts[2].length === 4) { // DD.MM.YYYY или MM/DD/YYYY
-        day = parts[0]; month = parts[1]; year = parts[2];
-      } else return null;
+      if (parts[0].length === 4) { year = parts[0]; month = parts[1]; day = parts[2]; }
+      else if (parts[2].length === 4) { day = parts[0]; month = parts[1]; year = parts[2]; }
+      else return null;
 
       const d = parseInt(day,10), m = parseInt(month,10), y = parseInt(year,10);
       if (isNaN(d)||isNaN(m)||isNaN(y)) return null;
@@ -216,7 +215,7 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
         skipped 
       });
     }
-// Вставка в БД
+
     const stmt = db.prepare(`
       INSERT INTO inventory (code, name, model, type, equipment, location, unit, quantity, date, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -253,20 +252,17 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     
-    // Читаем с форматированием: даты как текст, числа как числа
     const rawData = XLSX.utils.sheet_to_json(worksheet, { 
       header: 1, 
       defval: '',
-      raw: false,  // все значения как строки (даты станут текстом в локальном формате)
-      dateNF: 'dd"."mm"."yyyy' // подсказка для чтения дат
+      raw: false,
+      dateNF: 'dd"."mm"."yyyy'
     });
     
     if (rawData.length < 2) return res.status(400).json({ error: 'Файл пуст или содержит только заголовок' });
 
-    // Нормализуем заголовки: убираем пробелы, приводим к нижнему регистру
     const header = rawData[0].map(h => String(h).trim().toLowerCase());
     
-    // Ищем индексы по ключевым словам (гибкий поиск)
     const findIndex = (keywords) => {
       return header.findIndex(h => keywords.some(k => h.includes(k)));
     };
@@ -290,11 +286,8 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
     const items = [];
     const skipped = [];
 
-    // Парсинг даты с учётом Excel-числа
     const parseDate = (raw) => {
-      // raw уже строка благодаря raw:false
       const str = String(raw).trim();
-      // Пробуем известные форматы
       let parts;
       if (str.includes('.')) parts = str.split('.');
       else if (str.includes('-')) parts = str.split('-');
@@ -312,10 +305,8 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
         return null;
       }
       
-      // Если это число (серийный номер Excel)
       const num = parseFloat(str);
       if (!isNaN(num) && num > 40000 && num < 60000) {
-        // Преобразуем серийный номер в дату (1900-01-01 + номер - 2)
         const d = new Date((num - 25569) * 86400 * 1000);
         const day = String(d.getDate()).padStart(2,'0');
         const month = String(d.getMonth() + 1).padStart(2,'0');
@@ -365,7 +356,7 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
       });
     }
 
-   const stmt = db.prepare(`
+    const stmt = db.prepare(`
       INSERT INTO inventory (code, name, model, type, equipment, location, unit, quantity, date, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(code) DO UPDATE SET
@@ -379,9 +370,6 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
     });
     insertAll(items);
 
-    console.log(`Excel импорт: добавлено ${items.length}, пропущено ${skipped.length}`);
-    if (skipped.length) console.log('Пропущенные строки:', JSON.stringify(skipped));
-
     res.json({ ok: true, count: items.length, skipped: skipped.length > 0 ? skipped : undefined });
   } catch (err) {
     console.error('Ошибка в import-excel:', err);
@@ -389,30 +377,4 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
   }
 });
 
-    // Вставка в БД
-    const stmt = db.prepare(`
-  INSERT INTO inventory (code, name, model, type, equipment, location, unit, quantity, date, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-  ON CONFLICT(code) DO UPDATE SET
-    name=excluded.name, model=excluded.model, type=excluded.type,
-    equipment=excluded.equipment, location=excluded.location,
-    unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
-    updated_at=CURRENT_TIMESTAMP
-`);
-const insertAll = db.transaction((items) => {
-  for (const item of items) {
-    stmt.run(item.code, item.name, item.model, item.type, item.equipment, item.location, item.unit, item.quantity, item.date);
-  }
-});
-insertAll(items);
-    
-    res.json({ ok: true, count: items.length, skipped: skipped.length > 0 ? skipped : undefined });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Ошибка импорта Excel' });
-  }
-});
-    
-    
-
-module.exports = router; 
+module.exports = router;
