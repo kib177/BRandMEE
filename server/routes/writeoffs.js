@@ -14,6 +14,11 @@ router.post('/', (req, res) => {
     const item = db.prepare('SELECT code, name, unit, quantity FROM inventory WHERE code = ?').get(item_code);
     if (!item) return res.status(404).json({ error: 'Позиция с таким кодом не найдена' });
 
+    // *** НОВОЕ *** проверка, что не списывают больше остатка
+    if (quantity > item.quantity) {
+      return res.status(400).json({ error: `Недостаточно на складе. Доступно: ${item.quantity} ${item.unit}` });
+    }
+
     const stmt = db.prepare(`
       INSERT INTO write_offs (item_code, item_name, equipment, quantity, unit, requested_by, comment)
       VALUES (?, ?, ?, ?, ?, ?, ?)
