@@ -11,6 +11,7 @@ app.use(express.json({ limit: '5mb' }));
 
 // API маршруты
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/write-offs', require('./routes/writeoffs'));
 
 // Статические файлы (фронтенд)
