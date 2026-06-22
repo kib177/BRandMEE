@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Списание компонентов</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .suggestions { border:1px solid #ddd; max-height:150px; overflow-y:auto; position:absolute; background:#fff; width:100%; z-index:10; }
+    .suggestions div { padding:8px; cursor:pointer; }
+    .suggestions div:hover { background:#e8f0fe; }
+    .hidden { display:none; }
+    .writeoff-form { max-width:500px; margin:2rem auto; background:#fff; padding:2rem; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <a href="/" style="color:#fff; text-decoration:none;">📦 Склад</a>
+        <span style="margin-left:2rem; font-size:0.9rem;">→ Списание</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="writeoff-form">
+    <h2>Заявка на списание</h2>
+    <div class="form-group">
+      <label>Поиск позиции (по названию или коду)</label>
+      <input type="text" id="searchItem" placeholder="Начните вводить..." autocomplete="off">
+      <div id="suggestions" class="suggestions hidden"></div>
+    </div>
+    <div class="form-group">
+      <label>Выбранная позиция</label>
+      <input type="text" id="selectedItem" readonly>
+      <input type="hidden" id="selectedCode">
+    </div>
+    <div class="form-group">
+      <label>Количество для списания *</label>
+      <input type="number" id="quantity" step="0.01" min="0.01" required>
+    </div>
+    <div class="form-group">
+      <label>На какое оборудование (опционально)</label>
+      <input type="text" id="equipment" list="equipList">
+      <datalist id="equipList"></datalist>
+    </div>
+    <div class="form-group">
+      <label>Кто запрашивает</label>
+      <input type="text" id="requestedBy" value="Сотрудник">
+    </div>
+    <div class="form-group">
+      <label>Комментарий</label>
+      <textarea id="comment" rows="2"></textarea>
+    </div>
+    <button class="btn btn-primary" id="submitWriteOff">Отправить заявку</button>
+    <p id="message" style="margin-top:1rem;"></p>
+    <hr>
+    <h3>Ваши последние заявки</h3>
+    <div id="recentRequests">Загрузка...</div>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const API = '/api/write-offs';
+    const INVENTORY_API = '/api/inventory';
+
+    let allItems = []; // кэш всех позиций для поиска
+
+    async function loadAllItems() {
+      try {
+        const res = await fetch(INVENTORY_API);
+        if (res.ok) allItems = await res.json();
+      } catch (e) { console.error(e); }
+      // Заполним datalist для оборудования
+      const equips = [...new Set(allItems.map(i => i.equipment).filter(Boolean))].sort();
+      const datalist = $('#equipList');
+      datalist.innerHTML = equips.map(e => `<option value="${e}">`).join('');
+    }
+
+    function showSuggestions(query) {
+      const cont = $('#suggestions');
+      cont.innerHTML = '';
+      if (!query.trim()) { cont.classList.add('hidden'); return; }
+      const q = query.toLowerCase();
+      const matches = allItems.filter(i => 
+        i.code.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)
+      ).slice(0, 10);
+      if (matches.length === 0) { cont.classList.add('hidden'); return; }
+      matches.forEach(item => {
+        const div = document.createElement('div');
+        div.textContent = `${item.code} – ${item.name} (остаток: ${item.quantity} ${item.unit})`;
+        div.addEventListener('click', () => selectItem(item));
+        cont.appendChild(div);
+      });
+      cont.classList.remove('hidden');
+    }
+
+    function selectItem(item) {
+      $('#selectedItem').value = `${item.code} – ${item.name}`;
+      $('#selectedCode').value = item.code;
+      $('#quantity').max = item.quantity;
+      $('#suggestions').classList.add('hidden');
+    }
+
+    async function loadRecentRequests() {
+      try {
+        // Загружаем последние 10 запросов без авторизации (можно сделать отдельную ручку или фильтр)
+        const res = await fetch(API + '?limit=10');
+        if (!res.ok) throw new Error('Ошибка');
+        const data = await res.json();
+        const html = data.map(r => `
+          <div style="border-bottom:1px solid #eee; padding:0.5rem 0;">
+            <strong>${r.item_code}</strong> – ${r.item_name}<br>
+            ${r.quantity} ${r.unit} → ${r.equipment || '—'}<br>
+            Статус: <span style="color:${r.status==='approved'?'green':r.status==='rejected'?'red':'orange'}">${r.status}</span>
+            (${new Date(r.requested_at).toLocaleString('ru')})
+          </div>
+        `).join('');
+        $('#recentRequests').innerHTML = html || 'Нет заявок';
+      } catch(e) { $('#recentRequests').textContent = 'Не удалось загрузить'; }
+    }
+
+    $('#searchItem').addEventListener('input', (e) => showSuggestions(e.target.value));
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#searchItem') && !e.target.closest('#suggestions')) {
+        $('#suggestions').classList.add('hidden');
+      }
+    });
+
+    $('#submitWriteOff').addEventListener('click', async () => {
+      const item_code = $('#selectedCode').value;
+      const quantity = parseFloat($('#quantity').value);
+      const equipment = $('#equipment').value;
+      const requested_by = $('#requestedBy').value.trim() || 'сотрудник';
+      const comment = $('#comment').value.trim();
+
+      if (!item_code || !quantity || quantity <= 0) {
+        $('#message').textContent = 'Выберите позицию и укажите количество';
+        return;
+      }
+      try {
+        const res = await fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ item_code, equipment, quantity, requested_by, comment })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error);
+        }
+        $('#message').textContent = '✅ Заявка отправлена';
+        $('#selectedItem').value = '';
+        $('#selectedCode').value = '';
+        $('#quantity').value = '';
+        loadRecentRequests();
+      } catch(e) {
+        $('#message').textContent = '❌ ' + e.message;
+      }
+    });
+
+    loadAllItems();
+    loadRecentRequests();
+  </script>
+</body>
+</html>
