@@ -129,7 +129,9 @@ $('#btnDeleteSelected').onclick = () => {
     if (selectedRowCode) requireAuth('delete', selectedRowCode);
 };
 $('#btnDeleteAll').onclick = () => requireAuth('deleteAll');
-
+$('#btnWriteOff').onclick = () => {
+    if (selectedRowCode) window.location.href = `/writeoff.html?code=${encodeURIComponent(selectedRowCode)}`;
+};
     $('#importFileInput').onchange = async (e) => {
         if (e.target.files[0]) {
             const success = await handleImport(e.target.files[0]);
