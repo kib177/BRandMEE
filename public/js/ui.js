@@ -32,6 +32,13 @@ function renderTable(data) {
     });
     $$('.btn-edit').forEach(b => b.onclick = () => requirePassword('edit', b.dataset.code));
     $$('.btn-delete').forEach(b => b.onclick = () => requirePassword('delete', b.dataset.code));
+    $$('.btn-writeoff').forEach(b => {
+    b.onclick = () => {
+        const code = b.dataset.code;
+        // Переход на страницу списания с предвыбранным кодом
+        window.location.href = `/writeoff.html?code=${encodeURIComponent(code)}`;
+    };
+});
 }
 
 function updateStats(inventory) {
