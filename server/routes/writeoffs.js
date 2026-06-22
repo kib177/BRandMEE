@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, requireRole } = require('../middleware/auth');
 
 // 1. Создание запроса на списание (сотрудник)
 router.post('/', (req, res) => {
@@ -40,8 +40,7 @@ router.post('/', (req, res) => {
 });
 
 // 2. Получение списка запросов (администратор)
-// Поддерживает фильтрацию: ?status=pending&from=2025-01-01&to=2025-12-31&equipment=...
-router.get('/', authMiddleware, (req, res) => {
+router.get('/', authMiddleware, requireRole('admin'), (req, res) =>  {
   try {
     let query = 'SELECT * FROM write_offs WHERE 1=1';
     const params = [];
