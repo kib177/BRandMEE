@@ -126,9 +126,7 @@ function bindEvents() {
     $('#btnEdit').onclick = () => {
         if (selectedRowCode) requirePassword('edit', selectedRowCode);
     };
-    $('#btnWriteOff').onclick = () => {
-        if (selectedRowCode) window.location.href = `/writeoff.html?code=${encodeURIComponent(selectedRowCode)}`;
-    };
+    
     $('#btnDeleteSelected').onclick = () => {
         if (selectedRowCode) requirePassword('delete', selectedRowCode);
     };
