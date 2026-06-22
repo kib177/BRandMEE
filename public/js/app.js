@@ -167,6 +167,21 @@ function bindEvents() {
     });
 }
 
+function requireAuth(action, data) {
+    if (!currentUser) {
+        showLoginModal(() => {
+            executeAction(action, data);
+        });
+        return;
+    }
+    // Проверка роли для модераторских действий
+    if (action !== 'writeoff' && currentUser.role !== 'admin' && currentUser.role !== 'moderator') {
+        showToast('Недостаточно прав', 'error');
+        return;
+    }
+    executeAction(action, data);
+}
+
 function updateDate() {
     $('#currentDate').textContent = new Date().toLocaleDateString('ru-RU', { weekday:'short', day:'2-digit', month:'long', year:'numeric' });
 }
