@@ -64,14 +64,13 @@
                 <option value="">🏭 Всё оборудование</option>
             </select>
             <button class="btn btn-primary auth-required moderator-only" id="btnAdd">➕ Добавить</button>
-<button class="btn btn-outline auth-required moderator-only" id="btnImport">📤 Импорт CSV</button>
+<button class="btn btn-outline auth-required moderator-only" id="btnImport">📤 Импорт CSV/Excel</button>
+            <button class="btn btn-outline" id="btnExportExcel">📊 Экспорт Excel</button>
+<button class="btn btn-outline" id="btnExportCSV">📄 Экспорт CSV</button>
 <button class="btn btn-outline auth-required moderator-only" id="btnEdit" disabled>✏️ Редактировать</button>
 <button class="btn btn-outline auth-required moderator-only" id="btnWriteOff" disabled>📤 Списать</button>
 <button class="btn btn-danger auth-required moderator-only" id="btnDeleteSelected" disabled>🗑️ Удалить</button>
 <button class="btn btn-danger auth-required moderator-only" id="btnDeleteAll">🗑️ Удалить всё</button>
-<!-- Кнопки экспорта доступны всем -->
-<button class="btn btn-outline" id="btnExportExcel">📊 Excel</button>
-<button class="btn btn-outline" id="btnExportCSV">📄 CSV</button>
 <!-- Ссылка на админ-панель списаний только для админов -->
 <a href="/admin-writeoffs.html" class="btn btn-outline admin-only" style="text-decoration:none;" id="adminWriteOffLink">👑 Админ-списания</a>
             <input type="file" id="importFileInput" accept=".csv,.xlsx,.xls" class="import-hidden">
