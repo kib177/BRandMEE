@@ -21,14 +21,6 @@ function applyFilterAndRender() {
     populateFilters(inventory);
 }
 
-async function resetToDefault() {
-    if (!confirm('Сбросить всё?')) return;
-    await deleteAllItems();
-    const defaults = [ /* можно вставить DEFAULT_DATA или загрузить через CSV */ ];
-    if (defaults.length) await saveBulkItems(defaults);
-    await loadData();
-}
-
 // Модалки
 function openAddModal() {
     $('#formMode').value = 'add';
@@ -106,6 +98,33 @@ async function executeDeleteAll() {
     showToast('Всё удалено');
 }
 
+// Функция, выполняющая действие после проверки прав
+function executeAction(action, data) {
+    switch (action) {
+        case 'add': openAddModal(); break;
+        case 'edit': openEditModal(data); break;
+        case 'delete': openConfirmDelete(data); break;
+        case 'deleteAll': openConfirmDeleteAll(); break;
+        case 'import': $('#importFileInput').click(); break;
+        case 'writeoff': window.location.href = `/writeoff.html?code=${encodeURIComponent(data)}`; break;
+    }
+}
+
+function requireAuth(action, data) {
+    if (!currentUser) {
+        showLoginModal(() => {
+            executeAction(action, data);
+        });
+        return;
+    }
+    // Проверка роли для действий, требующих модератора/админа
+    if (action !== 'writeoff' && currentUser.role !== 'admin' && currentUser.role !== 'moderator') {
+        showToast('Недостаточно прав', 'error');
+        return;
+    }
+    executeAction(action, data);
+}
+
 // События
 function bindEvents() {
     $('#searchInput').oninput = () => { searchQuery = $('#searchInput').value; applyFilterAndRender(); };
@@ -120,70 +139,57 @@ function bindEvents() {
    
     $('#btnExportExcel').onclick = () => exportExcel(filteredInventory);
     $('#btnExportCSV').onclick = () => exportCSV(filteredInventory);
+
     $('#btnAdd').onclick = () => requireAuth('add');
-$('#btnImport').onclick = () => requireAuth('import');
-$('#btnEdit').onclick = () => {
-    if (selectedRowCode) requireAuth('edit', selectedRowCode);
-};
-$('#btnDeleteSelected').onclick = () => {
-    if (selectedRowCode) requireAuth('delete', selectedRowCode);
-};
-$('#btnDeleteAll').onclick = () => requireAuth('deleteAll');
-$('#btnWriteOff').onclick = () => {
-    if (selectedRowCode) window.location.href = `/writeoff.html?code=${encodeURIComponent(selectedRowCode)}`;
-};
+    $('#btnImport').onclick = () => requireAuth('import');
+    $('#btnEdit').onclick = () => {
+        if (selectedRowCode) requireAuth('edit', selectedRowCode);
+    };
+    $('#btnDeleteSelected').onclick = () => {
+        if (selectedRowCode) requireAuth('delete', selectedRowCode);
+    };
+    $('#btnDeleteAll').onclick = () => requireAuth('deleteAll');
+    $('#btnWriteOff').onclick = () => {
+        if (selectedRowCode) window.location.href = `/writeoff.html?code=${encodeURIComponent(selectedRowCode)}`;
+    };
+
     $('#importFileInput').onchange = async (e) => {
-    if (!currentUser || (currentUser.role !== 'moderator' && currentUser.role !== 'admin')) {
-        showToast('Требуется авторизация', 'error');
-        e.target.value = '';
-        return;
-    }
-    if (e.target.files[0]) {
-        const success = await handleImport(e.target.files[0]);
-        if (success) {
-            searchQuery = '';
-            filterType = '';
-            filterEquipment = '';
-            $('#searchInput').value = '';
-            $('#filterType').value = '';
-            $('#filterEquipment').value = '';
-            selectedRowCode = null;
-            await loadData();
+        if (!currentUser || (currentUser.role !== 'moderator' && currentUser.role !== 'admin')) {
+            showToast('Требуется авторизация', 'error');
+            e.target.value = '';
+            return;
         }
-        e.target.value = '';
-    }
-};
+        if (e.target.files[0]) {
+            const success = await handleImport(e.target.files[0]);
+            if (success) {
+                searchQuery = '';
+                filterType = '';
+                filterEquipment = '';
+                $('#searchInput').value = '';
+                $('#filterType').value = '';
+                $('#filterEquipment').value = '';
+                selectedRowCode = null;
+                await loadData();
+            }
+            e.target.value = '';
+        }
+    };
+
     $('#btnSubmit').onclick = submitForm;
     $('#btnCancel').onclick = () => $('#modalOverlay').classList.add('hidden');
     $('#btnConfirmDelete').onclick = executeDelete;
     $('#btnConfirmCancel').onclick = () => $('#confirmOverlay').classList.add('hidden');
     $('#btnConfirmDeleteAll').onclick = executeDeleteAll;
     $('#btnConfirmDeleteAllCancel').onclick = () => $('#confirmDeleteAllOverlay').classList.add('hidden');
-    $('#btnPasswordSubmit').onclick = submitPassword;
-    $('#btnPasswordCancel').onclick = () => $('#passwordOverlay').classList.add('hidden');
+
+    // Удалены обработчики для удалённых кнопок пароля
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
             $('#modalOverlay').classList.add('hidden');
-            $('#passwordOverlay').classList.add('hidden');
             $('#confirmOverlay').classList.add('hidden');
             $('#confirmDeleteAllOverlay').classList.add('hidden');
         }
     });
-}
-
-function requireAuth(action, data) {
-    if (!currentUser) {
-        showLoginModal(() => {
-            executeAction(action, data);
-        });
-        return;
-    }
-    // Проверка роли для модераторских действий
-    if (action !== 'writeoff' && currentUser.role !== 'admin' && currentUser.role !== 'moderator') {
-        showToast('Недостаточно прав', 'error');
-        return;
-    }
-    executeAction(action, data);
 }
 
 function updateDate() {
@@ -192,11 +198,11 @@ function updateDate() {
 
 // Инициализация
 (async function init() {
-    const savedToken = sessionStorage.getItem('token');
-    if (savedToken) { token = savedToken; isAuthenticated = true; }
+    // Вызов checkAuth из auth.js уже выполнится при загрузке auth.js,
+    // но updateAuthUI нужно вызвать после отрисовки
     bindEvents();
     await loadData();
     updateDate();
     setInterval(updateDate, 60000);
-    updateAuthUI();
-})(); 
+    updateAuthUI();   // отобразим/скроем кнопки в зависимости от авторизации
+})();
