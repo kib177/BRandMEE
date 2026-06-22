@@ -67,70 +67,55 @@
   </main>
 
   <script>
-    if (!token) {
-    window.location.href = '/';
-} else {
-    fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } })
-        .then(r => r.json())
-        .then(data => {
-            if (data.user && data.user.role === 'admin') {
-                currentUser = data.user;
-                loadRequests({ status: 'pending' });
-            } else {
-                alert('Доступ запрещён');
-                window.location.href = '/';
-            }
-        })
-        .catch(() => {
-            window.location.href = '/';
-        });
-}
     const $ = (s) => document.querySelector(s);
-    const API = '/api/write-offs';
-    let token = sessionStorage.getItem('token');
+const API = '/api/write-offs';
+
+// Авторизация и таймер
+let token = sessionStorage.getItem('token');
+let currentUser = null;
 let inactivityTimer;
+
 function resetInactivityTimer() {
-    clearTimeout(inactivityTimer);
-    inactivityTimer = setTimeout(() => {
-        sessionStorage.removeItem('token');
-        alert('Вы были разлогинены из-за бездействия');
-        window.location.href = '/';
-    }, 5 * 60 * 1000);
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    sessionStorage.removeItem('token');
+    alert('Вы были разлогинены из-за бездействия');
+    window.location.href = '/';
+  }, 5 * 60 * 1000);
 }
 ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(ev => {
-    document.addEventListener(ev, resetInactivityTimer);
+  document.addEventListener(ev, resetInactivityTimer);
 });
 resetInactivityTimer();
-    if (!token) {
-      const password = prompt('Введите пароль администратора');
-      if (password) {
-        fetch('/api/inventory/auth', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ password })
-        })
-        .then(r => r.json())
-        .then(data => {
-          if (data.token) {
-            token = data.token;
-            sessionStorage.setItem('token', token);
-            loadRequests({ status: 'pending' });
-          } else {
-            alert('Неверный пароль');
-            window.location.href = '/';
-          }
-        })
-        .catch(() => alert('Ошибка соединения'));
-      } else {
-        window.location.href = '/';
-      }
-    } else {
-      loadRequests({ status: 'pending' });
-    }
 
-    function authHeaders() {
-      return { 'Authorization': `Bearer ${token}` };
+// Проверка токена и роли при загрузке
+(async function init() {
+  if (!token) {
+    window.location.href = '/';
+    return;
+  }
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Unauthorized');
+    const data = await res.json();
+    if (data.user.role !== 'admin') {
+      alert('Доступ запрещён');
+      window.location.href = '/';
+      return;
     }
+    currentUser = data.user;
+    loadRequests({ status: 'pending' });
+  } catch (e) {
+    window.location.href = '/';
+  }
+})();
+
+function authHeaders() {
+  return { 'Authorization': `Bearer ${token}` };
+}
+
 
     async function loadRequests(params = {}) {
       const url = new URL(API, window.location.origin);
