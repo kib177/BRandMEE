@@ -114,27 +114,38 @@ function bindEvents() {
         applyFilterAndRender();
     });
     $('#btnAdd').onclick = () => requirePassword('add');
-    $('#btnExport').onclick = () => exportCSV(filteredInventory);
-    $('#btnExportExcel').onclick = () => exportToExcel();
+    $('#btnExport').onclick = () => exportExcel(filteredInventory);
     $('#btnImport').onclick = () => requirePassword('import');
     $('#btnDeleteAll').onclick = () => requirePassword('deleteAll');
-   // $('#btnReset').onclick = () => requirePassword('reset');
+
+    // Новые кнопки действий
+    $('#btnEdit').onclick = () => {
+        if (selectedRowCode) requirePassword('edit', selectedRowCode);
+    };
+    $('#btnWriteOff').onclick = () => {
+        if (selectedRowCode) window.location.href = `/writeoff.html?code=${encodeURIComponent(selectedRowCode)}`;
+    };
+    $('#btnDeleteSelected').onclick = () => {
+        if (selectedRowCode) requirePassword('delete', selectedRowCode);
+    };
+
     $('#importFileInput').onchange = async (e) => {
-    if (e.target.files[0]) {
-        const success = await handleImport(e.target.files[0]);
-        if (success) {
-            // Сброс всех фильтров и поиска
-            searchQuery = '';
-            filterType = '';
-            filterEquipment = '';
-            $('#searchInput').value = '';
-            $('#filterType').value = '';
-            $('#filterEquipment').value = '';
-            await loadData();
+        if (e.target.files[0]) {
+            const success = await handleImport(e.target.files[0]);
+            if (success) {
+                // Сброс фильтров и поиска
+                searchQuery = '';
+                filterType = '';
+                filterEquipment = '';
+                $('#searchInput').value = '';
+                $('#filterType').value = '';
+                $('#filterEquipment').value = '';
+                selectedRowCode = null;   // сброс выделения
+                await loadData();
+            }
+            e.target.value = '';
         }
-        e.target.value = '';
-    }
-};
+    };
     $('#btnSubmit').onclick = submitForm;
     $('#btnCancel').onclick = () => $('#modalOverlay').classList.add('hidden');
     $('#btnConfirmDelete').onclick = executeDelete;
