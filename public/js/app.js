@@ -195,4 +195,5 @@ function updateDate() {
     await loadData();
     updateDate();
     setInterval(updateDate, 60000);
+    updateAuthUI();
 })(); 
