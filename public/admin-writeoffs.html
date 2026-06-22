@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Управление списаниями</title>
   <link rel="stylesheet" href="css/style.css">
+  <!-- Библиотека для Excel -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
   <style>
     .filters { display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; align-items:flex-end; }
     .filters select, .filters input { padding:0.5rem; }
@@ -40,6 +42,9 @@
       <input type="date" id="filterTo" placeholder="По">
       <input type="text" id="filterEquip" placeholder="Оборудование">
       <button class="btn btn-primary btn-sm" id="applyFilter">Применить</button>
+      <!-- Новые кнопки экспорта -->
+      <button class="btn btn-outline btn-sm" id="exportExcel">📊 Excel</button>
+      <button class="btn btn-outline btn-sm" id="exportCSV">📄 CSV</button>
     </div>
 
     <table id="requestsTable">
@@ -61,13 +66,10 @@
   </main>
 
   <script>
-    // Локальная мини-функция $
     const $ = (s) => document.querySelector(s);
-
     const API = '/api/write-offs';
     let token = sessionStorage.getItem('token');
 
-    // Если токена нет – запрашиваем пароль
     if (!token) {
       const password = prompt('Введите пароль администратора');
       if (password) {
@@ -81,7 +83,7 @@
           if (data.token) {
             token = data.token;
             sessionStorage.setItem('token', token);
-            loadRequests({ status: 'pending' }); // загрузим после авторизации
+            loadRequests({ status: 'pending' });
           } else {
             alert('Неверный пароль');
             window.location.href = '/';
@@ -92,7 +94,6 @@
         window.location.href = '/';
       }
     } else {
-      // Токен уже есть – сразу грузим
       loadRequests({ status: 'pending' });
     }
 
@@ -157,7 +158,7 @@
           const err = await res.json();
           alert(err.error);
         } else {
-          loadRequests(getCurrentFilters()); // обновить таблицу
+          loadRequests(getCurrentFilters());
         }
       } catch(e) {
         alert('Ошибка сети');
@@ -176,7 +177,86 @@
     $('#applyFilter').addEventListener('click', () => loadRequests(getCurrentFilters()));
     $('#filterStatus').addEventListener('change', () => loadRequests(getCurrentFilters()));
 
-    // Отчёт
+    // === ЭКСПОРТ ===
+    async function fetchAllForExport(filters) {
+      const url = new URL(API, window.location.origin);
+      Object.entries(filters).forEach(([k,v]) => {
+        if (v) url.searchParams.set(k, v);
+      });
+      // Запрашиваем все записи без ограничений
+      const res = await fetch(url, { headers: authHeaders() });
+      if (!res.ok) throw new Error('Ошибка загрузки для экспорта');
+      return await res.json();
+    }
+
+    function exportToExcel(data) {
+      const exportData = data.map(r => ({
+        'ID': r.id,
+        'Код': r.item_code,
+        'Наименование': r.item_name,
+        'Количество': r.quantity,
+        'Ед.изм.': r.unit,
+        'Оборудование': r.equipment || '',
+        'Запросил': r.requested_by,
+        'Дата запроса': new Date(r.requested_at).toLocaleDateString('ru'),
+        'Статус': r.status,
+        'Дата решения': r.resolved_at ? new Date(r.resolved_at).toLocaleDateString('ru') : '',
+        'Комментарий': r.comment || ''
+      }));
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Списания');
+      XLSX.writeFile(wb, `spisaniya_${new Date().toISOString().slice(0,10)}.xlsx`);
+      alert('Excel-отчёт сохранён');
+    }
+
+    function exportToCSV(data) {
+      const headers = ['ID','Код','Наименование','Количество','Ед.изм.','Оборудование','Запросил','Дата запроса','Статус','Дата решения','Комментарий'];
+      const rows = data.map(r => [
+        r.id,
+        r.item_code,
+        r.item_name,
+        r.quantity,
+        r.unit,
+        r.equipment || '',
+        r.requested_by,
+        new Date(r.requested_at).toLocaleDateString('ru'),
+        r.status,
+        r.resolved_at ? new Date(r.resolved_at).toLocaleDateString('ru') : '',
+        r.comment || ''
+      ]);
+      const csv = [headers, ...rows]
+        .map(row => row.map(c => String(c).includes(';') ? `"${c}"` : c).join(';'))
+        .join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `spisaniya_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      alert('CSV-отчёт сохранён');
+    }
+
+    $('#exportExcel').addEventListener('click', async () => {
+      try {
+        const filters = getCurrentFilters();
+        const allData = await fetchAllForExport(filters);
+        exportToExcel(allData);
+      } catch(e) {
+        alert('Ошибка экспорта: ' + e.message);
+      }
+    });
+
+    $('#exportCSV').addEventListener('click', async () => {
+      try {
+        const filters = getCurrentFilters();
+        const allData = await fetchAllForExport(filters);
+        exportToCSV(allData);
+      } catch(e) {
+        alert('Ошибка экспорта: ' + e.message);
+      }
+    });
+
+    // === ОТЧЁТ ЗА ГОД ===
     $('#loadReport').addEventListener('click', async () => {
       const year = $('#reportYear').value;
       try {
