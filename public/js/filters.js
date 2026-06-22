@@ -1,4 +1,3 @@
-// filters.js – состояние фильтров и их применение
 let sortConfig = { key: null, direction: 'asc' };
 let searchQuery = '';
 let filterType = '';
