@@ -88,7 +88,19 @@
     const $ = (s) => document.querySelector(s);
     const API = '/api/write-offs';
     let token = sessionStorage.getItem('token');
-
+let inactivityTimer;
+function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+        sessionStorage.removeItem('token');
+        alert('Вы были разлогинены из-за бездействия');
+        window.location.href = '/';
+    }, 5 * 60 * 1000);
+}
+['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(ev => {
+    document.addEventListener(ev, resetInactivityTimer);
+});
+resetInactivityTimer();
     if (!token) {
       const password = prompt('Введите пароль администратора');
       if (password) {
