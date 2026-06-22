@@ -90,21 +90,18 @@
   </div>
 
   <script>
-    // Локальная мини-функция $ (не зависит от внешнего utils.js)
     const $ = (selector) => document.querySelector(selector);
-
     const API = '/api/write-offs';
     const INVENTORY_API = '/api/inventory';
 
     let allItems = [];
+    let currentStock = 0;   // *** НОВОЕ *** остаток выбранной позиции
 
-    // Загружаем весь список для поиска
     async function loadAllItems() {
       try {
         const res = await fetch(INVENTORY_API);
         if (!res.ok) throw new Error('Ошибка загрузки инвентаря');
         allItems = await res.json();
-        // Заполняем datalist оборудованием
         const equips = [...new Set(allItems.map(i => i.equipment).filter(Boolean))].sort();
         $('#equipList').innerHTML = equips.map(e => `<option value="${e}">`).join('');
       } catch (e) {
@@ -113,7 +110,6 @@
       }
     }
 
-    // Показ подсказок при вводе в поиск
     function showSuggestions(query) {
       const cont = $('#suggestions');
       cont.innerHTML = '';
@@ -139,25 +135,50 @@
       cont.classList.remove('hidden');
     }
 
-    // Выбор позиции (из поиска или автоподстановки)
     function selectItem(item) {
       $('#selectedItem').value = `${item.code} – ${item.name}`;
       $('#selectedCode').value = item.code;
-      $('#quantity').max = item.quantity;  // ограничим остатком
+      currentStock = item.quantity;               // *** НОВОЕ *** сохраняем остаток
+      $('#quantity').max = currentStock;          // HTML-ограничение для стрелок
+      $('#quantity').value = '';                  // сбросим введённое ранее
       $('#suggestions').classList.add('hidden');
+      validateQuantity();                         // сразу проверим (пустое поле)
     }
 
-    // Обработчик ввода в поиск
+    // *** НОВОЕ *** проверка введённого количества
+    function validateQuantity() {
+      const qtyInput = $('#quantity');
+      const submitBtn = $('#submitWriteOff');
+      const val = parseFloat(qtyInput.value);
+      const msgArea = $('#message');
+
+      if (isNaN(val) || val <= 0) {
+        // пусто или некорректно – просто не даём отправить
+        submitBtn.disabled = true;
+        msgArea.textContent = '';
+        return;
+      }
+
+      if (val > currentStock) {
+        msgArea.textContent = `❌ Нельзя списать больше, чем есть на складе (${currentStock})`;
+        submitBtn.disabled = true;
+      } else {
+        msgArea.textContent = '';
+        submitBtn.disabled = false;
+      }
+    }
+
+    // *** НОВОЕ *** обработчик ввода в поле количества
+    $('#quantity').addEventListener('input', validateQuantity);
+
     $('#searchItem').addEventListener('input', (e) => showSuggestions(e.target.value));
 
-    // Скрывать подсказки при клике вне поля
     document.addEventListener('click', (e) => {
       if (!e.target.closest('#searchItem') && !e.target.closest('#suggestions')) {
         $('#suggestions').classList.add('hidden');
       }
     });
 
-    // Отправка заявки
     $('#submitWriteOff').addEventListener('click', async () => {
       const item_code = $('#selectedCode').value;
       const quantity = parseFloat($('#quantity').value);
@@ -169,6 +190,13 @@
         $('#message').textContent = 'Выберите позицию и укажите количество';
         return;
       }
+
+      // Финальная проверка на всякий случай
+      if (quantity > currentStock) {
+        $('#message').textContent = `❌ Количество превышает остаток (${currentStock})`;
+        return;
+      }
+
       try {
         const res = await fetch(API, {
           method: 'POST',
@@ -186,13 +214,13 @@
         $('#quantity').value = '';
         $('#equipment').value = '';
         $('#comment').value = '';
-        loadRecentRequests(); // обновим список последних заявок
+        currentStock = 0;   // сбросим остаток
+        loadRecentRequests();
       } catch(e) {
         $('#message').textContent = '❌ ' + e.message;
       }
     });
 
-    // Загрузка последних заявок пользователя (без авторизации)
     async function loadRecentRequests() {
       try {
         const res = await fetch(API + '?limit=10');
@@ -212,13 +240,11 @@
       }
     }
 
-    // ---------- АВТОПОДСТАНОВКА ПОЗИЦИИ ИЗ URL ----------
     const urlParams = new URLSearchParams(window.location.search);
     const preselectedCode = urlParams.get('code');
     
-    // Сначала загружаем весь список (для поиска), потом, если есть code, подгружаем позицию
     (async function init() {
-      await loadAllItems();                // нужно, чтобы поиск работал
+      await loadAllItems();
       loadRecentRequests();
 
       if (preselectedCode) {
@@ -226,13 +252,13 @@
           const res = await fetch(`${INVENTORY_API}/${encodeURIComponent(preselectedCode)}`);
           if (!res.ok) throw new Error('Не найдена');
           const item = await res.json();
-          selectItem(item);               // заполнит поля
+          selectItem(item);
         } catch (e) {
           console.error('Ошибка автоподстановки:', e);
           $('#message').textContent = 'Позиция не найдена в базе';
         }
       }
     })();
-  </script>
+</script>
 </body>
 </html>
