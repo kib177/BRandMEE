@@ -117,20 +117,18 @@ function bindEvents() {
         else { sortConfig.key = key; sortConfig.direction = 'asc'; }
         applyFilterAndRender();
     });
-    $('#btnAdd').onclick = () => requirePassword('add');
+   
     $('#btnExportExcel').onclick = () => exportExcel(filteredInventory);
     $('#btnExportCSV').onclick = () => exportCSV(filteredInventory);
-    $('#btnImport').onclick = () => requirePassword('import');
-    $('#btnDeleteAll').onclick = () => requirePassword('deleteAll');
-
-    // Новые кнопки действий
-    $('#btnEdit').onclick = () => {
-        if (selectedRowCode) requirePassword('edit', selectedRowCode);
-    };
-    
-    $('#btnDeleteSelected').onclick = () => {
-        if (selectedRowCode) requirePassword('delete', selectedRowCode);
-    };
+    $('#btnAdd').onclick = () => requireAuth('add');
+$('#btnImport').onclick = () => requireAuth('import');
+$('#btnEdit').onclick = () => {
+    if (selectedRowCode) requireAuth('edit', selectedRowCode);
+};
+$('#btnDeleteSelected').onclick = () => {
+    if (selectedRowCode) requireAuth('delete', selectedRowCode);
+};
+$('#btnDeleteAll').onclick = () => requireAuth('deleteAll');
 
     $('#importFileInput').onchange = async (e) => {
         if (e.target.files[0]) {
