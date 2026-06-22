@@ -103,6 +103,24 @@
       $('#suggestions').classList.add('hidden');
     }
 
+    // Автоподстановка, если передан параметр code
+const urlParams = new URLSearchParams(window.location.search);
+const preselectedCode = urlParams.get('code');
+if (preselectedCode) {
+    (async function() {
+        try {
+            const res = await fetch(`${INVENTORY_API}/${encodeURIComponent(preselectedCode)}`);
+            if (!res.ok) throw new Error('Не найдено');
+            const item = await res.json();
+            selectItem(item);
+            // Можно скрыть поиск или оставить — на ваше усмотрение
+        } catch (e) {
+            console.error('Ошибка предзагрузки позиции:', e);
+            // Если не удалось, просто ничего не делаем, пользователь может искать вручную
+        }
+    })();
+}
+
     async function loadRecentRequests() {
       try {
         // Загружаем последние 10 запросов без авторизации (можно сделать отдельную ручку или фильтр)
