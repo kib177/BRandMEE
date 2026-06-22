@@ -377,4 +377,37 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
   }
 });
 
+// Экспорт в Excel
+router.get('/export-excel', (req, res) => {
+  try {
+    const items = db.prepare('SELECT * FROM inventory ORDER BY updated_at DESC').all();
+    
+    // Переименовываем ключи для русских заголовков
+    const data = items.map(item => ({
+      'Код': item.code,
+      'Наименование': item.name,
+      'Модель': item.model,
+      'Тип': item.type,
+      'Оборудование': item.equipment,
+      'Расположение': item.location,
+      'Ед.изм.': item.unit,
+      'Количество': item.quantity,
+      'Дата': item.date
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Склад');
+
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename=warehouse.xlsx');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buf);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка экспорта Excel' });
+  }
+});
+
 module.exports = router;
