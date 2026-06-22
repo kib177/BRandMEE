@@ -133,16 +133,6 @@ router.delete('/', authMiddleware, (req, res) => {
   }
 });
 
-// Эндпоинт для проверки пароля (без middleware)
-router.post('/auth', (req, res) => {
-  const { password } = req.body;
-  if (password === AUTH_PASSWORD) {
-    res.json({ ok: true, token: AUTH_PASSWORD });
-  } else {
-    res.status(401).json({ error: 'Неверный пароль' });
-  }
-});
-
 // Импорт CSV
 router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => {
   try {
