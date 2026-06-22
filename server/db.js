@@ -45,4 +45,22 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_wo_requested_at ON write_offs(requested_at);
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('admin','moderator')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+// Создаём пользователей по умолчанию
+const bcrypt = require('bcryptjs');
+const salt = bcrypt.genSaltSync(10);
+
+const insertUser = db.prepare('INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)');
+insertUser.run('admin', bcrypt.hashSync('admin123', salt), 'admin');
+insertUser.run('moderator', bcrypt.hashSync('moderator123', salt), 'moderator');
+
 module.exports = db;
