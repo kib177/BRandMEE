@@ -118,7 +118,8 @@ function bindEvents() {
         applyFilterAndRender();
     });
     $('#btnAdd').onclick = () => requirePassword('add');
-    $('#btnExport').onclick = () => exportExcel(filteredInventory);
+    $('#btnExportExcel').onclick = () => exportExcel(filteredInventory);
+    $('#btnExportCSV').onclick = () => exportCSV(filteredInventory);
     $('#btnImport').onclick = () => requirePassword('import');
     $('#btnDeleteAll').onclick = () => requirePassword('deleteAll');
 
