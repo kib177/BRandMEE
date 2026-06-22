@@ -120,11 +120,21 @@ function bindEvents() {
     $('#btnDeleteAll').onclick = () => requirePassword('deleteAll');
    // $('#btnReset').onclick = () => requirePassword('reset');
     $('#importFileInput').onchange = async (e) => {
-        if (e.target.files[0]) {
-            if (await handleImport(e.target.files[0])) await loadData();
-            e.target.value = '';
+    if (e.target.files[0]) {
+        const success = await handleImport(e.target.files[0]);
+        if (success) {
+            // Сброс всех фильтров и поиска
+            searchQuery = '';
+            filterType = '';
+            filterEquipment = '';
+            $('#searchInput').value = '';
+            $('#filterType').value = '';
+            $('#filterEquipment').value = '';
+            await loadData();
         }
-    };
+        e.target.value = '';
+    }
+};
     $('#btnSubmit').onclick = submitForm;
     $('#btnCancel').onclick = () => $('#modalOverlay').classList.add('hidden');
     $('#btnConfirmDelete').onclick = executeDelete;
