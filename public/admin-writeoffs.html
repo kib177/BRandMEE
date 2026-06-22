@@ -8,9 +8,11 @@
   <style>
     .filters { display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; align-items:flex-end; }
     .filters select, .filters input { padding:0.5rem; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { padding:0.5rem; border-bottom:1px solid #ddd; }
+    table { width:100%; border-collapse:collapse; margin-top:1rem; }
+    th, td { padding:0.5rem; border-bottom:1px solid #ddd; text-align:left; }
     .status { font-weight:bold; }
+    .btn-logout { color:#fff; background:transparent; border:2px solid rgba(255,255,255,0.7); border-radius:6px; padding:0.4rem 1rem; cursor:pointer; font-size:0.85rem; }
+    .btn-logout:hover { background:rgba(255,255,255,0.15); }
   </style>
 </head>
 <body>
@@ -21,7 +23,7 @@
         <span style="margin-left:2rem;">→ Администрирование списаний</span>
       </div>
       <div>
-        <button class="btn btn-sm btn-outline" id="btnLogout" style="color:#fff; border-color:#fff;">Выйти</button>
+        <button class="btn-logout" id="btnLogout">Выйти</button>
       </div>
     </div>
   </header>
@@ -58,30 +60,40 @@
     <div id="reportArea" style="margin-top:1rem;"></div>
   </main>
 
-  <script src="js/utils.js"></script>
   <script>
+    // Локальная мини-функция $
     const $ = (s) => document.querySelector(s);
-    const API = '/api/write-offs';
 
+    const API = '/api/write-offs';
     let token = sessionStorage.getItem('token');
+
+    // Если токена нет – запрашиваем пароль
     if (!token) {
-      // запросить пароль
       const password = prompt('Введите пароль администратора');
-      fetch('/api/inventory/auth', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ password })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.token) {
-          token = data.token;
-          sessionStorage.setItem('token', token);
-        } else {
-          alert('Неверный пароль');
-          window.location.href = '/';
-        }
-      });
+      if (password) {
+        fetch('/api/inventory/auth', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ password })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.token) {
+            token = data.token;
+            sessionStorage.setItem('token', token);
+            loadRequests({ status: 'pending' }); // загрузим после авторизации
+          } else {
+            alert('Неверный пароль');
+            window.location.href = '/';
+          }
+        })
+        .catch(() => alert('Ошибка соединения'));
+      } else {
+        window.location.href = '/';
+      }
+    } else {
+      // Токен уже есть – сразу грузим
+      loadRequests({ status: 'pending' });
     }
 
     function authHeaders() {
@@ -90,10 +102,20 @@
 
     async function loadRequests(params = {}) {
       const url = new URL(API, window.location.origin);
-      Object.entries(params).forEach(([k,v]) => url.searchParams.set(k,v));
+      Object.entries(params).forEach(([k,v]) => {
+        if (v) url.searchParams.set(k, v);
+      });
       try {
         const res = await fetch(url, { headers: authHeaders() });
-        if (!res.ok) throw new Error('Ошибка загрузки');
+        if (!res.ok) {
+          if (res.status === 401) {
+            alert('Сессия истекла, войдите заново');
+            sessionStorage.removeItem('token');
+            window.location.reload();
+            return;
+          }
+          throw new Error('Ошибка загрузки');
+        }
         const data = await res.json();
         renderTable(data);
       } catch(e) {
@@ -117,14 +139,14 @@
             ${r.status === 'pending' ? `
               <button class="btn btn-success btn-sm" onclick="resolve(${r.id},'approved')">✅</button>
               <button class="btn btn-danger btn-sm" onclick="resolve(${r.id},'rejected')">❌</button>
-            ` : ''}
+            ` : '<span style="font-size:0.8rem;">—</span>'}
           </td>
         </tr>
       `).join('');
     }
 
     async function resolve(id, status) {
-      if (!confirm(`Подтвердить ${status}?`)) return;
+      if (!confirm(`Подтвердить ${status === 'approved' ? 'списание' : 'отклонение'}?`)) return;
       try {
         const res = await fetch(`${API}/${id}`, {
           method: 'PATCH',
@@ -135,7 +157,7 @@
           const err = await res.json();
           alert(err.error);
         } else {
-          loadRequests(getCurrentFilters());
+          loadRequests(getCurrentFilters()); // обновить таблицу
         }
       } catch(e) {
         alert('Ошибка сети');
@@ -163,26 +185,33 @@
         let html = `<h3>${year} год</h3>`;
         html += '<table><tr><th>Месяц</th><th>Списано единиц</th><th>Заявок</th></tr>';
         const months = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
-        data.monthly.forEach(m => {
-          html += `<tr><td>${months[parseInt(m.month)-1]}</td><td>${m.total_quantity}</td><td>${m.count_requests}</td></tr>`;
-        });
+        if (data.monthly && data.monthly.length) {
+          data.monthly.forEach(m => {
+            html += `<tr><td>${months[parseInt(m.month)-1]}</td><td>${m.total_quantity}</td><td>${m.count_requests}</td></tr>`;
+          });
+        } else {
+          html += '<tr><td colspan="3">Нет данных</td></tr>';
+        }
         html += '</table>';
         html += '<h4>По оборудованию</h4><ul>';
-        data.byEquipment.forEach(e => {
-          html += `<li>${e.equipment || 'Без указания'}: ${e.total_quantity} ед. (${e.count_requests} заявок)</li>`;
-        });
+        if (data.byEquipment && data.byEquipment.length) {
+          data.byEquipment.forEach(e => {
+            html += `<li>${e.equipment || 'Без указания'}: ${e.total_quantity} ед. (${e.count_requests} заявок)</li>`;
+          });
+        } else {
+          html += '<li>Нет данных</li>';
+        }
         html += '</ul>';
         $('#reportArea').innerHTML = html;
-      } catch(e) { alert('Ошибка загрузки отчёта'); }
+      } catch(e) {
+        alert('Ошибка загрузки отчёта');
+      }
     });
 
     $('#btnLogout').addEventListener('click', () => {
       sessionStorage.removeItem('token');
       window.location.href = '/';
     });
-
-    // Загрузка при старте
-    loadRequests({ status: 'pending' });
   </script>
 </body>
 </html>
