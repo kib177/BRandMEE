@@ -115,6 +115,7 @@ function bindEvents() {
     });
     $('#btnAdd').onclick = () => requirePassword('add');
     $('#btnExport').onclick = () => exportCSV(filteredInventory);
+    $('#btnExportExcel').onclick = () => exportToExcel();
     $('#btnImport').onclick = () => requirePassword('import');
     $('#btnDeleteAll').onclick = () => requirePassword('deleteAll');
    // $('#btnReset').onclick = () => requirePassword('reset');
