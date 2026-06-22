@@ -63,23 +63,15 @@
             <select class="filter-select" id="filterEquipment" title="Фильтр по оборудованию">
                 <option value="">🏭 Всё оборудование</option>
             </select>
-            <button class="btn btn-primary" id="btnAdd" title="Добавить новую запись (требуется пароль)">
-                ➕ Добавить
-            </button>
+            <button class="btn btn-primary" id="btnAdd" title="Добавить новую запись (требуется пароль)">➕ Добавить</button>
             <button class="btn btn-outline" id="btnExport" title="Экспорт в CSV">📥 Экспорт CSV</button>
             <button class="btn btn-outline" id="btnExportExcel" title="Экспорт в Excel">📥 Экспорт Excel</button>
-            <button class="btn btn-outline" id="btnImport" title="Импорт из CSV/Excel (требуется пароль)">
-                📤 Импорт CSV/Excel
-            </button>
-            
+            <button class="btn btn-outline" id="btnImport" title="Импорт из CSV/Excel (требуется пароль)">📤 Импорт CSV/Excel</button>
             <a href="/admin-writeoffs.html" class="btn btn-outline" style="text-decoration:none;">👑 Админ-списания</a>
             <button class="btn btn-outline" id="btnEdit" title="Редактировать выбранную позицию" disabled>✏️ Редактировать</button>
             <button class="btn btn-outline" id="btnWriteOff" title="Списать выбранную позицию" disabled>📤 Списать</button>
             <button class="btn btn-danger" id="btnDeleteSelected" title="Удалить выбранную позицию" disabled>🗑️ Удалить</button>
             <button class="btn btn-danger" id="btnDeleteAll" title="Удалить все записи (требуется пароль)">🗑️ Удалить всё</button>
-            <!-- <button class="btn btn-warning" id="btnReset" title="Сбросить к исходным данным (требуется пароль)">
-                🔄 Сброс
-            </button> -->
             <input type="file" id="importFileInput" accept=".csv,.xlsx,.xls" class="import-hidden">
         </section>
 
@@ -230,5 +222,6 @@
 <script src="js/import.js"></script>
 <script src="js/export.js"></script>
 <script src="js/app.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 </body>
 </html>
