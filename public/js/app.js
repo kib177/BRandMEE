@@ -194,7 +194,6 @@ function updateDate() {
 (async function init() {
     const savedToken = sessionStorage.getItem('token');
     if (savedToken) { token = savedToken; isAuthenticated = true; }
-    updateAuthIndicator();
     bindEvents();
     await loadData();
     updateDate();
