@@ -144,7 +144,7 @@ function updateAuthUI() {
         loginBtn = document.createElement('button');
         loginBtn.id = 'btnLoginLogout';
         loginBtn.className = 'btn btn-sm btn-outline';
-        loginBtn.style.color = '#fff';
+        loginBtn.style.color = '#1a3c5e';
         loginBtn.style.borderColor = 'rgba(255,255,255,0.7)';
         document.querySelector('.header-inner').appendChild(loginBtn);
     }
