@@ -24,9 +24,10 @@ function renderTable(data) {
             <td><span class="qty-badge ${qc}">${formatQty(q)}</span></td>
             <td>${escapeHtml(item.date)}</td>
             <td><div class="actions-cell">
-                <button class="btn btn-outline btn-sm btn-edit" data-code="${escapeHtml(item.code)}">✏️</button>
-                <button class="btn btn-danger btn-sm btn-delete" data-code="${escapeHtml(item.code)}">🗑️</button>
-            </div></td>`;
+    <button class="btn btn-outline btn-sm btn-edit" data-code="${escapeHtml(item.code)}">✏️</button>
+    <button class="btn btn-outline btn-sm btn-writeoff" data-code="${escapeHtml(item.code)}" title="Списать">📤</button>
+    <button class="btn btn-danger btn-sm btn-delete" data-code="${escapeHtml(item.code)}">🗑️</button>
+</div></td>
         tbody.appendChild(tr);
     });
     $$('.btn-edit').forEach(b => b.onclick = () => requirePassword('edit', b.dataset.code));
