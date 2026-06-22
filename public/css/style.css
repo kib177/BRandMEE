@@ -228,7 +228,11 @@
         .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.74rem; border-radius: var(--radius-sm); }
         .btn-warning { background: #fff; color: #c0831a; border: 2px solid #f0d78c; }
         .btn-warning:hover { background: #fffdf0; border-color: #c0831a; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+        .btn:disabled, .btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
         .import-hidden {
             position: absolute;
             width: 0; height: 0; opacity: 0; pointer-events: none;
