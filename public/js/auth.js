@@ -1,9 +1,9 @@
 // auth.js – управление авторизацией, роли, таймер бездействия
 
-let currentUser = null;         // { id, username, role }
+let currentUser = null;
 let token = sessionStorage.getItem('token');
 let inactivityTimer = null;
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 минут
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
 
 // Функция для выполнения выхода
 function logout() {
@@ -181,3 +181,7 @@ function resetInactivityTimer() {
 
 // При загрузке страницы проверяем токен
 checkAuth();
+
+function getToken() {
+  return token;
+}
