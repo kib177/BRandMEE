@@ -1,4 +1,3 @@
-// ui.js – отрисовка таблицы, статистика, наполнение фильтров
 function renderTable(data) {
     const tbody = $('#tableBody');
     tbody.innerHTML = '';
