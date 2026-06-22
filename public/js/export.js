@@ -36,12 +36,16 @@ async function exportToCSV() {
 async function exportToExcel() {
   try {
     const res = await fetch('/api/inventory/export-excel');
-    if (!res.ok) throw new Error();
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${res.status}`);
+    }
     const blob = await res.blob();
     downloadBlob(blob, 'warehouse.xlsx');
     showToast('Экспорт в Excel готов', 'success');
   } catch (err) {
-    showToast('Ошибка экспорта Excel', 'error');
+    console.error('Ошибка экспорта Excel:', err);
+    showToast(`Ошибка: ${err.message}`, 'error');
   }
 }
 
