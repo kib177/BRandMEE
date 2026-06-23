@@ -50,19 +50,27 @@ function openAddModal() {
 function openEditModal(code) {
     const item = inventory.find(i => i.code === code);
     if (!item) return;
+
     $('#formMode').value = 'edit';
     $('#formOriginalCode').value = item.code;
     $('#modalTitle').textContent = 'Редактировать';
-    $('#formCode').value = item.code; $('#formCode').readOnly = true;
+
+    $('#formCode').value = item.code; 
+    $('#formCode').readOnly = true;
     $('#formName').value = item.name;
     $('#formModel').value = item.model;
-    $('#formType').value = item.type || '';
-    $('#formEquipment').value = item.equipment || '';
+
+    const typeSel = $('#formType');
+    if (typeSel) typeSel.value = item.type_id || '';
+    const equipSel = $('#formEquipment');
+    if (equipSel) equipSel.value = item.equipment_id || '';
+
     $('#formLocation').value = item.location || '';
     $('#formUnit').value = item.unit;
     $('#formQty').value = item.quantity.toString().replace('.', ',');
     const parts = item.date.split('.');
     $('#formDate').value = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : '';
+
     $('#modalOverlay').classList.remove('hidden');
 }
 
