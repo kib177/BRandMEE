@@ -6,7 +6,7 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 // 1. Создание запроса на списание (сотрудник)
 router.post('/', (req, res) => {
   try {
-    const { item_code, equipment, quantity, requested_by, comment } = req.body;
+    const { item_code, equipment_id, quantity, requested_by, comment } = req.body;
     if (!item_code || quantity == null || quantity <= 0) {
       return res.status(400).json({ error: 'Код позиции и количество обязательны' });
     }
@@ -19,10 +19,12 @@ router.post('/', (req, res) => {
       return res.status(400).json({ error: `Недостаточно на складе. Доступно: ${item.quantity} ${item.unit}` });
     }
 
-    const stmt = db.prepare(`
-      INSERT INTO write_offs (item_code, item_name, equipment, quantity, unit, requested_by, comment)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
+   const stmt = db.prepare(`
+   INSERT INTO write_offs (item_code, item_name, equipment_id, quantity, unit, requested_by, comment)
+   VALUES (?, ?, ?, ?, ?, ?, ?)
+   `);
+   stmt.run(item_code, item.name, equipment_id || null, quantity, item.unit, requested_by || 'сотрудник', comment || '');
+    
     const result = stmt.run(
       item_code,
       item.name,
@@ -40,9 +42,12 @@ router.post('/', (req, res) => {
 });
 
 // 2. Получение списка запросов (администратор)
-router.get('/', authMiddleware, requireRole('admin'), (req, res) =>  {
+router.get('/', authMiddleware, requireRole('admin'), (req, res) => {
   try {
-    let query = 'SELECT * FROM write_offs WHERE 1=1';
+    let query = `SELECT wo.*, eq.name AS equipment_name 
+                 FROM write_offs wo
+                 LEFT JOIN equipment eq ON wo.equipment_id = eq.id
+                 WHERE 1=1`;
     const params = [];
 
     if (req.query.status) {
