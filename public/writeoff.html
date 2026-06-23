@@ -34,9 +34,10 @@
       <input type="number" id="quantity" step="0.01" min="0.01" required>
     </div>
     <div class="form-group">
-      <label>На какое оборудование *</label>
-      <input type="text" id="equipment" list="equipList">
-      <datalist id="equipList"></datalist>
+      <label for="equipment">На какое оборудование *</label>
+      <select id="equipment" required>
+      <option value="">— Выберите —</option>
+      </select>
     </div>
     <div class="form-group">
       <label>Кто запрашивает</label>
