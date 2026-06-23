@@ -143,23 +143,29 @@
       }
     });
 
-    $('#submitWriteOff').addEventListener('click', async () => {
-      const item_code = $('#selectedCode').value;
-      const quantity = parseFloat($('#quantity').value);
-      const equipment = $('#equipment').value;
-      const requested_by = $('#requestedBy').value.trim() || 'сотрудник';
-      const comment = $('#comment').value.trim();
+   $('#submitWriteOff').addEventListener('click', async () => {
+    const item_code = $('#selectedCode').value;
+    const quantity = parseFloat($('#quantity').value);
+    const equipment = $('#equipment').value.trim();           // ← здесь trim
+    const requested_by = $('#requestedBy').value.trim() || 'сотрудник';
+    const comment = $('#comment').value.trim();
 
-      if (!item_code || !quantity || quantity <= 0) {
+    if (!item_code || !quantity || quantity <= 0) {
         $('#message').textContent = 'Выберите позицию и укажите количество';
         return;
-      }
+    }
 
-      // Финальная проверка на всякий случай
-      if (quantity > currentStock) {
+    // *** НОВАЯ ПРОВЕРКА ***
+    if (!equipment) {
+        $('#message').textContent = '❌ Укажите оборудование, на которое выполняется списание';
+        return;
+    }
+
+    // Финальная проверка остатка
+    if (quantity > currentStock) {
         $('#message').textContent = `❌ Количество превышает остаток (${currentStock})`;
         return;
-      }
+    }
 
       try {
         const res = await fetch(API, {
