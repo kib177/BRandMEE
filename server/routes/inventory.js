@@ -227,8 +227,6 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
       }
 
       const model    = modelIndex >= 0 ? (cols[modelIndex] || '').trim() : '';
-      const type     = typeIndex >= 0 ? (cols[typeIndex] || '').trim() : 'Прочее';
-      const equip    = equipIndex >= 0 ? (cols[equipIndex] || '').trim() : '';
       const location = locIndex >= 0 ? (cols[locIndex] || '').trim() : '';
       const unit     = (cols[unitIndex] || '').trim();
       const qtyRaw   = (cols[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
@@ -251,16 +249,21 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
         continue;
       }
 
-      items.push({
-        code, name, model,
-        type: type || 'Прочее',
-        equipment: equip,
-        location,
-        unit,
-        quantity,
-        date: formattedDate
-      });
-    }
+      const typeName = typeIndex >= 0 ? (cols[typeIndex] || '').trim() : 'Прочее';
+const equipName = equipIndex >= 0 ? (cols[equipIndex] || '').trim() : '';
+
+const typeId = getOrCreateTypeId(typeName || 'Прочее');
+const equipmentId = getOrCreateEquipmentId(equipName);
+
+items.push({
+  code, name, model,
+  type_id: typeId,
+  equipment_id: equipmentId,
+  location,
+  unit,
+  quantity,
+  date: formattedDate
+});
 
     if (items.length === 0) {
       return res.status(400).json({ 
@@ -270,14 +273,14 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
     }
 
     const stmt = db.prepare(`
-      INSERT INTO inventory (code, name, model, type, equipment, location, unit, quantity, date, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(code) DO UPDATE SET
-        name=excluded.name, model=excluded.model, type=excluded.type,
-        equipment=excluded.equipment, location=excluded.location,
-        unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
-        updated_at=CURRENT_TIMESTAMP
-    `);
+  INSERT INTO inventory (code, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+  ON CONFLICT(code) DO UPDATE SET
+    name=excluded.name, model=excluded.model, type_id=excluded.type_id,
+    equipment_id=excluded.equipment_id, location=excluded.location,
+    unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
+    updated_at=CURRENT_TIMESTAMP
+`);
     const insertAll = db.transaction((items) => {
       for (const item of items) {
         stmt.run(item.code, item.name, item.model, item.type, item.equipment, item.location, item.unit, item.quantity, item.date);
@@ -377,8 +380,6 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
       if (!code || !name) { skipped.push({ row: i+1, reason: 'Пустой код или наименование' }); continue; }
 
       const model    = modelIndex >= 0 ? String(row[modelIndex] || '').trim() : '';
-      const type     = typeIndex >= 0 ? String(row[typeIndex] || '').trim() : 'Прочее';
-      const equip    = equipIndex >= 0 ? String(row[equipIndex] || '').trim() : '';
       const location = locIndex >= 0 ? String(row[locIndex] || '').trim() : '';
       const unit     = String(row[unitIndex] || '').trim();
       const qtyRaw   = String(row[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
@@ -391,16 +392,21 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
       const formattedDate = parseDate(dateRaw);
       if (!formattedDate) { skipped.push({ row: i+1, reason: `Некорректная дата: ${dateRaw}` }); continue; }
 
-      items.push({
-        code, name, model,
-        type: type || 'Прочее',
-        equipment: equip,
-        location,
-        unit,
-        quantity,
-        date: formattedDate
-      });
-    }
+      const typeName = typeIndex >= 0 ? String(row[typeIndex] || '').trim() : 'Прочее';
+const equipName = equipIndex >= 0 ? String(row[equipIndex] || '').trim() : '';
+
+const typeId = getOrCreateTypeId(typeName || 'Прочее');
+const equipmentId = getOrCreateEquipmentId(equipName);
+
+items.push({
+  code, name, model,
+  type_id: typeId,
+  equipment_id: equipmentId,
+  location,
+  unit,
+  quantity,
+  date: formattedDate
+});
 
     if (items.length === 0) {
       return res.status(400).json({ 
