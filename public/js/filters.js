@@ -1,7 +1,9 @@
+// filters.js – состояние фильтров и их применение
+
 let sortConfig = { key: null, direction: 'asc' };
 let searchQuery = '';
-let filterTypeValue = '';
-let filterEquipmentValue = '';
+let filterTypeValue = '';      // теперь храним ID типа
+let filterEquipmentValue = ''; // теперь храним ID оборудования
 let filteredInventory = [];
 
 function applyFilters(inventory) {
