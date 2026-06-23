@@ -416,14 +416,14 @@ items.push({
     }
 
     const stmt = db.prepare(`
-      INSERT INTO inventory (code, name, model, type, equipment, location, unit, quantity, date, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(code) DO UPDATE SET
-        name=excluded.name, model=excluded.model, type=excluded.type,
-        equipment=excluded.equipment, location=excluded.location,
-        unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
-        updated_at=CURRENT_TIMESTAMP
-    `);
+  INSERT INTO inventory (code, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+  ON CONFLICT(code) DO UPDATE SET
+    name=excluded.name, model=excluded.model, type_id=excluded.type_id,
+    equipment_id=excluded.equipment_id, location=excluded.location,
+    unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
+    updated_at=CURRENT_TIMESTAMP
+`);
     const insertAll = db.transaction((items) => {
       for (const item of items) stmt.run(item.code, item.name, item.model, item.type, item.equipment, item.location, item.unit, item.quantity, item.date);
     });
