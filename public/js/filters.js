@@ -12,8 +12,8 @@ function applyFilters(inventory) {
             Object.values(item).some(v => String(v).toLowerCase().includes(q))
         );
     }
-    if (filterType) result = result.filter(i => i.type === filterType);
-    if (filterEquipment) result = result.filter(i => i.equipment === filterEquipment);
+    if (filterType) result = result.filter(i => i.type_id == filterType);
+    if (filterEquipment) result = result.filter(i => i.equipment_id == filterEquipment);
 
     if (sortConfig.key) {
         const key = sortConfig.key;
