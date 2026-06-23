@@ -1,7 +1,7 @@
 let sortConfig = { key: null, direction: 'asc' };
 let searchQuery = '';
-let filterType = '';
-let filterEquipment = '';
+let filterTypeValue = '';
+let filterEquipmentValue = '';
 let filteredInventory = [];
 
 function applyFilters(inventory) {
@@ -12,8 +12,8 @@ function applyFilters(inventory) {
             Object.values(item).some(v => String(v).toLowerCase().includes(q))
         );
     }
-    if (filterType) result = result.filter(i => i.type_id == filterType);
-    if (filterEquipment) result = result.filter(i => i.equipment_id == filterEquipment);
+    if (filterTypeValue) result = result.filter(i => i.type_id == filterTypeValue);
+    if (filterEquipmentValue) result = result.filter(i => i.equipment_id == filterEquipmentValue);
 
     if (sortConfig.key) {
         const key = sortConfig.key;
