@@ -1,1 +1,23 @@
-
+@media (max-width: 600px) {
+    .writeoff-form {
+        margin: 1rem;
+        padding: 1rem;
+    }
+    .writeoff-form h2 {
+        font-size: 1.2rem;
+    }
+    .writeoff-form label {
+        font-size: 0.8rem;
+    }
+    .writeoff-form input,
+    .writeoff-form select,
+    .writeoff-form textarea,
+    .writeoff-form button {
+        font-size: 15px;
+        padding: 0.6rem;
+    }
+    #submitWriteOff {
+        width: 100%;
+        padding: 0.7rem;
+    }
+}
