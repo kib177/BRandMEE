@@ -12,7 +12,6 @@ async function loadDirectoriesForForm() {
       fetch('/api/directories/equipment')
     ]);
 
-    // Если сервер вернул не 200, считаем ответ пустым массивом
     if (typesRes.ok) {
       const data = await typesRes.json();
       allTypes = Array.isArray(data) ? data : [];
@@ -27,18 +26,22 @@ async function loadDirectoriesForForm() {
       allEquipments = [];
     }
 
-    // ... дальше заполнение селектов без изменений
-  } catch (err) {
-    allTypes = [];
-    allEquipments = [];
-    console.error('Ошибка загрузки справочников:', err);
-  }
-}
+    // Заполняем форму добавления/редактирования
+    const typeSelect = $('#formType');
+    if (typeSelect) {
+      typeSelect.innerHTML = '<option value="">— Выберите —</option>' +
+        allTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    }
+    const equipSelect = $('#formEquipment');
+    if (equipSelect) {
+      equipSelect.innerHTML = '<option value="">— Без оборудования —</option>' +
+        allEquipments.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+    }
 
-    // Фильтры – просто наполняем, выбранные значения восстановим позже
+    // Фильтры на главной странице
     const filterType = $('#filterType');
     if (filterType) {
-      const currentVal = filterType.value; // сохраним, что было выбрано
+      const currentVal = filterType.value;
       filterType.innerHTML = '<option value="">🔧 Все типы</option>' +
         allTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
       filterType.value = currentVal || '';
@@ -51,11 +54,13 @@ async function loadDirectoriesForForm() {
       filterEquip.value = currentVal || '';
     }
   } catch (err) {
+    allTypes = [];
+    allEquipments = [];
     console.error('Ошибка загрузки справочников:', err);
   }
 }
 
-// ========== ПОМОЩНИКИ ==========
+// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
 function getTypeName(typeId) {
   const found = allTypes.find(t => t.id == typeId);
   return found ? found.name : '—';
@@ -126,8 +131,11 @@ function updateActionButtons() {
         const btn = $('#' + id);
         if (btn) {
             btn.disabled = !hasSelection;
-            if (hasSelection) btn.classList.remove('disabled');
-            else btn.classList.add('disabled');
+            if (hasSelection) {
+                btn.classList.remove('disabled');
+            } else {
+                btn.classList.add('disabled');
+            }
         }
     });
 }
