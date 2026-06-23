@@ -26,13 +26,28 @@ function openAddModal() {
     $('#formMode').value = 'add';
     $('#formOriginalCode').value = '';
     $('#modalTitle').textContent = 'Добавить позицию';
-    ['formCode','formName','formModel','formLocation'].forEach(id => $(`#${id}`).value = '');
-    $('#formType').value = item.type_id || '';
-    $('#formEquipment').value = item.equipment_id || '';
-    $('#formUnit').value = 'ШТ';
-    $('#formQty').value = '1,00';
-    $('#formDate').value = new Date().toISOString().split('T')[0];
-    $('#formCode').readOnly = false;
+
+    // Безопасно очищаем поля, если они есть
+    ['formCode','formName','formModel','formEquipment','formLocation'].forEach(id => {
+        const el = $(`#${id}`);
+        if (el) el.value = '';
+    });
+
+    // Селекты
+    const typeSelect = $('#formType');
+    if (typeSelect) typeSelect.value = '';
+    const unitSelect = $('#formUnit');
+    if (unitSelect) unitSelect.value = 'ШТ';
+
+    // Остальные поля
+    const qtyEl = $('#formQty');
+    if (qtyEl) qtyEl.value = '1,00';
+    const dateEl = $('#formDate');
+    if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+
+    const codeEl = $('#formCode');
+    if (codeEl) codeEl.readOnly = false;
+
     $('#modalOverlay').classList.remove('hidden');
 }
 
