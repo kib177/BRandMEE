@@ -10,23 +10,36 @@ async function loadData() {
     applyFilterAndRender();
 }
 
-// Модалки
+function applyFilterAndRender() {
+    applyFilters(inventory);
+    if (selectedRowCode && !filteredInventory.some(item => item.code === selectedRowCode)) {
+        selectedRowCode = null;
+    }
+    renderTable(filteredInventory);
+    updateStats(inventory);
+    // populateFilters(inventory); больше не нужна, т.к. справочники загружаются один раз
+}
+
+// ========== МОДАЛЬНЫЕ ОКНА ==========
 function openAddModal() {
     $('#formMode').value = 'add';
     $('#formOriginalCode').value = '';
     $('#modalTitle').textContent = 'Добавить позицию';
 
+    // Безопасно очищаем текстовые поля
     ['formCode','formName','formModel','formLocation'].forEach(id => {
-        const el = $('#' + id);
+        const el = $(`#${id}`);
         if (el) el.value = '';
     });
 
+    // Сбрасываем селекты
     const typeSel = $('#formType');
     if (typeSel) typeSel.value = '';
     const equipSel = $('#formEquipment');
     if (equipSel) equipSel.value = '';
     const unitSel = $('#formUnit');
     if (unitSel) unitSel.value = 'ШТ';
+
     const qtyEl = $('#formQty');
     if (qtyEl) qtyEl.value = '1,00';
     const dateEl = $('#formDate');
@@ -36,6 +49,7 @@ function openAddModal() {
 
     $('#modalOverlay').classList.remove('hidden');
 }
+
 function openEditModal(code) {
     const item = inventory.find(i => i.code === code);
     if (!item) return;
@@ -44,21 +58,23 @@ function openEditModal(code) {
     $('#formOriginalCode').value = item.code;
     $('#modalTitle').textContent = 'Редактировать';
 
-    $('#formCode').value = item.code; 
+    // Безопасное заполнение
+    const setVal = (id, val) => {
+        const el = $('#' + id);
+        if (el) el.value = val;
+    };
+
+    setVal('formCode', item.code);
     $('#formCode').readOnly = true;
-    $('#formName').value = item.name;
-    $('#formModel').value = item.model;
-
-    const typeSel = $('#formType');
-    if (typeSel) typeSel.value = item.type_id || '';
-    const equipSel = $('#formEquipment');
-    if (equipSel) equipSel.value = item.equipment_id || '';
-
-    $('#formLocation').value = item.location || '';
-    $('#formUnit').value = item.unit;
-    $('#formQty').value = item.quantity.toString().replace('.', ',');
+    setVal('formName', item.name);
+    setVal('formModel', item.model);
+    setVal('formType', item.type_id || '');
+    setVal('formEquipment', item.equipment_id || '');
+    setVal('formLocation', item.location || '');
+    setVal('formUnit', item.unit);
+    setVal('formQty', item.quantity.toString().replace('.', ','));
     const parts = item.date.split('.');
-    $('#formDate').value = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : '';
+    setVal('formDate', parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : '');
 
     $('#modalOverlay').classList.remove('hidden');
 }
@@ -85,6 +101,8 @@ async function submitForm(e) {
     await loadData();
     showToast(mode === 'add' ? 'Добавлено' : 'Обновлено');
 }
+
+// ========== УДАЛЕНИЕ ==========
 let pendingDeleteCode = null;
 function openConfirmDelete(code) {
     pendingDeleteCode = code;
@@ -109,7 +127,7 @@ async function executeDeleteAll() {
     showToast('Всё удалено');
 }
 
-// Функция, выполняющая действие после проверки прав
+// ========== АВТОРИЗАЦИЯ ДЕЙСТВИЙ ==========
 function executeAction(action, data) {
     switch (action) {
         case 'add': openAddModal(); break;
@@ -117,18 +135,14 @@ function executeAction(action, data) {
         case 'delete': openConfirmDelete(data); break;
         case 'deleteAll': openConfirmDeleteAll(); break;
         case 'import': $('#importFileInput').click(); break;
-        case 'writeoff': window.location.href = `/writeoff.html?code=${encodeURIComponent(data)}`; break;
     }
 }
 
 function requireAuth(action, data) {
     if (!currentUser) {
-        showLoginModal(() => {
-            executeAction(action, data);
-        });
+        showLoginModal(() => executeAction(action, data));
         return;
     }
-    // Проверка роли для действий, требующих модератора/админа
     if (action !== 'writeoff' && currentUser.role !== 'admin' && currentUser.role !== 'moderator') {
         showToast('Недостаточно прав', 'error');
         return;
@@ -136,18 +150,27 @@ function requireAuth(action, data) {
     executeAction(action, data);
 }
 
-// События
+// ========== ОСНОВНЫЕ СОБЫТИЯ ==========
 function bindEvents() {
     $('#searchInput').oninput = () => { searchQuery = $('#searchInput').value; applyFilterAndRender(); };
-    $('#filterType').onchange = () => { filterType = $('#filterType').value; applyFilterAndRender(); };
-    $('#filterEquipment').onchange = () => { filterEquipment = $('#filterEquipment').value; applyFilterAndRender(); };
+
+    // Используем новые переменные фильтров
+    $('#filterType').onchange = () => {
+        filterTypeValue = $('#filterType').value;
+        applyFilterAndRender();
+    };
+    $('#filterEquipment').onchange = () => {
+        filterEquipmentValue = $('#filterEquipment').value;
+        applyFilterAndRender();
+    };
+
     $$('thead th[data-sort]').forEach(th => th.onclick = () => {
         const key = th.dataset.sort;
         if (sortConfig.key === key) sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
         else { sortConfig.key = key; sortConfig.direction = 'asc'; }
         applyFilterAndRender();
     });
-   
+
     $('#btnExportExcel').onclick = () => exportExcel(filteredInventory);
     $('#btnExportCSV').onclick = () => exportCSV(filteredInventory);
 
@@ -164,6 +187,7 @@ function bindEvents() {
         if (selectedRowCode) window.location.href = `/writeoff.html?code=${encodeURIComponent(selectedRowCode)}`;
     };
 
+    // Импорт
     $('#importFileInput').onchange = async (e) => {
         if (!currentUser || (currentUser.role !== 'moderator' && currentUser.role !== 'admin')) {
             showToast('Требуется авторизация', 'error');
@@ -173,14 +197,17 @@ function bindEvents() {
         if (e.target.files[0]) {
             const success = await handleImport(e.target.files[0]);
             if (success) {
+                // Сброс фильтров и поиска, чтобы все записи стали видны
                 searchQuery = '';
-                filterType = '';
-                filterEquipment = '';
+                filterTypeValue = '';
+                filterEquipmentValue = '';
                 $('#searchInput').value = '';
                 $('#filterType').value = '';
                 $('#filterEquipment').value = '';
                 selectedRowCode = null;
                 await loadData();
+                // После импорта обновим справочники (вдруг появились новые типы/оборудование)
+                await loadDirectoriesForForm();
             }
             e.target.value = '';
         }
@@ -193,7 +220,6 @@ function bindEvents() {
     $('#btnConfirmDeleteAll').onclick = executeDeleteAll;
     $('#btnConfirmDeleteAllCancel').onclick = () => $('#confirmDeleteAllOverlay').classList.add('hidden');
 
-    // Удалены обработчики для удалённых кнопок пароля
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
             $('#modalOverlay').classList.add('hidden');
@@ -204,12 +230,16 @@ function bindEvents() {
 }
 
 function updateDate() {
-    $('#currentDate').textContent = new Date().toLocaleDateString('ru-RU', { weekday:'short', day:'2-digit', month:'long', year:'numeric' });
+    $('#currentDate').textContent = new Date().toLocaleDateString('ru-RU', {
+        weekday:'short', day:'2-digit', month:'long', year:'numeric'
+    });
 }
 
-// Инициализация
+// ========== ИНИЦИАЛИЗАЦИЯ ==========
 (async function init() {
-    await loadDirectoriesForForm();   // заполняем справочники сразу
+    // Сначала загружаем справочники, чтобы форма и фильтры были заполнены
+    await loadDirectoriesForForm();
+
     bindEvents();
     await loadData();
     updateDate();
