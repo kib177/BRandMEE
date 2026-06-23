@@ -26,8 +26,9 @@ function openAddModal() {
     $('#formMode').value = 'add';
     $('#formOriginalCode').value = '';
     $('#modalTitle').textContent = 'Добавить позицию';
-    ['formCode','formName','formModel','formEquipment','formLocation'].forEach(id => $(`#${id}`).value = '');
-    $('#formType').value = '';
+    ['formCode','formName','formModel','formLocation'].forEach(id => $(`#${id}`).value = '');
+    $('#formType').value = item.type_id || '';
+    $('#formEquipment').value = item.equipment_id || '';
     $('#formUnit').value = 'ШТ';
     $('#formQty').value = '1,00';
     $('#formDate').value = new Date().toISOString().split('T')[0];
