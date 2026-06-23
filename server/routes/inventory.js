@@ -12,7 +12,13 @@ const XLSX = require('xlsx');
 // Получить все записи
 router.get('/', (req, res) => {
   try {
-    const items = db.prepare('SELECT * FROM inventory ORDER BY updated_at DESC').all();
+    const items = db.prepare(`
+      SELECT i.*, pt.name AS type_name, eq.name AS equipment_name
+      FROM inventory i
+      LEFT JOIN part_types pt ON i.type_id = pt.id
+      LEFT JOIN equipment eq ON i.equipment_id = eq.id
+      ORDER BY i.updated_at DESC
+    `).all();
     res.json(items);
   } catch (err) {
     console.error(err);
@@ -63,19 +69,19 @@ router.get('/:code', (req, res) => {
 // Добавить или обновить запись
 router.post('/', authMiddleware, (req, res) => {
   try {
-    const { code, name, model, type, equipment, location, unit, quantity, date } = req.body;
+    const { code, name, model, type_id, equipment_id, location, unit, quantity, date } = req.body;
     if (!code || !name || !date) {
       return res.status(400).json({ error: 'code, name, date обязательны' });
     }
     db.prepare(`
-      INSERT INTO inventory (code, name, model, type, equipment, location, unit, quantity, date, updated_at)
+      INSERT INTO inventory (code, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(code) DO UPDATE SET
-        name=excluded.name, model=excluded.model, type=excluded.type,
-        equipment=excluded.equipment, location=excluded.location,
+        name=excluded.name, model=excluded.model, type_id=excluded.type_id,
+        equipment_id=excluded.equipment_id, location=excluded.location,
         unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
         updated_at=CURRENT_TIMESTAMP
-    `).run(code, name, model, type, equipment, location, unit, quantity, date);
+    `).run(code, name, model, type_id || null, equipment_id || null, location, unit, quantity, date);
     res.json({ ok: true, code });
   } catch (err) {
     console.error(err);
