@@ -100,3 +100,36 @@ function populateFilters(inventory) {
     $('#formType').innerHTML = '<option value="">— Выберите —</option>' + 
         PART_TYPES.map(t => `<option value="${t}">${t}</option>`).join('');
 }
+
+async function loadDirectoriesForForm() {
+  try {
+    const [typesRes, equipsRes] = await Promise.all([
+      fetch('/api/directories/types'),
+      fetch('/api/directories/equipment')
+    ]);
+    const types = await typesRes.json();
+    const equips = await equipsRes.json();
+
+    // Для формы добавления/редактирования
+    const typeSelect = $('#formType');
+    typeSelect.innerHTML = '<option value="">— Выберите —</option>' +
+      types.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+    const equipSelect = $('#formEquipment');
+    equipSelect.innerHTML = '<option value="">— Без оборудования —</option>' +
+      equips.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+
+    // Для фильтров на главной
+    const filterType = $('#filterType');
+    filterType.innerHTML = '<option value="">🔧 Все типы</option>' +
+      types.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    filterType.value = filterTypeValue || '';
+
+    const filterEquip = $('#filterEquipment');
+    filterEquip.innerHTML = '<option value="">🏭 Всё оборудование</option>' +
+      equips.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+    filterEquip.value = filterEquipmentValue || '';
+  } catch (err) {
+    console.error('Ошибка загрузки справочников', err);
+  }
+}
