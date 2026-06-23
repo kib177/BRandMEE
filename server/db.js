@@ -6,7 +6,7 @@ const db = new Database(path.join(__dirname, 'warehouse.db'));
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
-// ========== ТАБЛИЦЫ ==========
+// ========== СОЗДАНИЕ ТАБЛИЦ ==========
 db.exec(`
   -- Типы запчастей
   CREATE TABLE IF NOT EXISTS part_types (
@@ -20,7 +20,7 @@ db.exec(`
     name TEXT NOT NULL UNIQUE
   );
 
-  -- Основная таблица запчастей (теперь ссылается на типы и оборудование)
+  -- Основная таблица запчастей (новая схема)
   CREATE TABLE IF NOT EXISTS inventory (
     code TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -52,7 +52,7 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
-  -- Таблица списаний
+  -- Таблица списаний (новая схема)
   CREATE TABLE IF NOT EXISTS write_offs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     item_code TEXT NOT NULL,
@@ -73,55 +73,59 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_wo_requested_at ON write_offs(requested_at);
 `);
 
-// ========== МИГРАЦИЯ СТАРЫХ ДАННЫХ ==========
-// Переносим существующие текстовые поля type и equipment в новые таблицы
-const migrate = () => {
-  const tableInfo = db.prepare("PRAGMA table_info('inventory')").all();
-  const hasTypeId = tableInfo.some(col => col.name === 'type_id');
-  if (!hasTypeId) {
-    // Добавляем новые столбцы, если их ещё нет (на случай, если старая схема)
-    db.exec(`ALTER TABLE inventory ADD COLUMN type_id INTEGER REFERENCES part_types(id)`);
-    db.exec(`ALTER TABLE inventory ADD COLUMN equipment_id INTEGER REFERENCES equipment(id)`);
+// ========== БЕЗОПАСНАЯ МИГРАЦИЯ ==========
+function safeMigrate() {
+  // Проверяем наличие старого столбца 'type' в inventory
+  const invColumns = db.prepare("PRAGMA table_info('inventory')").all().map(c => c.name);
+
+  // Миграция типов
+  if (invColumns.includes('type')) {
+    try {
+      const oldTypes = db.prepare(`SELECT DISTINCT type FROM inventory WHERE type IS NOT NULL AND type != ''`).all();
+      const insertType = db.prepare(`INSERT OR IGNORE INTO part_types (name) VALUES (?)`);
+      for (const row of oldTypes) {
+        insertType.run(row.type);
+      }
+      // Обновляем type_id
+      db.prepare(`UPDATE inventory SET type_id = (SELECT id FROM part_types WHERE name = inventory.type) WHERE type_id IS NULL`).run();
+      // Удаляем старый столбец (опционально, SQLite не позволяет, можно просто не трогать)
+    } catch (e) {
+      console.log('Миграция типов не потребовалась:', e.message);
+    }
   }
 
-  // Перенос типов
-  const oldTypes = db.prepare(`SELECT DISTINCT type FROM inventory WHERE type IS NOT NULL AND type != '' AND type != 'Прочее'`).all();
-  const insertType = db.prepare(`INSERT OR IGNORE INTO part_types (name) VALUES (?)`);
-  for (const row of oldTypes) {
-    insertType.run(row.type);
+  // Миграция оборудования
+  if (invColumns.includes('equipment')) {
+    try {
+      const oldEquips = db.prepare(`SELECT DISTINCT equipment FROM inventory WHERE equipment IS NOT NULL AND equipment != ''`).all();
+      const insertEquip = db.prepare(`INSERT OR IGNORE INTO equipment (name) VALUES (?)`);
+      for (const row of oldEquips) {
+        insertEquip.run(row.equipment);
+      }
+      db.prepare(`UPDATE inventory SET equipment_id = (SELECT id FROM equipment WHERE name = inventory.equipment) WHERE equipment_id IS NULL AND equipment IS NOT NULL AND equipment != ''`).run();
+    } catch (e) {
+      console.log('Миграция оборудования не потребовалась:', e.message);
+    }
   }
-  // Убедимся, что есть тип "Прочее"
-  insertType.run('Прочее');
 
-  // Обновляем type_id
-  db.prepare(`UPDATE inventory SET type_id = (SELECT id FROM part_types WHERE name = inventory.type)`).run();
-  // Для тех, у кого type_id остался NULL, ставим "Прочее"
-  db.prepare(`UPDATE inventory SET type_id = (SELECT id FROM part_types WHERE name = 'Прочее') WHERE type_id IS NULL`).run();
-
-  // Перенос оборудования
-  const oldEquips = db.prepare(`SELECT DISTINCT equipment FROM inventory WHERE equipment IS NOT NULL AND equipment != ''`).all();
-  const insertEquip = db.prepare(`INSERT OR IGNORE INTO equipment (name) VALUES (?)`);
-  for (const row of oldEquips) {
-    insertEquip.run(row.equipment);
+  // Миграция write_offs (оборудование)
+  const woColumns = db.prepare("PRAGMA table_info('write_offs')").all().map(c => c.name);
+  if (woColumns.includes('equipment') && !woColumns.includes('equipment_id')) {
+    try {
+      db.exec(`ALTER TABLE write_offs ADD COLUMN equipment_id INTEGER REFERENCES equipment(id)`);
+      const woEquips = db.prepare(`SELECT DISTINCT equipment FROM write_offs WHERE equipment IS NOT NULL AND equipment != ''`).all();
+      const insertEquip = db.prepare(`INSERT OR IGNORE INTO equipment (name) VALUES (?)`);
+      for (const row of woEquips) {
+        insertEquip.run(row.equipment);
+      }
+      db.prepare(`UPDATE write_offs SET equipment_id = (SELECT id FROM equipment WHERE name = write_offs.equipment) WHERE equipment_id IS NULL AND equipment IS NOT NULL AND equipment != ''`).run();
+    } catch (e) {
+      console.log('Миграция write_offs не потребовалась:', e.message);
+    }
   }
-  // Обновляем equipment_id
-  db.prepare(`UPDATE inventory SET equipment_id = (SELECT id FROM equipment WHERE name = inventory.equipment) WHERE equipment IS NOT NULL AND equipment != ''`).run();
+}
 
-  // Для write_offs: добавляем equipment_id и переносим
-  const woColumns = db.prepare("PRAGMA table_info('write_offs')").all();
-  if (!woColumns.some(c => c.name === 'equipment_id')) {
-    db.exec(`ALTER TABLE write_offs ADD COLUMN equipment_id INTEGER REFERENCES equipment(id)`);
-  }
-  const woEquips = db.prepare(`SELECT DISTINCT equipment FROM write_offs WHERE equipment IS NOT NULL AND equipment != ''`).all();
-  for (const row of woEquips) {
-    insertEquip.run(row.equipment);
-  }
-  db.prepare(`UPDATE write_offs SET equipment_id = (SELECT id FROM equipment WHERE name = write_offs.equipment) WHERE equipment IS NOT NULL AND equipment != ''`).run();
-
-  console.log('Миграция завершена');
-};
-
-migrate();
+safeMigrate();
 
 // ========== ПОЛЬЗОВАТЕЛИ ПО УМОЛЧАНИЮ ==========
 const salt = bcrypt.genSaltSync(10);
