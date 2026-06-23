@@ -13,7 +13,7 @@
     
     /* Увеличиваем область касания, но шрифт оставляем небольшим */
     button, .btn, select, input, textarea {
-        min-height: 40px;
+        min-height: 30px;
         font-size: 14px;
     }
 
@@ -29,7 +29,7 @@
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: 0.5rem;
+        gap: 0rem;
         padding: 0.4rem 0;
     }
     .header-logo {
@@ -179,7 +179,7 @@
 @media (max-width: 480px) {
     /* Ещё компактнее шапка */
     .header-inner {
-        height: 44px;
+        height: 75px;
         padding: 0 0.5rem;
     }
     .header-logo {
