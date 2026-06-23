@@ -17,7 +17,6 @@ function applyFilterAndRender() {
     }
     renderTable(filteredInventory);
     updateStats(inventory);
-    // populateFilters(inventory); больше не нужна, т.к. справочники загружаются один раз
 }
 
 // ========== МОДАЛЬНЫЕ ОКНА ==========
@@ -26,20 +25,17 @@ function openAddModal() {
     $('#formOriginalCode').value = '';
     $('#modalTitle').textContent = 'Добавить позицию';
 
-    // Безопасно очищаем текстовые поля
     ['formCode','formName','formModel','formLocation'].forEach(id => {
-        const el = $(`#${id}`);
+        const el = $('#' + id);
         if (el) el.value = '';
     });
 
-    // Сбрасываем селекты
     const typeSel = $('#formType');
     if (typeSel) typeSel.value = '';
     const equipSel = $('#formEquipment');
     if (equipSel) equipSel.value = '';
     const unitSel = $('#formUnit');
     if (unitSel) unitSel.value = 'ШТ';
-
     const qtyEl = $('#formQty');
     if (qtyEl) qtyEl.value = '1,00';
     const dateEl = $('#formDate');
@@ -58,7 +54,6 @@ function openEditModal(code) {
     $('#formOriginalCode').value = item.code;
     $('#modalTitle').textContent = 'Редактировать';
 
-    // Безопасное заполнение
     const setVal = (id, val) => {
         const el = $('#' + id);
         if (el) el.value = val;
@@ -154,7 +149,6 @@ function requireAuth(action, data) {
 function bindEvents() {
     $('#searchInput').oninput = () => { searchQuery = $('#searchInput').value; applyFilterAndRender(); };
 
-    // Используем новые переменные фильтров
     $('#filterType').onchange = () => {
         filterTypeValue = $('#filterType').value;
         applyFilterAndRender();
@@ -187,7 +181,6 @@ function bindEvents() {
         if (selectedRowCode) window.location.href = `/writeoff.html?code=${encodeURIComponent(selectedRowCode)}`;
     };
 
-    // Импорт
     $('#importFileInput').onchange = async (e) => {
         if (!currentUser || (currentUser.role !== 'moderator' && currentUser.role !== 'admin')) {
             showToast('Требуется авторизация', 'error');
@@ -197,7 +190,6 @@ function bindEvents() {
         if (e.target.files[0]) {
             const success = await handleImport(e.target.files[0]);
             if (success) {
-                // Сброс фильтров и поиска, чтобы все записи стали видны
                 searchQuery = '';
                 filterTypeValue = '';
                 filterEquipmentValue = '';
@@ -206,8 +198,7 @@ function bindEvents() {
                 $('#filterEquipment').value = '';
                 selectedRowCode = null;
                 await loadData();
-                // После импорта обновим справочники (вдруг появились новые типы/оборудование)
-                await loadDirectoriesForForm();
+                await loadDirectoriesForForm(); // обновим справочники после импорта
             }
             e.target.value = '';
         }
@@ -237,9 +228,7 @@ function updateDate() {
 
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
 (async function init() {
-    // Сначала загружаем справочники, чтобы форма и фильтры были заполнены
-    await loadDirectoriesForForm();
-
+    await loadDirectoriesForForm();  // эта функция определена в ui.js
     bindEvents();
     await loadData();
     updateDate();
