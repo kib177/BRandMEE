@@ -77,11 +77,7 @@ function openEditModal(code) {
 async function submitForm(e) {
     e.preventDefault();
     const mode = $('#formMode').value;
-
-    const getVal = (selector) => {
-        const el = $(selector);
-        return el ? el.value : '';
-    };
+    const getVal = (sel) => { const el = $(sel); return el ? el.value : ''; };
 
     const item = {
         code: getVal('#formCode').trim(),
@@ -224,11 +220,10 @@ function updateDate() {
 
 // Инициализация
 (async function init() {
-    // Вызов checkAuth из auth.js уже выполнится при загрузке auth.js,
-    // но updateAuthUI нужно вызвать после отрисовки
+    await loadDirectoriesForForm();   // заполняем справочники сразу
     bindEvents();
     await loadData();
     updateDate();
     setInterval(updateDate, 60000);
-    updateAuthUI();   // отобразим/скроем кнопки в зависимости от авторизации
+    updateAuthUI();
 })();
