@@ -293,6 +293,13 @@ tbody tr.low-stock {
 }
 tbody tr.low-stock:hover { background: #fff9e6; }
 
+.import-hidden {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
 .code-cell {
     font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
     font-weight: 600;
