@@ -1,27 +1,22 @@
-/* ===== МОБИЛЬНАЯ АДАПТАЦИЯ (максимум 768px) ===== */
+/* ===== МОБИЛЬНАЯ АДАПТАЦИЯ ===== */
 @media (max-width: 768px) {
-    /* Запрещаем всей странице горизонтальную прокрутку */
     html, body {
         max-width: 100vw;
         overflow-x: hidden;
     }
 
-    /* Основной контейнер */
     .main-container {
         max-width: 100%;
         padding: 0.5rem;
     }
 
-    /* Увеличиваем touch-области, но шрифт оставляем небольшим */
     button, .btn, select, input, textarea {
         min-height: 38px;
         font-size: 14px;
     }
 
-    /* ----- ШАПКА ----- */
-    .header {
-        padding: 0 0.5rem;
-    }
+    /* Шапка */
+    .header { padding: 0 0.5rem; }
     .header-inner {
         max-width: 100%;
         margin: 0;
@@ -43,108 +38,168 @@
         line-height: 1.2;
     }
     .header-logo .icon {
-        width: 28px;
-        height: 28px;
-        font-size: 1rem;
-        flex-shrink: 0;
+        width: 28px; height: 28px;
+        font-size: 1rem; flex-shrink: 0;
     }
-    .header-date {
-        font-size: 0.65rem;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    .header-auth {
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        font-size: 0.7rem;
-        flex-shrink: 0;
-    }
+    .header-date { font-size: 0.65rem; white-space: nowrap; flex-shrink: 0; }
+    .header-auth { font-size: 0.7rem; flex-shrink: 0; }
     #btnLoginLogout {
         padding: 0.2rem 0.6rem;
         font-size: 0.7rem;
         flex-shrink: 0;
     }
 
-    /* ----- СТАТИСТИКА (компактнее) ----- */
-    .stats-row {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.4rem;
-    }
-    .stat-card {
-        padding: 0.5rem 0.7rem;
-    }
-    .stat-card .stat-value {
-        font-size: 1.1rem;
-    }
+    /* Статистика */
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
+    .stat-card { padding: 0.5rem 0.7rem; }
+    .stat-card .stat-value { font-size: 1.1rem; }
 
-    /* ----- ТУЛБАР ----- */
-    .toolbar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.4rem;
-    }
-    .search-wrapper, .filter-select {
-        width: 100%;
-    }
+    /* Тулбар */
+    .toolbar { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+    .search-wrapper, .filter-select { width: 100%; }
 
-    /* ----- ТАБЛИЦЫ (общие правила для любой таблицы) ----- */
-    .table-wrapper,
-    #requestsTable {
+    /* Таблицы – скролл через обёртку */
+    .table-wrapper {
         display: block;
         max-width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
-    /* Для главной таблицы */
-    #inventoryTable,
-    /* Для админской таблицы */
-    #requestsTable table {
+    .table-wrapper table {
         min-width: 850px;
         width: max-content;
         font-size: 0.75rem;
         border-collapse: collapse;
     }
-    /* Шапка и ячейки */
     thead th, tbody td {
         padding: 0.4rem 0.3rem;
         white-space: nowrap;
     }
-    thead th {
-        font-size: 0.65rem;
-    }
-    tbody td {
-        font-size: 0.7rem;
-    }
+    thead th { font-size: 0.65rem; }
+    tbody td { font-size: 0.7rem; }
 
     /* Модальные окна */
-    .modal {
-        max-width: 95vw;
-        margin: 0.5rem;
-        padding: 1rem;
-    }
-    .form-row, .form-row-3 {
-        grid-template-columns: 1fr;
+    .modal { max-width: 95vw; margin: 0.5rem; padding: 1rem; }
+    .form-row, .form-row-3 { grid-template-columns: 1fr; }
+
+    /* Фильтры на админ-странице */
+    .filters { flex-direction: column; gap: 0.5rem; }
+    .filters select, .filters input, .filters button {
+        width: 100%;
+        font-size: 15px;
+        padding: 0.6rem;
     }
 }
 
-/* ===== ДОПОЛНИТЕЛЬНО ДЛЯ ОЧЕНЬ УЗКИХ ЭКРАНОВ (480px) ===== */
 @media (max-width: 480px) {
-    .header-logo {
-        font-size: 0.7rem;
-    }
-    .header-date {
-        display: none;  /* если совсем тесно */
-    }
-    #inventoryTable,
-    #requestsTable table {
+    .header-logo { font-size: 0.7rem; }
+    .header-date { display: none; }
+    .table-wrapper table {
         min-width: 800px;
         font-size: 0.7rem;
     }
-    thead th {
-        font-size: 0.6rem;
+    thead th { font-size: 0.6rem; }
+    tbody td { font-size: 0.65rem; }
+}/* ===== МОБИЛЬНАЯ АДАПТАЦИЯ ===== */
+@media (max-width: 768px) {
+    html, body {
+        max-width: 100vw;
+        overflow-x: hidden;
     }
-    tbody td {
-        font-size: 0.65rem;
+
+    .main-container {
+        max-width: 100%;
+        padding: 0.5rem;
     }
+
+    button, .btn, select, input, textarea {
+        min-height: 38px;
+        font-size: 14px;
+    }
+
+    /* Шапка */
+    .header { padding: 0 0.5rem; }
+    .header-inner {
+        max-width: 100%;
+        margin: 0;
+        height: auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.4rem;
+        padding: 0.4rem 0;
+    }
+    .header-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.8rem;
+        white-space: normal;
+        flex: 1 1 auto;
+        line-height: 1.2;
+    }
+    .header-logo .icon {
+        width: 28px; height: 28px;
+        font-size: 1rem; flex-shrink: 0;
+    }
+    .header-date { font-size: 0.65rem; white-space: nowrap; flex-shrink: 0; }
+    .header-auth { font-size: 0.7rem; flex-shrink: 0; }
+    #btnLoginLogout {
+        padding: 0.2rem 0.6rem;
+        font-size: 0.7rem;
+        flex-shrink: 0;
+    }
+
+    /* Статистика */
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
+    .stat-card { padding: 0.5rem 0.7rem; }
+    .stat-card .stat-value { font-size: 1.1rem; }
+
+    /* Тулбар */
+    .toolbar { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+    .search-wrapper, .filter-select { width: 100%; }
+
+    /* Таблицы – скролл через обёртку */
+    .table-wrapper {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .table-wrapper table {
+        min-width: 850px;
+        width: max-content;
+        font-size: 0.75rem;
+        border-collapse: collapse;
+    }
+    thead th, tbody td {
+        padding: 0.4rem 0.3rem;
+        white-space: nowrap;
+    }
+    thead th { font-size: 0.65rem; }
+    tbody td { font-size: 0.7rem; }
+
+    /* Модальные окна */
+    .modal { max-width: 95vw; margin: 0.5rem; padding: 1rem; }
+    .form-row, .form-row-3 { grid-template-columns: 1fr; }
+
+    /* Фильтры на админ-странице */
+    .filters { flex-direction: column; gap: 0.5rem; }
+    .filters select, .filters input, .filters button {
+        width: 100%;
+        font-size: 15px;
+        padding: 0.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-logo { font-size: 0.7rem; }
+    .header-date { display: none; }
+    .table-wrapper table {
+        min-width: 800px;
+        font-size: 0.7rem;
+    }
+    thead th { font-size: 0.6rem; }
+    tbody td { font-size: 0.65rem; }
 }
