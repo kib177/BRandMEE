@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { authMiddleware, AUTH_PASSWORD } = require('../middleware/auth');
+const { authMiddleware } = require('../middleware/auth');
 const multer = require('multer');
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 } // 10 MB
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
 const XLSX = require('xlsx');
 
-// Получить ID типа, создав его при необходимости
+// ---------- вспомогательные функции ----------
 function getOrCreateTypeId(typeName) {
   if (!typeName || !typeName.trim()) return null;
   const name = typeName.trim();
@@ -21,7 +21,6 @@ function getOrCreateTypeId(typeName) {
   return row.id;
 }
 
-// Получить ID оборудования, создав его при необходимости
 function getOrCreateEquipmentId(equipName) {
   if (!equipName || !equipName.trim()) return null;
   const name = equipName.trim();
@@ -33,7 +32,7 @@ function getOrCreateEquipmentId(equipName) {
   return row.id;
 }
 
-// Получить все записи
+// ---------- GET / ----------
 router.get('/', (req, res) => {
   try {
     const items = db.prepare(`
@@ -50,18 +49,23 @@ router.get('/', (req, res) => {
   }
 });
 
-// Экспорт в Excel
+// ---------- GET /export-excel ----------
 router.get('/export-excel', (req, res) => {
   try {
-    const items = db.prepare('SELECT * FROM inventory ORDER BY updated_at DESC').all();
-    
-    // Переименовываем ключи для русских заголовков
+    const items = db.prepare(`
+      SELECT i.*, pt.name AS type_name, eq.name AS equipment_name
+      FROM inventory i
+      LEFT JOIN part_types pt ON i.type_id = pt.id
+      LEFT JOIN equipment eq ON i.equipment_id = eq.id
+      ORDER BY i.updated_at DESC
+    `).all();
+
     const data = items.map(item => ({
       'Код': item.code,
       'Наименование': item.name,
       'Модель': item.model,
-      'Тип': item.type,
-      'Оборудование': item.equipment,
+      'Тип': item.type_name || '',
+      'Оборудование': item.equipment_name || '',
       'Расположение': item.location,
       'Ед.изм.': item.unit,
       'Количество': item.quantity,
@@ -83,14 +87,25 @@ router.get('/export-excel', (req, res) => {
   }
 });
 
-// Получить одну запись
+// ---------- GET /:code ----------
 router.get('/:code', (req, res) => {
-  const item = db.prepare('SELECT * FROM inventory WHERE code = ?').get(req.params.code);
-  if (!item) return res.status(404).json({ error: 'Не найдено' });
-  res.json(item);
+  try {
+    const item = db.prepare(`
+      SELECT i.*, pt.name AS type_name, eq.name AS equipment_name
+      FROM inventory i
+      LEFT JOIN part_types pt ON i.type_id = pt.id
+      LEFT JOIN equipment eq ON i.equipment_id = eq.id
+      WHERE i.code = ?
+    `).get(req.params.code);
+    if (!item) return res.status(404).json({ error: 'Не найдено' });
+    res.json(item);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка получения данных' });
+  }
 });
 
-// Добавить или обновить запись
+// ---------- POST / ----------
 router.post('/', authMiddleware, (req, res) => {
   try {
     const { code, name, model, type_id, equipment_id, location, unit, quantity, date } = req.body;
@@ -113,7 +128,7 @@ router.post('/', authMiddleware, (req, res) => {
   }
 });
 
-// Массовое добавление
+// ---------- POST /bulk ----------
 router.post('/bulk', authMiddleware, (req, res) => {
   try {
     const items = req.body;
@@ -121,17 +136,17 @@ router.post('/bulk', authMiddleware, (req, res) => {
       return res.status(400).json({ error: 'Ожидается непустой массив' });
     }
     const stmt = db.prepare(`
-      INSERT INTO inventory (code, name, model, type, equipment, location, unit, quantity, date, updated_at)
+      INSERT INTO inventory (code, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(code) DO UPDATE SET
-        name=excluded.name, model=excluded.model, type=excluded.type,
-        equipment=excluded.equipment, location=excluded.location,
+        name=excluded.name, model=excluded.model, type_id=excluded.type_id,
+        equipment_id=excluded.equipment_id, location=excluded.location,
         unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
         updated_at=CURRENT_TIMESTAMP
     `);
     const insertAll = db.transaction((items) => {
       for (const item of items) {
-        stmt.run(item.code, item.name, item.model, item.type, item.equipment, item.location, item.unit, item.quantity, item.date);
+        stmt.run(item.code, item.name, item.model, item.type_id || null, item.equipment_id || null, item.location, item.unit, item.quantity, item.date);
       }
     });
     insertAll(items);
@@ -142,7 +157,7 @@ router.post('/bulk', authMiddleware, (req, res) => {
   }
 });
 
-// Удалить запись
+// ---------- DELETE /:code ----------
 router.delete('/:code', authMiddleware, (req, res) => {
   try {
     const info = db.prepare('DELETE FROM inventory WHERE code = ?').run(req.params.code);
@@ -153,7 +168,7 @@ router.delete('/:code', authMiddleware, (req, res) => {
   }
 });
 
-// Удалить все записи
+// ---------- DELETE / ----------
 router.delete('/', authMiddleware, (req, res) => {
   try {
     db.prepare('DELETE FROM inventory').run();
@@ -163,7 +178,7 @@ router.delete('/', authMiddleware, (req, res) => {
   }
 });
 
-// Импорт CSV
+// ---------- ИМПОРТ CSV ----------
 router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
@@ -227,6 +242,8 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
       }
 
       const model    = modelIndex >= 0 ? (cols[modelIndex] || '').trim() : '';
+      const typeName = typeIndex >= 0 ? (cols[typeIndex] || '').trim() : 'Прочее';
+      const equipName = equipIndex >= 0 ? (cols[equipIndex] || '').trim() : '';
       const location = locIndex >= 0 ? (cols[locIndex] || '').trim() : '';
       const unit     = (cols[unitIndex] || '').trim();
       const qtyRaw   = (cols[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
@@ -249,21 +266,19 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
         continue;
       }
 
-      const typeName = typeIndex >= 0 ? (cols[typeIndex] || '').trim() : 'Прочее';
-const equipName = equipIndex >= 0 ? (cols[equipIndex] || '').trim() : '';
+      const typeId = getOrCreateTypeId(typeName || 'Прочее');
+      const equipmentId = getOrCreateEquipmentId(equipName);
 
-const typeId = getOrCreateTypeId(typeName || 'Прочее');
-const equipmentId = getOrCreateEquipmentId(equipName);
-
-items.push({
-  code, name, model,
-  type_id: typeId,
-  equipment_id: equipmentId,
-  location,
-  unit,
-  quantity,
-  date: formattedDate
-});
+      items.push({
+        code, name, model,
+        type_id: typeId,
+        equipment_id: equipmentId,
+        location,
+        unit,
+        quantity,
+        date: formattedDate
+      });
+    }
 
     if (items.length === 0) {
       return res.status(400).json({ 
@@ -273,17 +288,17 @@ items.push({
     }
 
     const stmt = db.prepare(`
-  INSERT INTO inventory (code, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-  ON CONFLICT(code) DO UPDATE SET
-    name=excluded.name, model=excluded.model, type_id=excluded.type_id,
-    equipment_id=excluded.equipment_id, location=excluded.location,
-    unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
-    updated_at=CURRENT_TIMESTAMP
-`);
+      INSERT INTO inventory (code, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(code) DO UPDATE SET
+        name=excluded.name, model=excluded.model, type_id=excluded.type_id,
+        equipment_id=excluded.equipment_id, location=excluded.location,
+        unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
+        updated_at=CURRENT_TIMESTAMP
+    `);
     const insertAll = db.transaction((items) => {
       for (const item of items) {
-        stmt.run(item.code, item.name, item.model, item.type, item.equipment, item.location, item.unit, item.quantity, item.date);
+        stmt.run(item.code, item.name, item.model, item.type_id, item.equipment_id, item.location, item.unit, item.quantity, item.date);
       }
     });
     insertAll(items);
@@ -298,8 +313,8 @@ items.push({
     res.status(500).json({ error: 'Ошибка импорта CSV' });
   }
 });
-   
-// Импорт Excel
+
+// ---------- ИМПОРТ EXCEL ----------
 router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
@@ -380,6 +395,8 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
       if (!code || !name) { skipped.push({ row: i+1, reason: 'Пустой код или наименование' }); continue; }
 
       const model    = modelIndex >= 0 ? String(row[modelIndex] || '').trim() : '';
+      const typeName = typeIndex >= 0 ? String(row[typeIndex] || '').trim() : 'Прочее';
+      const equipName = equipIndex >= 0 ? String(row[equipIndex] || '').trim() : '';
       const location = locIndex >= 0 ? String(row[locIndex] || '').trim() : '';
       const unit     = String(row[unitIndex] || '').trim();
       const qtyRaw   = String(row[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
@@ -392,21 +409,19 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
       const formattedDate = parseDate(dateRaw);
       if (!formattedDate) { skipped.push({ row: i+1, reason: `Некорректная дата: ${dateRaw}` }); continue; }
 
-      const typeName = typeIndex >= 0 ? String(row[typeIndex] || '').trim() : 'Прочее';
-const equipName = equipIndex >= 0 ? String(row[equipIndex] || '').trim() : '';
+      const typeId = getOrCreateTypeId(typeName || 'Прочее');
+      const equipmentId = getOrCreateEquipmentId(equipName);
 
-const typeId = getOrCreateTypeId(typeName || 'Прочее');
-const equipmentId = getOrCreateEquipmentId(equipName);
-
-items.push({
-  code, name, model,
-  type_id: typeId,
-  equipment_id: equipmentId,
-  location,
-  unit,
-  quantity,
-  date: formattedDate
-});
+      items.push({
+        code, name, model,
+        type_id: typeId,
+        equipment_id: equipmentId,
+        location,
+        unit,
+        quantity,
+        date: formattedDate
+      });
+    }
 
     if (items.length === 0) {
       return res.status(400).json({ 
@@ -416,16 +431,16 @@ items.push({
     }
 
     const stmt = db.prepare(`
-  INSERT INTO inventory (code, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-  ON CONFLICT(code) DO UPDATE SET
-    name=excluded.name, model=excluded.model, type_id=excluded.type_id,
-    equipment_id=excluded.equipment_id, location=excluded.location,
-    unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
-    updated_at=CURRENT_TIMESTAMP
-`);
+      INSERT INTO inventory (code, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(code) DO UPDATE SET
+        name=excluded.name, model=excluded.model, type_id=excluded.type_id,
+        equipment_id=excluded.equipment_id, location=excluded.location,
+        unit=excluded.unit, quantity=excluded.quantity, date=excluded.date,
+        updated_at=CURRENT_TIMESTAMP
+    `);
     const insertAll = db.transaction((items) => {
-      for (const item of items) stmt.run(item.code, item.name, item.model, item.type, item.equipment, item.location, item.unit, item.quantity, item.date);
+      for (const item of items) stmt.run(item.code, item.name, item.model, item.type_id, item.equipment_id, item.location, item.unit, item.quantity, item.date);
     });
     insertAll(items);
 
