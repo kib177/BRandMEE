@@ -7,43 +7,54 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/mobile.css">
   <style>
-    .accordion {
-      margin-bottom: 1.5rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    .accordion-header {
-      background: #f7f9fb;
-      padding: 0.8rem 1rem;
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      user-select: none;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border);
-    }
-    .accordion-header:hover {
-      background: #eef3f8;
-    }
-    .accordion-header::after {
-      content: '▼';
-      font-size: 0.8rem;
-      transition: transform 0.2s;
-    }
-    .accordion.collapsed .accordion-header::after {
-      transform: rotate(-90deg);
-    }
-    .accordion-body {
-      padding: 1rem;
-      background: #fff;
-    }
-    .accordion.collapsed .accordion-body {
-      display: none;
-    }
-  </style>
+  .accordion {
+    border: 1px solid var(--border, #ddd);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .accordion-header {
+    background: #f8f9fb;
+    padding: 0.7rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .accordion-header::after {
+    content: '▼';
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+  }
+  .accordion.collapsed .accordion-body {
+    display: none;
+  }
+  .accordion.collapsed .accordion-header::after {
+    transform: rotate(-90deg);
+  }
+  .accordion-body {
+    padding: 0.8rem;
+  }
+
+  /* Компактные таблицы */
+  .compact-table {
+    width: auto;               /* не растягиваться */
+    max-width: 600px;          /* ограничение ширины */
+    font-size: 0.85rem;        /* уменьшенный шрифт */
+  }
+  .compact-table th,
+  .compact-table td {
+    padding: 0.4rem 0.5rem;
+  }
+  /* Тонкая колонка ID */
+  .compact-table th:first-child,
+  .compact-table td:first-child {
+    width: 50px;
+    text-align: center;
+  }
+</style>
 </head>
 <body>
   <header class="header">
@@ -70,7 +81,7 @@
           <button class="btn btn-primary btn-sm" id="addType">Добавить</button>
         </div>
         <div class="table-wrapper">
-          <table id="typesTable">
+          <table id="typesTable" class="compact-table">
             <thead><tr><th>ID</th><th>Название</th><th>Действия</th></tr></thead>
             <tbody></tbody>
           </table>
@@ -89,7 +100,7 @@
           <button class="btn btn-primary btn-sm" id="addEquip">Добавить</button>
         </div>
         <div class="table-wrapper">
-          <table id="equipTable">
+          <table id="equipTable" class="compact-table">
             <thead><tr><th>ID</th><th>Название</th><th>Действия</th></tr></thead>
             <tbody></tbody>
           </table>
