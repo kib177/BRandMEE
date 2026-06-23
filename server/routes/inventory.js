@@ -9,6 +9,30 @@ const upload = multer({
 });
 const XLSX = require('xlsx');
 
+// Получить ID типа, создав его при необходимости
+function getOrCreateTypeId(typeName) {
+  if (!typeName || !typeName.trim()) return null;
+  const name = typeName.trim();
+  let row = db.prepare('SELECT id FROM part_types WHERE name = ?').get(name);
+  if (!row) {
+    const insert = db.prepare('INSERT INTO part_types (name) VALUES (?)');
+    row = { id: insert.run(name).lastInsertRowid };
+  }
+  return row.id;
+}
+
+// Получить ID оборудования, создав его при необходимости
+function getOrCreateEquipmentId(equipName) {
+  if (!equipName || !equipName.trim()) return null;
+  const name = equipName.trim();
+  let row = db.prepare('SELECT id FROM equipment WHERE name = ?').get(name);
+  if (!row) {
+    const insert = db.prepare('INSERT INTO equipment (name) VALUES (?)');
+    row = { id: insert.run(name).lastInsertRowid };
+  }
+  return row.id;
+}
+
 // Получить все записи
 router.get('/', (req, res) => {
   try {
