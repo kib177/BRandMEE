@@ -73,23 +73,29 @@ function openEditModal(code) {
 async function submitForm(e) {
     e.preventDefault();
     const mode = $('#formMode').value;
-    const item = {
-        code: $('#formCode').value.trim(),
-        name: $('#formName').value.trim(),
-        model: $('#formModel').value.trim(),
-        type_id: $('#formType').value || null,
-        equipment_id: $('#formEquipment').value || null,
-        location: $('#formLocation').value.trim(),
-        unit: $('#formUnit').value,
-        quantity: parseFloat($('#formQty').value.replace(',', '.')),
-        date: $('#formDate').value.split('-').reverse().join('.')
+
+    const getVal = (selector) => {
+        const el = $(selector);
+        return el ? el.value : '';
     };
+
+    const item = {
+        code: getVal('#formCode').trim(),
+        name: getVal('#formName').trim(),
+        model: getVal('#formModel').trim(),
+        type_id: getVal('#formType') || null,
+        equipment_id: getVal('#formEquipment') || null,
+        location: getVal('#formLocation').trim(),
+        unit: getVal('#formUnit') || 'ШТ',
+        quantity: parseFloat((getVal('#formQty') || '0').replace(',', '.')),
+        date: getVal('#formDate').split('-').reverse().join('.')
+    };
+
     await saveItem(item);
     $('#modalOverlay').classList.add('hidden');
     await loadData();
     showToast(mode === 'add' ? 'Добавлено' : 'Обновлено');
 }
-
 let pendingDeleteCode = null;
 function openConfirmDelete(code) {
     pendingDeleteCode = code;
