@@ -1,5 +1,14 @@
 /* ===== ОБЩИЕ ПРАВИЛА ДЛЯ МОБИЛЬНЫХ ===== */
 @media (max-width: 768px) {
+     body {
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+    .main-container {
+        max-width: 100%;
+        padding: 0.8rem;
+    }
+    
     /* Увеличиваем область касания, но шрифт оставляем небольшим */
     button, .btn, select, input, textarea {
         min-height: 40px;
@@ -86,8 +95,19 @@
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
+    
+    .table-wrapper {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: var(--radius);
+    }
+    .table-scroll {
+        overflow-x: visible; /* чтобы не было двойного скролла */
+    }
     table {
-        min-width: 900px; /* достаточно для всех колонок без обрезания */
+        min-width: 900px;   /* достаточно, чтобы показать все колонки */
+        width: max-content;
         font-size: 0.75rem;
     }
     thead th {
@@ -98,6 +118,7 @@
         font-size: 0.7rem;
         padding: 0.35rem 0.3rem;
     }
+    
     /* Не скрываем колонки – все видны, пользователь скроллит горизонтально */
     th, td {
         display: table-cell !important;
