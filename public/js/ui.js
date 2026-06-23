@@ -1,10 +1,10 @@
 // ui.js – отрисовка таблицы, статистика, работа со справочниками
 
-let selectedRowCode = null;          // код выбранной позиции (или null)
-let allTypes = [];                   // кэш всех типов [{id, name}]
-let allEquipments = [];              // кэш всего оборудования [{id, name}]
+let selectedRowCode = null;
+let allTypes = [];
+let allEquipments = [];
 
-// ========== ЗАГРУЗКА СПРАВОЧНИКОВ И ЗАПОЛНЕНИЕ ФОРМ / ФИЛЬТРОВ ==========
+// ========== ЗАГРУЗКА СПРАВОЧНИКОВ ==========
 async function loadDirectoriesForForm() {
   try {
     const [typesRes, equipsRes] = await Promise.all([
@@ -14,38 +14,39 @@ async function loadDirectoriesForForm() {
     allTypes = await typesRes.json();
     allEquipments = await equipsRes.json();
 
-    // Заполняем селект типа в форме добавления/редактирования
+    // Форма добавления/редактирования
     const typeSelect = $('#formType');
     if (typeSelect) {
       typeSelect.innerHTML = '<option value="">— Выберите —</option>' +
         allTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
     }
-    // Заполняем селект оборудования в форме добавления/редактирования
     const equipSelect = $('#formEquipment');
     if (equipSelect) {
       equipSelect.innerHTML = '<option value="">— Без оборудования —</option>' +
         allEquipments.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
     }
 
-    // Обновляем фильтры на главной странице
+    // Фильтры – просто наполняем, выбранные значения восстановим позже
     const filterType = $('#filterType');
     if (filterType) {
+      const currentVal = filterType.value; // сохраним, что было выбрано
       filterType.innerHTML = '<option value="">🔧 Все типы</option>' +
         allTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-      filterType.value = filterTypeValue || '';   // filterTypeValue объявлена в filters.js
+      filterType.value = currentVal || '';
     }
     const filterEquip = $('#filterEquipment');
     if (filterEquip) {
+      const currentVal = filterEquip.value;
       filterEquip.innerHTML = '<option value="">🏭 Всё оборудование</option>' +
         allEquipments.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-      filterEquip.value = filterEquipmentValue || '';
+      filterEquip.value = currentVal || '';
     }
   } catch (err) {
     console.error('Ошибка загрузки справочников:', err);
   }
 }
 
-// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ОТОБРАЖЕНИЯ ==========
+// ========== ПОМОЩНИКИ ==========
 function getTypeName(typeId) {
   const found = allTypes.find(t => t.id == typeId);
   return found ? found.name : '—';
@@ -56,7 +57,7 @@ function getEquipmentName(equipId) {
   return found ? found.name : '—';
 }
 
-// ========== ОТРИСОВКА ТАБЛИЦЫ ==========
+// ========== ТАБЛИЦА ==========
 function renderTable(data) {
     const tbody = $('#tableBody');
     tbody.innerHTML = '';
@@ -73,7 +74,6 @@ function renderTable(data) {
         else if (q <= 2) qc = 'low';
         if (q <= 2) tr.classList.add('low-stock');
 
-        // Используем type_name / equipment_name из JOIN, если есть, иначе подтягиваем из кэша
         const typeName = item.type_name || getTypeName(item.type_id);
         const equipName = item.equipment_name || getEquipmentName(item.equipment_id);
 
@@ -91,11 +91,9 @@ function renderTable(data) {
         tbody.appendChild(tr);
     });
 
-    // Обработчики чекбоксов
     $$('.row-selector').forEach(cb => {
         cb.addEventListener('change', function(e) {
             if (this.checked) {
-                // Снимаем все остальные чекбоксы
                 $$('.row-selector').forEach(other => {
                     if (other !== this) other.checked = false;
                 });
@@ -107,30 +105,24 @@ function renderTable(data) {
         });
     });
 
-    // Если выделенная строка исчезла (после фильтрации), сбрасываем
     if (selectedRowCode && !data.some(item => item.code === selectedRowCode)) {
         selectedRowCode = null;
     }
     updateActionButtons();
 }
 
-// ========== КНОПКИ ДЕЙСТВИЙ ==========
 function updateActionButtons() {
     const hasSelection = selectedRowCode !== null;
     ['btnEdit', 'btnWriteOff', 'btnDeleteSelected'].forEach(id => {
         const btn = $('#' + id);
         if (btn) {
             btn.disabled = !hasSelection;
-            if (hasSelection) {
-                btn.classList.remove('disabled');
-            } else {
-                btn.classList.add('disabled');
-            }
+            if (hasSelection) btn.classList.remove('disabled');
+            else btn.classList.add('disabled');
         }
     });
 }
 
-// ========== СТАТИСТИКА ==========
 function updateStats(inventory) {
     const total = inventory.length;
     const totalQty = inventory.reduce((s, i) => s + i.quantity, 0);
@@ -147,8 +139,6 @@ function updateStats(inventory) {
     $('#statLastDate').textContent = last;
 }
 
-// Функция populateFilters больше не используется – оставлена пустой для совместимости,
-// чтобы не было ошибок, если где-то ещё вызывается.
 function populateFilters(inventory) {
-    // Ничего не делаем, т.к. справочники загружаются через loadDirectoriesForForm
+    // больше не используется, оставлена для совместимости
 }
