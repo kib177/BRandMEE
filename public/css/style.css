@@ -281,7 +281,7 @@ thead th .sort-arrow {
 }
 thead th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
 tbody td {
-    padding: 0.6rem 0.7rem;
+    padding: 0.4rem 0.5rem;
     border-bottom: 1px solid #eef1f5;
     vertical-align: middle;
 }
