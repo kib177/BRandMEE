@@ -11,20 +11,29 @@ async function loadDirectoriesForForm() {
       fetch('/api/directories/types'),
       fetch('/api/directories/equipment')
     ]);
-    allTypes = await typesRes.json();
-    allEquipments = await equipsRes.json();
 
-    // Форма добавления/редактирования
-    const typeSelect = $('#formType');
-    if (typeSelect) {
-      typeSelect.innerHTML = '<option value="">— Выберите —</option>' +
-        allTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    // Если сервер вернул не 200, считаем ответ пустым массивом
+    if (typesRes.ok) {
+      const data = await typesRes.json();
+      allTypes = Array.isArray(data) ? data : [];
+    } else {
+      allTypes = [];
     }
-    const equipSelect = $('#formEquipment');
-    if (equipSelect) {
-      equipSelect.innerHTML = '<option value="">— Без оборудования —</option>' +
-        allEquipments.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+
+    if (equipsRes.ok) {
+      const data = await equipsRes.json();
+      allEquipments = Array.isArray(data) ? data : [];
+    } else {
+      allEquipments = [];
     }
+
+    // ... дальше заполнение селектов без изменений
+  } catch (err) {
+    allTypes = [];
+    allEquipments = [];
+    console.error('Ошибка загрузки справочников:', err);
+  }
+}
 
     // Фильтры – просто наполняем, выбранные значения восстановим позже
     const filterType = $('#filterType');
