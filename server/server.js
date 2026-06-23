@@ -13,6 +13,7 @@ app.use(express.json({ limit: '5mb' }));
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/write-offs', require('./routes/writeoffs'));
+app.use('/api/directories', require('./routes/directories'));
 
 // Статические файлы (фронтенд)
 app.use(express.static(path.join(__dirname, '..', 'public')));
