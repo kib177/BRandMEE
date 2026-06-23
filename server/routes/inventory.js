@@ -11,12 +11,14 @@ const XLSX = require('xlsx');
 
 // ---------- вспомогательные функции ----------
 function getOrCreateTypeId(typeName) {
+  console.log('getOrCreateTypeId called with:', typeName);
   if (!typeName || !typeName.trim()) return null;
   const name = typeName.trim();
   let row = db.prepare('SELECT id FROM part_types WHERE name = ?').get(name);
   if (!row) {
     const insert = db.prepare('INSERT INTO part_types (name) VALUES (?)');
     row = { id: insert.run(name).lastInsertRowid };
+    console.log('Created new type:', name, 'id:', row.id);
   }
   return row.id;
 }
