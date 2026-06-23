@@ -27,30 +27,26 @@ function openAddModal() {
     $('#formOriginalCode').value = '';
     $('#modalTitle').textContent = 'Добавить позицию';
 
-    // Безопасно очищаем поля, если они есть
-    ['formCode','formName','formModel','formEquipment','formLocation'].forEach(id => {
-        const el = $(`#${id}`);
+    ['formCode','formName','formModel','formLocation'].forEach(id => {
+        const el = $('#' + id);
         if (el) el.value = '';
     });
 
-    // Селекты
-    const typeSelect = $('#formType');
-    if (typeSelect) typeSelect.value = '';
-    const unitSelect = $('#formUnit');
-    if (unitSelect) unitSelect.value = 'ШТ';
-
-    // Остальные поля
+    const typeSel = $('#formType');
+    if (typeSel) typeSel.value = '';
+    const equipSel = $('#formEquipment');
+    if (equipSel) equipSel.value = '';
+    const unitSel = $('#formUnit');
+    if (unitSel) unitSel.value = 'ШТ';
     const qtyEl = $('#formQty');
     if (qtyEl) qtyEl.value = '1,00';
     const dateEl = $('#formDate');
     if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
-
     const codeEl = $('#formCode');
     if (codeEl) codeEl.readOnly = false;
 
     $('#modalOverlay').classList.remove('hidden');
 }
-
 function openEditModal(code) {
     const item = inventory.find(i => i.code === code);
     if (!item) return;
