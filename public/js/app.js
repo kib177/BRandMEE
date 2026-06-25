@@ -226,6 +226,37 @@ function updateDate() {
     });
 }
 
+function initStatsAccordion() {
+    const accordion = document.getElementById('statsAccordion');
+    const header = document.getElementById('statsHeader');
+    if (!accordion || !header) return;
+
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+
+    function updateAccordionState() {
+        if (mediaQuery.matches) {
+            // На мобильных: по умолчанию свёрнут
+            accordion.classList.add('collapsed');
+        } else {
+            // На десктопе: всегда развёрнут
+            accordion.classList.remove('collapsed');
+        }
+    }
+
+    // Переключение при клике на заголовок (только на мобильных)
+    header.addEventListener('click', () => {
+        if (mediaQuery.matches) {
+            accordion.classList.toggle('collapsed');
+        }
+    });
+
+    // Отслеживание изменения размера экрана
+    mediaQuery.addEventListener('change', updateAccordionState);
+
+    // Начальное состояние
+    updateAccordionState();
+}
+
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
 (async function init() {
     await loadDirectoriesForForm();  // эта функция определена в ui.js
@@ -234,4 +265,5 @@ function updateDate() {
     updateDate();
     setInterval(updateDate, 60000);
     updateAuthUI();
+    initStatsAccordion();
 })();
