@@ -106,7 +106,7 @@
     }
     #inventoryTable th:nth-child(3),
 #inventoryTable td:nth-child(3) {
-    max-width: 120px;          /* было ~300px */
+    max-width: 140px;          /* было ~300px */
     word-wrap: break-word;
     white-space: normal;       /* разрешаем перенос */
     overflow-wrap: break-word;
@@ -114,7 +114,7 @@
     /* Главная таблица – колонка Модель (4-я) уже в 1.5 раза */
 #inventoryTable th:nth-child(4),
 #inventoryTable td:nth-child(4) {
-    max-width: 100px;   /* примерно на треть меньше обычного */
+    max-width: 110px;   /* примерно на треть меньше обычного */
     white-space: normal;
     word-wrap: break-word;
 }
