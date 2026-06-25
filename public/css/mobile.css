@@ -118,23 +118,23 @@
         min-width: 800px;
     }
     #inventoryTable th:nth-child(3),
-#inventoryTable td:nth-child(3) {
+    #inventoryTable td:nth-child(3) {
     max-width: 140px;          /* было ~300px */
     word-wrap: break-word;
     white-space: normal;       /* разрешаем перенос */
     overflow-wrap: break-word;
 }
     /* Главная таблица – колонка Модель (4-я) уже в 1.5 раза */
-#inventoryTable th:nth-child(4),
-#inventoryTable td:nth-child(4) {
+    #inventoryTable th:nth-child(4),
+    #inventoryTable td:nth-child(4) {
     max-width: 110px;   /* примерно на треть меньше обычного */
     white-space: normal;
     word-wrap: break-word;
 }
 
 /* Главная таблица – колонка Тип (5-я) на 20% уже */
-#inventoryTable th:nth-child(5),
-#inventoryTable td:nth-child(5) {
+    #inventoryTable th:nth-child(5),
+    #inventoryTable td:nth-child(5) {
     max-width: 100px;    /* было ~120px */
     white-space: normal;
     word-wrap: break-word;
