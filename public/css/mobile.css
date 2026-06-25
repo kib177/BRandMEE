@@ -142,7 +142,7 @@
 
     .compact-table th:nth-child(2),
 .compact-table td:nth-child(2) {
-    max-width: 80px;
+    max-width: 60px;
     word-wrap: break-word;
     white-space: normal;
 }
