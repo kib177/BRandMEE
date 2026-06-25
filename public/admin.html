@@ -101,7 +101,7 @@
         tbody.innerHTML = types.map(t => `
           <tr>
             <td>${t.id}</td>
-            <td><input type="text" value="${t.name}" data-id="${t.id}" class="type-edit" style="width:100%;"></td>
+            <td><input type="text" value="${t.name}" data-id="${t.id}" class="type-edit"></td>
             <td>
               <button class="btn btn-sm btn-outline save-type" data-id="${t.id}">💾</button>
               <button class="btn btn-sm btn-danger delete-type" data-id="${t.id}">🗑️</button>
@@ -123,7 +123,7 @@
         tbody.innerHTML = equips.map(e => `
           <tr>
             <td>${e.id}</td>
-            <td><input type="text" value="${e.name}" data-id="${e.id}" class="equip-edit" style="width:100%;"></td>
+            <td><input type="text" value="${e.name}" data-id="${e.id}" class="equip-edit" ></td>
             <td>
               <button class="btn btn-sm btn-outline save-equip" data-id="${e.id}">💾</button>
               <button class="btn btn-sm btn-danger delete-equip" data-id="${e.id}">🗑️</button>
