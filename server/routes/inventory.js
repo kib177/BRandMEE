@@ -349,8 +349,7 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
     const unitIndex   = findIndex(['ед.изм', 'единиц', 'измерен']);
     const qtyIndex    = findIndex(['количеств', 'кол-во', 'остаток']);
     const dateIndex   = findIndex(['дат']);
-    console.log('Indexes:', { codeIndex, nameIndex, unitIndex, qtyIndex, dateIndex });
-console.log('Total data rows:', rawData.length - 1, 'Items found:', items.length, 'Skipped:', skipped.length);
+    
 
    if (codeIndex === -1 || nameIndex === -1 || unitIndex === -1 || qtyIndex === -1 || dateIndex === -1) {
       return res.status(400).json({ 
@@ -360,6 +359,9 @@ console.log('Total data rows:', rawData.length - 1, 'Items found:', items.length
 
     const items = [];
     const skipped = [];
+
+    console.log('Indexes:', { codeIndex, nameIndex, unitIndex, qtyIndex, dateIndex });
+console.log('Total data rows:', rawData.length - 1, 'Items found:', items.length, 'Skipped:', skipped.length);
 
     const parseDate = (raw) => {
       const str = String(raw).trim();
