@@ -318,6 +318,7 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
 
 // ---------- ИМПОРТ EXCEL ----------
 router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) => {
+  console.log('Excel import - file:', req.file?.originalname, 'size:', req.file?.size);
   try {
     if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
 
