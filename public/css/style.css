@@ -583,6 +583,38 @@ tbody tr.low-stock:hover { background: #fff9e6; }
     transform: rotate(-90deg);
 }
 
+/* Общие стили для справочника */
+  .accordion {
+    border: 1px solid var(--border, #ddd);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .accordion-header {
+    background: #f8f9fb;
+    padding: 0.7rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .accordion-header::after {
+    content: '▼';
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+  }
+  .accordion.collapsed .accordion-body {
+    display: none;
+  }
+  .accordion.collapsed .accordion-header::after {
+    transform: rotate(-90deg);
+  }
+  .accordion-body {
+    padding: 0.8rem;
+  }
+
 .compact-table {
     width: auto;
     max-width: 100%;
