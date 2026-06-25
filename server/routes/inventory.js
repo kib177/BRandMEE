@@ -360,8 +360,7 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
     const items = [];
     const skipped = [];
 
-    console.log('Indexes:', { codeIndex, nameIndex, unitIndex, qtyIndex, dateIndex });
-console.log('Total data rows:', rawData.length - 1, 'Items found:', items.length, 'Skipped:', skipped.length);
+    
 
     const parseDate = (raw) => {
       const str = String(raw).trim();
@@ -428,6 +427,8 @@ console.log('Total data rows:', rawData.length - 1, 'Items found:', items.length
         date: formattedDate
       });
     }
+    console.log('Indexes:', { codeIndex, nameIndex, unitIndex, qtyIndex, dateIndex });
+    console.log('Total data rows:', rawData.length - 1, 'Items found:', items.length, 'Skipped:', skipped.length);
 
     if (items.length === 0) {
       return res.status(400).json({ 
