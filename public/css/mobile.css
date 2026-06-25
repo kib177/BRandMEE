@@ -77,11 +77,11 @@
 
     /* ----- ТАБЛИЦЫ (общие) ----- */
     .table-wrapper {
-        display: block;
-        max-width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
     .table-wrapper table {
         min-width: 850px;
         width: max-content;
@@ -109,33 +109,38 @@
         font-size: 15px;
         padding: 0.6rem;
     }
+   
+    #inventoryTable {
+    min-width: auto;           /* отменяем принудительные 850px */
+    width: auto;
+    font-size: 0.75rem;
+}
+
     #requestsTable {
-        display: block;
-        overflow-x: auto;
-        max-width: 100%;
-    }
-    #requestsTable table {
-        min-width: 800px;
-    }
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+}
+#requestsTable table {
+    min-width: 800px;
+    font-size: 0.8rem;
+}
     #inventoryTable th:nth-child(3),
-    #inventoryTable td:nth-child(3) {
-    max-width: 140px;          /* было ~300px */
+#inventoryTable td:nth-child(3) {
+    max-width: 140px;
     word-wrap: break-word;
-    white-space: normal;       /* разрешаем перенос */
+    white-space: normal;
     overflow-wrap: break-word;
 }
-    /* Главная таблица – колонка Модель (4-я) уже в 1.5 раза */
-    #inventoryTable th:nth-child(4),
-    #inventoryTable td:nth-child(4) {
-    max-width: 110px;   /* примерно на треть меньше обычного */
+#inventoryTable th:nth-child(4),
+#inventoryTable td:nth-child(4) {
+    max-width: 110px;
     white-space: normal;
     word-wrap: break-word;
 }
-
-/* Главная таблица – колонка Тип (5-я) на 20% уже */
-    #inventoryTable th:nth-child(5),
-    #inventoryTable td:nth-child(5) {
-    max-width: 100px;    /* было ~120px */
+#inventoryTable th:nth-child(5),
+#inventoryTable td:nth-child(5) {
+    max-width: 100px;
     white-space: normal;
     word-wrap: break-word;
 }
