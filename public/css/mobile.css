@@ -111,6 +111,13 @@
     white-space: normal;       /* разрешаем перенос */
     overflow-wrap: break-word;
 }
+
+    .compact-table th:nth-child(2),
+.compact-table td:nth-child(2) {
+    max-width: 150px;
+    word-wrap: break-word;
+    white-space: normal;
+}
 }
 
 /* ===== ДОПОЛНИТЕЛЬНО ДЛЯ ОЧЕНЬ УЗКИХ ЭКРАНОВ (480px) ===== */
@@ -123,11 +130,11 @@
     }
     thead th { font-size: 0.6rem; }
     tbody td { font-size: 0.65rem; }
-    #inventoryTable th:nth-child(3),
-#inventoryTable td:nth-child(3) {
-    max-width: 100px;          /* было ~300px → стало 100px */
-    word-wrap: break-word;
-    white-space: normal;       /* разрешаем перенос */
-    overflow-wrap: break-word;
-}
+
+ #inventoryTable {
+        font-size: 0.65rem;
+    }
+    .compact-table {
+        font-size: 0.75rem;
+    }
 }
