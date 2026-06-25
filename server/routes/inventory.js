@@ -336,6 +336,7 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
     if (rawData.length < 2) return res.status(400).json({ error: 'Файл пуст или содержит только заголовок' });
 
     const header = rawData[0].map(h => String(h).trim().toLowerCase());
+    console.log('Excel headers:', header);
     
     const findIndex = (keywords) => {
       return header.findIndex(h => keywords.some(k => h.includes(k)));
@@ -350,6 +351,8 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
     const unitIndex   = findIndex(['ед.изм', 'единиц', 'измерен']);
     const qtyIndex    = findIndex(['количеств', 'кол-во', 'остаток']);
     const dateIndex   = findIndex(['дат']);
+    console.log('Indexes:', { codeIndex, nameIndex, unitIndex, qtyIndex, dateIndex });
+console.log('Total data rows:', rawData.length - 1, 'Items found:', items.length, 'Skipped:', skipped.length);
 
     if (codeIndex === -1 || nameIndex === -1 || unitIndex === -1 || qtyIndex === -1 || dateIndex === -1) {
       return res.status(400).json({ 
