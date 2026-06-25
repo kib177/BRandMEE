@@ -582,3 +582,33 @@ tbody tr.low-stock:hover { background: #fff9e6; }
 .stats-accordion.collapsed .stats-accordion-arrow {
     transform: rotate(-90deg);
 }
+
+.compact-table {
+    width: auto;
+    max-width: 100%;
+    font-size: 0.85rem;
+    table-layout: auto;      /* браузер сам распределит ширину */
+}
+.compact-table th,
+.compact-table td {
+    padding: 0.4rem 0.5rem;
+    white-space: nowrap;
+}
+/* ID – минимальная ширина */
+.compact-table th:first-child,
+.compact-table td:first-child {
+    width: 40px;
+    text-align: center;
+}
+/* Название – занимает доступное пространство, но может переноситься при необходимости */
+.compact-table th:nth-child(2),
+.compact-table td:nth-child(2) {
+    white-space: normal;     /* разрешаем перенос, если не помещается */
+    word-wrap: break-word;
+}
+/* Действия – по содержимому */
+.compact-table th:last-child,
+.compact-table td:last-child {
+    width: 1%;
+    white-space: nowrap;
+}
