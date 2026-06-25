@@ -359,7 +359,15 @@ function initStatsAccordion() {
 (async function init() {
     await loadDirectoriesForForm();  // эта функция определена в ui.js
     bindEvents();
+    
+    $('#btnCloseView').addEventListener('click', () => {
+    $('#viewModalOverlay').classList.add('hidden');});
+    // Закрытие по Escape
+    document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        $('#viewModalOverlay').classList.add('hidden');    }});
     //initScannerButton();
+    
     await loadData();
     
     updateDate();
