@@ -150,12 +150,27 @@ function updateStats(inventory) {
         const d = new Date(max);
         last = d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
+
+    // Штучные позиции
+    const pcsItems = inventory.filter(i => i.unit === 'ШТ');
+    const totalPcs = pcsItems.length;
+    const totalPcsQty = pcsItems.reduce((s, i) => s + i.quantity, 0);
+
+    // Метровые позиции
+    const mItems = inventory.filter(i => i.unit === 'М');
+    const totalM = mItems.length;
+    const totalMQty = mItems.reduce((s, i) => s + i.quantity, 0);
+
     $('#statTotal').textContent = total;
     $('#statQty').textContent = formatQty(totalQty);
     $('#statLow').textContent = low;
     $('#statLastDate').textContent = last;
-}
 
+    $('#statTotalPcs').textContent = totalPcs;
+    $('#statQtyPcs').textContent = formatQty(totalPcsQty);
+    $('#statTotalM').textContent = totalM;
+    $('#statQtyM').textContent = formatQty(totalMQty);
+}
 function populateFilters(inventory) {
     // больше не используется, оставлена для совместимости
 }
