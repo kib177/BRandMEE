@@ -395,9 +395,26 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
 
     for (let i = 1; i < rawData.length; i++) {
       const row = rawData[i];
+      if (i <= 3) {  // выводим только первые 3 строки для примера
+  console.log(`Row ${i}:`, {
+    code: String(row[codeIndex] || ''),
+    name: String(row[nameIndex] || ''),
+    unit: String(row[unitIndex] || ''),
+    qtyRaw: String(row[qtyIndex] || ''),
+    dateRaw: String(row[dateIndex] || ''),
+    model: String(row[modelIndex] || ''),
+    type: String(row[typeIndex] || ''),
+    equip: String(row[equipIndex] || ''),
+    location: String(row[locIndex] || '')
+  });
+}
       const code = String(row[codeIndex] || '').trim();
       const name = String(row[nameIndex] || '').trim();
-      if (!code || !name) { skipped.push({ row: i+1, reason: 'Пустой код или наименование' }); continue; }
+      if (!code || !name) { 
+        if (i <= 3) {
+  console.log(`Skipping row ${i}: ...`); // укажите причину
+}
+        skipped.push({ row: i+1, reason: 'Пустой код или наименование' }); continue; }
 
       const model    = modelIndex >= 0 ? String(row[modelIndex] || '').trim() : '';
       const typeName = typeIndex >= 0 ? String(row[typeIndex] || '').trim() : 'Прочее';
@@ -407,12 +424,24 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
       const qtyRaw   = String(row[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
       const dateRaw  = String(row[dateIndex] || '').trim();
 
-      if (!unit || !qtyRaw || !dateRaw) { skipped.push({ row: i+1, reason: 'Пустые обязательные поля' }); continue; }
+      if (!unit || !qtyRaw || !dateRaw) { 
+        if (i <= 3) {
+  console.log(`Skipping row ${i}: ...`); // укажите причину
+}
+        skipped.push({ row: i+1, reason: 'Пустые обязательные поля' }); continue; }
       const quantity = parseFloat(qtyRaw);
-      if (isNaN(quantity) || quantity < 0) { skipped.push({ row: i+1, reason: `Некорректное количество: ${qtyRaw}` }); continue; }
+      if (isNaN(quantity) || quantity < 0) { 
+        if (i <= 3) {
+  console.log(`Skipping row ${i}: ...`); // укажите причину
+}
+        skipped.push({ row: i+1, reason: `Некорректное количество: ${qtyRaw}` }); continue; }
 
       const formattedDate = parseDate(dateRaw);
-      if (!formattedDate) { skipped.push({ row: i+1, reason: `Некорректная дата: ${dateRaw}` }); continue; }
+      if (!formattedDate) { 
+        if (i <= 3) {
+  console.log(`Skipping row ${i}: ...`); // укажите причину
+}
+        skipped.push({ row: i+1, reason: `Некорректная дата: ${dateRaw}` }); continue; }
 
       const typeId = getOrCreateTypeId(typeName || 'Прочее');
       const equipmentId = getOrCreateEquipmentId(equipName);
