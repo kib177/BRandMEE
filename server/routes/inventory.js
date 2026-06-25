@@ -363,35 +363,32 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
     
 
     const parseDate = (raw) => {
-      const str = String(raw).trim();
-      let parts;
-      if (str.includes('.')) parts = str.split('.');
-      else if (str.includes('-')) parts = str.split('-');
-      else if (str.includes('/')) parts = str.split('/');
-      
-      if (parts && parts.length === 3) {
-        let day, month, year;
-        if (parts[0].length === 4) { year = parts[0]; month = parts[1]; day = parts[2]; }
-        else if (parts[2].length === 4) { day = parts[0]; month = parts[1]; year = parts[2]; }
-        else return null;
-        const d = parseInt(day,10), m = parseInt(month,10), y = parseInt(year,10);
-        if (!isNaN(d) && !isNaN(m) && !isNaN(y) && d>=1 && d<=31 && m>=1 && m<=12 && y>=2000 && y<=2099) {
-          return `${String(d).padStart(2,'0')}.${String(m).padStart(2,'0')}.${y}`;
-        }
-        return null;
-      }
-      
-      const num = parseFloat(str);
-      if (!isNaN(num) && num > 40000 && num < 60000) {
-        const d = new Date((num - 25569) * 86400 * 1000);
-        const day = String(d.getDate()).padStart(2,'0');
-        const month = String(d.getMonth() + 1).padStart(2,'0');
-        const year = d.getFullYear();
-        return `${day}.${month}.${year}`;
-      }
-      
-      return null;
-    };
+  const str = String(raw).trim();
+  let parts;
+  if (str.includes('.')) parts = str.split('.');
+  else if (str.includes('-')) parts = str.split('-');
+  else if (str.includes('/')) parts = str.split('/');
+  else return null;
+
+  if (parts && parts.length === 3) {
+    let day, month, year;
+    if (parts[0].length === 4) {           // YYYY-MM-DD
+      year = parts[0]; month = parts[1]; day = parts[2];
+    } else if (parts[2].length === 4) {    // DD-MM-YYYY
+      day = parts[0]; month = parts[1]; year = parts[2];
+    } else {                               // M/D/YY (американский)
+      month = parts[0]; day = parts[1]; year = parts[2];
+      if (year.length === 2) year = '20' + year;
+    }
+
+    const d = parseInt(day,10), m = parseInt(month,10), y = parseInt(year,10);
+    if (!isNaN(d) && !isNaN(m) && !isNaN(y) &&
+        d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 2000 && y <= 2099) {
+      return `${String(d).padStart(2,'0')}.${String(m).padStart(2,'0')}.${y}`;
+    }
+  }
+  return null;
+};
 
     for (let i = 1; i < rawData.length; i++) {
       const row = rawData[i];
