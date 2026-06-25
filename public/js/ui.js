@@ -92,16 +92,15 @@ function renderTable(data) {
         const equipName = item.equipment_name || getEquipmentName(item.equipment_id);
 
         tr.innerHTML = `
-            <td><input type="checkbox" class="row-selector" data-code="${escapeHtml(item.code)}"></td>
-            <td class="code-cell">${escapeHtml(item.code)}</td>
-            <td>${escapeHtml(item.name)}</td>
-            <td>${escapeHtml(item.model)}</td>
-            <td><span class="type-badge">${escapeHtml(typeName)}</span></td>
-            <td class="equip-cell">${escapeHtml(equipName)}</td>
-            <td class="location-cell">${escapeHtml(item.location||'—')}</td>
-            <td><strong>${escapeHtml(item.unit)}</strong></td>
-            <td><span class="qty-badge ${qc}">${formatQty(q)}</span></td>
-            <td>${escapeHtml(item.date)}</td>`;
+    <td><input type="checkbox" class="row-selector" data-code="${escapeHtml(item.code)}"></td>
+    <td class="code-cell code-link" data-code="${escapeHtml(item.code)}" style="cursor:pointer; text-decoration: underline;">${escapeHtml(item.code)}</td>
+    <td>${escapeHtml(item.name)}</td>
+    <td>${escapeHtml(item.model)}</td>
+    <td><span class="type-badge">${escapeHtml(typeName)}</span></td>
+    <td><strong>${escapeHtml(item.unit)}</strong></td>
+    <td><span class="qty-badge ${qc}">${formatQty(q)}</span></td>
+    <td>${escapeHtml(item.date)}</td>
+`;
         tbody.appendChild(tr);
     });
 
@@ -123,6 +122,47 @@ function renderTable(data) {
         selectedRowCode = null;
     }
     updateActionButtons();
+
+  // Клик по коду позиции открывает карточку
+$$('.code-link').forEach(el => {
+    el.addEventListener('click', (e) => {
+        // Не срабатывать, если кликнули по чекбоксу (он в другой ячейке, но на всякий случай)
+        if (e.target.tagName === 'INPUT') return;
+        showItemDetails(el.dataset.code);
+    });
+});
+}
+
+function showItemDetails(code) {
+    const item = inventory.find(i => i.code === code);
+    if (!item) return;
+
+    const typeName = item.type_name || getTypeName(item.type_id);
+    const equipName = item.equipment_name || getEquipmentName(item.equipment_id);
+
+    $('#viewModalTitle').textContent = `Позиция ${item.code}`;
+    $('#viewModalContent').innerHTML = `
+        <p><strong>Код:</strong> ${escapeHtml(item.code)}</p>
+        <p><strong>Наименование:</strong> ${escapeHtml(item.name)}</p>
+        <p><strong>Модель:</strong> ${escapeHtml(item.model || '—')}</p>
+        <p><strong>Тип:</strong> ${escapeHtml(typeName)}</p>
+        <p><strong>Оборудование:</strong> ${escapeHtml(equipName)}</p>
+        <p><strong>Расположение:</strong> ${escapeHtml(item.location || '—')}</p>
+        <p><strong>Ед. изм.:</strong> ${escapeHtml(item.unit)}</p>
+        <p><strong>Количество:</strong> ${formatQty(item.quantity)}</p>
+        <p><strong>Дата:</strong> ${escapeHtml(item.date)}</p>
+    `;
+
+    // Покажем кнопку "Списать", если пользователь авторизован (или всегда, по вашему желанию)
+    const btnWriteOff = $('#btnWriteOffFromView');
+    if (btnWriteOff) {
+        btnWriteOff.style.display = 'inline-flex';
+        btnWriteOff.onclick = () => {
+            window.location.href = `/writeoff.html?code=${encodeURIComponent(code)}`;
+        };
+    }
+
+    $('#viewModalOverlay').classList.remove('hidden');
 }
 
 function updateActionButtons() {
