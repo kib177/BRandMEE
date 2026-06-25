@@ -617,32 +617,35 @@ tbody tr.low-stock:hover { background: #fff9e6; }
 
 .compact-table {
     width: auto;
-    max-width: 120px;
+    max-width: 100%;          /* таблица не шире родителя */
     font-size: 0.85rem;
-    table-layout: auto;
+    table-layout: fixed;      /* фиксированная раскладка, ширина столбцов управляется */
+    border-collapse: collapse;
 }
 .compact-table th,
 .compact-table td {
     padding: 0.4rem 0.5rem;
     vertical-align: middle;
+    word-wrap: break-word;    /* перенос длинных слов */
+    overflow-wrap: break-word;
 }
 /* ID – минимальная ширина */
 .compact-table th:first-child,
 .compact-table td:first-child {
-    width: 40px;
+    width: 50px;              /* достаточно для цифр */
     text-align: center;
-    white-space: nowrap;
 }
-/* Название – ограничиваем максимальную ширину, но разрешаем перенос */
+/* Название – занимает оставшееся пространство, но не более 300px на ПК */
 .compact-table th:nth-child(2),
 .compact-table td:nth-child(2) {
-    max-width: 80px;          /* можно подобрать комфортное значение (200-300px) */
-    word-wrap: break-word;
-    white-space: normal;       /* разрешаем перенос текста */
+    width: auto;              /* автоматически растягивается */
+    max-width: 300px;         /* ограничение ширины для ПК */
+    white-space: normal;
 }
-/* Действия – по содержимому */
-.compact-table th:last-child,
-.compact-table td:last-child {
-    width: 1%;
+/* Действия – фиксированная ширина под кнопки */
+.compact-table th:nth-child(3),
+.compact-table td:nth-child(3) {
+    width: 90px;              /* две кнопки поместятся */
     white-space: nowrap;
+    text-align: center;
 }
