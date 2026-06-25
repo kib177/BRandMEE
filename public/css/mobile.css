@@ -140,6 +140,11 @@
     word-wrap: break-word;
 }
 
+    .compact-table th:nth-child(2),
+    .compact-table td:nth-child(2) {
+        max-width: 60px;
+    }
+
 /* ===== ДОПОЛНИТЕЛЬНО ДЛЯ ОЧЕНЬ УЗКИХ ЭКРАНОВ (480px) ===== */
 @media (max-width: 480px) {
     .header-logo { font-size: 0.7rem; }
