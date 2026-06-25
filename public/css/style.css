@@ -566,7 +566,7 @@ tbody tr.low-stock:hover { background: #fff9e6; }
     cursor: pointer;
     user-select: none;
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.9rem;
 }
 .stats-accordion-arrow {
     transition: transform 0.2s;
