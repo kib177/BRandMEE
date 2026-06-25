@@ -156,53 +156,68 @@ let html5QrCode = null;
 
 // Запуск сканера камеры
 async function startScanner() {
-    if (typeof Html5Qrcode === 'undefined') {
-    showToast('Сканер временно недоступен', 'error');
-    console.error('Библиотека html5-qrcode не загружена');
-    return;
-}
     const readerElement = document.getElementById('reader');
     if (!readerElement) return;
 
     readerElement.style.display = 'block';
+
     if (html5QrCode) {
         await html5QrCode.stop();
         html5QrCode.clear();
     }
 
+    if (typeof Html5Qrcode === 'undefined') {
+        showToast('Сканер временно недоступен', 'error');
+        console.error('Html5Qrcode не загружен');
+        return;
+    }
+
     html5QrCode = new Html5Qrcode("reader");
     const config = { fps: 10, qrbox: { width: 250, height: 150 } };
 
-    html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        (decodedText) => {
-            const code = decodedText.trim();
-            $('#searchInput').value = code;
+    const tryCamera = async (facingMode) => {
+        try {
+            await html5QrCode.start(
+                { facingMode: facingMode },
+                config,
+                (decodedText) => {
+                    const code = decodedText.trim();
+                    $('#searchInput').value = code;
 
-            html5QrCode.stop().then(() => {
-                readerElement.style.display = 'none';
-                html5QrCode.clear();
-                html5QrCode = null;
+                    html5QrCode.stop().then(() => {
+                        readerElement.style.display = 'none';
+                        html5QrCode.clear();
+                        html5QrCode = null;
 
-                const item = inventory.find(i => i.code === code);
-                if (item) {
-                    window.location.href = `/writeoff.html?code=${encodeURIComponent(code)}`;
-                } else {
-                    showToast('Товар с таким штрихкодом не найден', 'error');
-                    $('#searchInput').value = '';
-                    applyFilterAndRender();
+                        const item = inventory.find(i => i.code === code);
+                        if (item) {
+                            window.location.href = `/writeoff.html?code=${encodeURIComponent(code)}`;
+                        } else {
+                            showToast('Товар с таким штрихкодом не найден', 'error');
+                            $('#searchInput').value = '';
+                            applyFilterAndRender();
+                        }
+                    }).catch(err => console.error(err));
+                },
+                (errorMessage) => {
+                    // Некритичные ошибки сканирования игнорируем
                 }
-            }).catch(err => console.error(err));
-        },
-        (errorMessage) => {
-            // Игнорируем некритичные ошибки сканирования
+            );
+            return true;
+        } catch (err) {
+            console.warn(`Камера ${facingMode} недоступна:`, err);
+            return false;
         }
-    ).catch(err => {
-        console.error('Не удалось запустить камеру', err);
-        showToast('Не удалось запустить камеру. Проверьте разрешения.', 'error');
-        readerElement.style.display = 'none';
-    });
+    };
+
+    const environmentSuccess = await tryCamera("environment");
+    if (!environmentSuccess) {
+        const userSuccess = await tryCamera("user");
+        if (!userSuccess) {
+            showToast('Не удалось запустить камеру. Проверьте разрешения и наличие камеры.', 'error');
+            readerElement.style.display = 'none';
+        }
+    }
 }
 
 // Инициализация кнопки сканера
