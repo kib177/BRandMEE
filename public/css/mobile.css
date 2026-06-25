@@ -106,7 +106,7 @@
     }
     #inventoryTable th:nth-child(3),
 #inventoryTable td:nth-child(3) {
-    max-width: 100px;          /* было ~300px → стало 100px */
+    max-width: 120px;          /* было ~300px → стало 100px */
     word-wrap: break-word;
     white-space: normal;       /* разрешаем перенос */
     overflow-wrap: break-word;
