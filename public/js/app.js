@@ -156,6 +156,11 @@ let html5QrCode = null;
 
 // Запуск сканера камеры
 async function startScanner() {
+    if (typeof Html5Qrcode === 'undefined') {
+    showToast('Сканер временно недоступен', 'error');
+    console.error('Библиотека html5-qrcode не загружена');
+    return;
+}
     const readerElement = document.getElementById('reader');
     if (!readerElement) return;
 
