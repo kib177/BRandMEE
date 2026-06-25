@@ -617,7 +617,6 @@ tbody tr.low-stock:hover { background: #fff9e6; }
 
 .compact-table {
     width: 100%;
-    max-width: 100%;
     font-size: 0.85rem;
     table-layout: fixed;
     border-collapse: collapse;
@@ -629,22 +628,23 @@ tbody tr.low-stock:hover { background: #fff9e6; }
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
-/* ID – минимальная ширина */
+/* ID */
 .compact-table th:first-child,
 .compact-table td:first-child {
     width: 50px;
     text-align: center;
 }
-/* Название – занимает не более 45% ширины таблицы */
+/* Название */
 .compact-table th:nth-child(2),
 .compact-table td:nth-child(2) {
-    width: 45%;
+    width: auto;
+    max-width: 200px;          /* ограничитель, можно подрегулировать */
     white-space: normal;
 }
-/* Действия – фиксированная ширина под две кнопки */
+/* Действия */
 .compact-table th:nth-child(3),
 .compact-table td:nth-child(3) {
-    width: 100px;
+    width: 90px;
     white-space: nowrap;
     text-align: center;
 }
