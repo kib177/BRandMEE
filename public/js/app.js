@@ -359,7 +359,7 @@ function initStatsAccordion() {
 (async function init() {
     await loadDirectoriesForForm();  // эта функция определена в ui.js
     bindEvents();
-    initScannerButton();
+    //initScannerButton();
     await loadData();
     
     updateDate();
