@@ -318,7 +318,6 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
 
 // ---------- ИМПОРТ EXCEL ----------
 router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) => {
-  console.log('Excel import - file:', req.file?.originalname, 'size:', req.file?.size);
   try {
     if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
 
@@ -336,7 +335,6 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
     if (rawData.length < 2) return res.status(400).json({ error: 'Файл пуст или содержит только заголовок' });
 
     const header = rawData[0].map(h => String(h).trim().toLowerCase());
-    console.log('Excel headers:', header);
     
     const findIndex = (keywords) => {
       return header.findIndex(h => keywords.some(k => h.includes(k)));
@@ -354,9 +352,9 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
     console.log('Indexes:', { codeIndex, nameIndex, unitIndex, qtyIndex, dateIndex });
 console.log('Total data rows:', rawData.length - 1, 'Items found:', items.length, 'Skipped:', skipped.length);
 
-    if (codeIndex === -1 || nameIndex === -1 || unitIndex === -1 || qtyIndex === -1 || dateIndex === -1) {
+   if (codeIndex === -1 || nameIndex === -1 || unitIndex === -1 || qtyIndex === -1 || dateIndex === -1) {
       return res.status(400).json({ 
-        error: 'Обязательные столбцы не найдены. Проверьте заголовки: Код, Наименование, Ед.изм., Количество, Дата'
+        error: 'Обязательные столбцы не найдены...'
       });
     }
 
