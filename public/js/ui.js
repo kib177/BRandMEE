@@ -142,7 +142,7 @@ function updateActionButtons() {
 
 function updateStats(inventory) {
     const total = inventory.length;
-    const totalQty = inventory.reduce((s, i) => s + i.quantity, 0);
+    //const totalQty = inventory.reduce((s, i) => s + i.quantity, 0);
     const low = inventory.filter(i => i.quantity <= 2).length;
     let last = '—';
     if (inventory.length) {
@@ -162,7 +162,7 @@ function updateStats(inventory) {
     const totalMQty = mItems.reduce((s, i) => s + i.quantity, 0);
 
     $('#statTotal').textContent = total;
-    $('#statQty').textContent = formatQty(totalQty);
+    //$('#statQty').textContent = formatQty(totalQty);
     $('#statLow').textContent = low;
     $('#statLastDate').textContent = last;
 
