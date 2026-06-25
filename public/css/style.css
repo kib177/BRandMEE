@@ -551,3 +551,33 @@ tbody tr.low-stock:hover { background: #fff9e6; }
     padding: 0.4rem 0.7rem;
     font-size: 0.9rem;
 }
+/* Аккордеон статистики */
+.stats-accordion {
+    margin-bottom: 1rem;
+}
+.stats-accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+    font-size: 1rem;
+}
+.stats-accordion-arrow {
+    transition: transform 0.2s;
+    display: inline-block;
+}
+.stats-accordion.collapsed .stats-accordion-body {
+    display: none;
+}
+.stats-accordion:not(.collapsed) .stats-accordion-arrow {
+    transform: rotate(0deg);
+}
+.stats-accordion.collapsed .stats-accordion-arrow {
+    transform: rotate(-90deg);
+}
