@@ -140,10 +140,14 @@
     word-wrap: break-word;
 }
 
-    .compact-table th:nth-child(2),
-    .compact-table td:nth-child(2) {
-        max-width: 60px;
-    }
+   .compact-table th:nth-child(2),
+.compact-table td:nth-child(2) {
+    max-width: 150px;        /* на мобильном ещё уже */
+}
+.compact-table th:nth-child(3),
+.compact-table td:nth-child(3) {
+    width: 80px;             /* кнопки чуть компактнее */
+}
 
 /* ===== ДОПОЛНИТЕЛЬНО ДЛЯ ОЧЕНЬ УЗКИХ ЭКРАНОВ (480px) ===== */
 @media (max-width: 480px) {
