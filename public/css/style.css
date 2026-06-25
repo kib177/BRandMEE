@@ -636,7 +636,7 @@ tbody tr.low-stock:hover { background: #fff9e6; }
 /* Название – ограничиваем максимальную ширину, но разрешаем перенос */
 .compact-table th:nth-child(2),
 .compact-table td:nth-child(2) {
-    max-width: 250px;          /* можно подобрать комфортное значение (200-300px) */
+    max-width: 70px;          /* можно подобрать комфортное значение (200-300px) */
     word-wrap: break-word;
     white-space: normal;       /* разрешаем перенос текста */
 }
