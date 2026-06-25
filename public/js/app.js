@@ -146,6 +146,84 @@ function requireAuth(action, data) {
 }
 
 // ========== ОСНОВНЫЕ СОБЫТИЯ ==========
+// Проверка, является ли устройство мобильным (имеет сенсорный экран)
+function isMobileDevice() {
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+}
+
+// Переменная для экземпляра сканера
+let html5QrCode = null;
+
+// Запуск сканера камеры
+async function startScanner() {
+    const readerElement = document.getElementById('reader');
+    if (!readerElement) return;
+
+    readerElement.style.display = 'block';
+    if (html5QrCode) {
+        await html5QrCode.stop();
+        html5QrCode.clear();
+    }
+
+    html5QrCode = new Html5Qrcode("reader");
+    const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+    html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        (decodedText) => {
+            const code = decodedText.trim();
+            $('#searchInput').value = code;
+
+            html5QrCode.stop().then(() => {
+                readerElement.style.display = 'none';
+                html5QrCode.clear();
+                html5QrCode = null;
+
+                const item = inventory.find(i => i.code === code);
+                if (item) {
+                    window.location.href = `/writeoff.html?code=${encodeURIComponent(code)}`;
+                } else {
+                    showToast('Товар с таким штрихкодом не найден', 'error');
+                    $('#searchInput').value = '';
+                    applyFilterAndRender();
+                }
+            }).catch(err => console.error(err));
+        },
+        (errorMessage) => {
+            // Игнорируем некритичные ошибки сканирования
+        }
+    ).catch(err => {
+        console.error('Не удалось запустить камеру', err);
+        showToast('Не удалось запустить камеру. Проверьте разрешения.', 'error');
+        readerElement.style.display = 'none';
+    });
+}
+
+// Инициализация кнопки сканера
+function initScannerButton() {
+    const btn = document.getElementById('btnScan');
+    if (!btn) return;
+
+    if (isMobileDevice()) {
+        btn.style.display = 'inline-flex'; // показываем кнопку
+        btn.addEventListener('click', () => {
+            if (html5QrCode && html5QrCode.isScanning) {
+                // Если уже сканирует – останавливаем
+                html5QrCode.stop().then(() => {
+                    document.getElementById('reader').style.display = 'none';
+                    html5QrCode.clear();
+                    html5QrCode = null;
+                });
+            } else {
+                startScanner();
+            }
+        });
+    } else {
+        btn.style.display = 'none'; // на ПК точно скрываем
+    }
+}
+
 function bindEvents() {
     $('#searchInput').oninput = () => { searchQuery = $('#searchInput').value; applyFilterAndRender(); };
 
