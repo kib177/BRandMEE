@@ -616,36 +616,35 @@ tbody tr.low-stock:hover { background: #fff9e6; }
   }
 
 .compact-table {
-    width: auto;
-    max-width: 100%;          /* таблица не шире родителя */
+    width: 100%;
+    max-width: 100%;
     font-size: 0.85rem;
-    table-layout: fixed;      /* фиксированная раскладка, ширина столбцов управляется */
+    table-layout: fixed;
     border-collapse: collapse;
 }
 .compact-table th,
 .compact-table td {
     padding: 0.4rem 0.5rem;
     vertical-align: middle;
-    word-wrap: break-word;    /* перенос длинных слов */
+    word-wrap: break-word;
     overflow-wrap: break-word;
 }
 /* ID – минимальная ширина */
 .compact-table th:first-child,
 .compact-table td:first-child {
-    width: 50px;              /* достаточно для цифр */
+    width: 50px;
     text-align: center;
 }
-/* Название – занимает оставшееся пространство, но не более 300px на ПК */
+/* Название – занимает не более 45% ширины таблицы */
 .compact-table th:nth-child(2),
 .compact-table td:nth-child(2) {
-    width: auto;              /* автоматически растягивается */
-    max-width: 300px;         /* ограничение ширины для ПК */
+    width: 45%;
     white-space: normal;
 }
-/* Действия – фиксированная ширина под кнопки */
+/* Действия – фиксированная ширина под две кнопки */
 .compact-table th:nth-child(3),
 .compact-table td:nth-child(3) {
-    width: 90px;              /* две кнопки поместятся */
+    width: 100px;
     white-space: nowrap;
     text-align: center;
 }
