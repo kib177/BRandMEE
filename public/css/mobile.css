@@ -19,36 +19,49 @@
     /* ----- ШАПКА ----- */
     .header { padding: 0 0.5rem; }
     .header-inner {
-        max-width: 100%;
-        margin: 0;
-        height: auto;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.4rem;
-        padding: 0.4rem 0;
-    }
-    .header-logo {
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        font-size: 0.8rem;
-        white-space: normal;
-        flex: 1 1 auto;
-        line-height: 1.2;
-    }
-    .header-logo .icon {
-        width: 28px; height: 28px;
-        font-size: 1rem; flex-shrink: 0;
-    }
-    .header-date { font-size: 0.65rem; white-space: nowrap; flex-shrink: 0; }
-    .header-auth { font-size: 0.7rem; flex-shrink: 0; }
-    #btnLoginLogout {
-        padding: 0.2rem 0.6rem;
-        font-size: 0.7rem;
-        flex-shrink: 0;
-    }
+    max-width: 100%;
+    margin: 0;
+    height: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;      /* поднимаем кнопку и дату наверх */
+    justify-content: space-between;
+    gap: 0.4rem;
+    padding: 0.4rem 0;
+}
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    white-space: normal;          /* разрешаем перенос */
+    flex: 1 1 auto;
+    line-height: 1.2;
+    max-width: 200px;             /* ограничиваем ширину, чтобы текст разбился */
+}
+.header-logo .icon {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.header-date {
+    font-size: 0.65rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.header-auth {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+}
+#btnLoginLogout {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+}
 
     /* ----- СТАТИСТИКА ----- */
     .stats-row { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
