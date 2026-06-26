@@ -97,8 +97,8 @@ function renderTable(data) {
     <td>${escapeHtml(item.name)}</td>
     <td>${escapeHtml(item.model)}</td>
     <td><span class="type-badge">${escapeHtml(typeName)}</span></td>
-    <td><strong>${escapeHtml(item.unit)}</strong></td>
     <td><span class="qty-badge ${qc}">${formatQty(q)}</span></td>
+    <td><strong>${escapeHtml(item.unit)}</strong></td>
     <td>${escapeHtml(item.date)}</td>
 `;
         tbody.appendChild(tr);
