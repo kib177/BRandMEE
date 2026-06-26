@@ -648,3 +648,31 @@ tbody tr.low-stock:hover { background: #fff9e6; }
     white-space: nowrap;
     text-align: center;
 }
+
+/* Кнопка сканера внутри строки поиска */
+.btn-scan-inside {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.3rem;
+    color: var(--text-secondary);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: auto;
+    line-height: 1;
+}
+.btn-scan-inside:hover {
+    color: var(--accent);
+}
+
+/* Отступ в поле ввода, чтобы текст не залезал под кнопку */
+.search-wrapper input {
+    padding-right: 3rem;
+}
