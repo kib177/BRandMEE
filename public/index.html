@@ -86,7 +86,7 @@
     <input type="text" id="searchInput" placeholder="Поиск по коду, названию, модели…" autocomplete="off">
     <button type="button" class="btn-scan-inside" id="btnScan" style="display:none;" title="Сканировать штрихкод">📷</button>
 </div>
-<div id="reader" style="display:none; width:100%; max-width:500px; margin-top:0.5rem; border:1px solid #ddd; border-radius:8px; overflow:hidden;"></div>
+
         <select class="filter-select" id="filterType" title="Фильтр по типу запчасти">
                 <option value="">🔧 Все типы</option>
             </select>
@@ -238,6 +238,15 @@
         </div>
     </div>
 </div>
+         <!-- Модальное окно сканера штрихкодов -->
+<div class="modal-overlay hidden" id="scannerModalOverlay">
+    <div class="modal" style="max-width: 500px; padding: 1rem; text-align: center;">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+            <button class="btn btn-sm btn-outline" id="btnCloseScanner" style="border: none; font-size: 1.2rem;">✕</button>
+        </div>
+        <div id="reader" style="width:100%; border-radius:8px; overflow:hidden;"></div>
+    </div>
+</div>   
 
     <div class="toast-container" id="toastContainer"></div>
     
