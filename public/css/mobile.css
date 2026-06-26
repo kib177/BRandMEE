@@ -145,6 +145,13 @@
     word-wrap: break-word;
 }
 
+    #inventoryTable th:nth-child(7),
+#inventoryTable td:nth-child(7) {
+    width: 60px;
+    max-width: 60px;
+    text-align: center;
+}
+
 /* ===== ДОПОЛНИТЕЛЬНО ДЛЯ ОЧЕНЬ УЗКИХ ЭКРАНОВ (480px) ===== */
 @media (max-width: 480px) {
     .header-logo { font-size: 0.7rem; }
