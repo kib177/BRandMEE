@@ -185,19 +185,23 @@ async function startScanner() {
                     $('#searchInput').value = code;
 
                     html5QrCode.stop().then(() => {
-                        readerElement.style.display = 'none';
-                        html5QrCode.clear();
-                        html5QrCode = null;
+    readerElement.style.display = 'none';
+    html5QrCode.clear();
+    html5QrCode = null;
 
-                        const item = inventory.find(i => i.code === code);
-                        if (item) {
-                            window.location.href = `/writeoff.html?code=${encodeURIComponent(code)}`;
-                        } else {
-                            showToast('Товар с таким штрихкодом не найден', 'error');
-                            $('#searchInput').value = '';
-                            applyFilterAndRender();
-                        }
-                    }).catch(err => console.error(err));
+    // Вставляем распознанный код в поле поиска
+    $('#searchInput').value = code;
+    // Запускаем фильтрацию (поиск по точному совпадению кода)
+    searchQuery = code;   // если у вас поиск по searchQuery
+    applyFilterAndRender();
+
+    // Сообщаем результат
+    if (filteredInventory.length === 0) {
+        showToast('Товар с таким штрихкодом не найден', 'error');
+    } else {
+        showToast(`Найдено: ${filteredInventory[0].name}`, 'success');
+    }
+}).catch(err => console.error(err));
                 },
                 (errorMessage) => {
                     // Некритичные ошибки сканирования игнорируем
