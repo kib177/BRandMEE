@@ -294,6 +294,21 @@ function bindEvents() {
         else { sortConfig.key = key; sortConfig.direction = 'asc'; }
         applyFilterAndRender();
     });
+
+    $('#btnResetFilters').onclick = () => {
+    // Очищаем поле поиска и переменную поиска
+    $('#searchInput').value = '';
+    searchQuery = '';
+    // Сбрасываем фильтры типа и оборудования
+    filterTypeValue = '';
+    filterEquipmentValue = '';
+    $('#filterType').value = '';
+    $('#filterEquipment').value = '';
+    // Снимаем выделение строки, если было
+    selectedRowCode = null;
+    // Показываем полный список
+    applyFilterAndRender();
+};
     
 $('#btnCloseScanner').addEventListener('click', stopScanner);
     $('#btnExportExcel').onclick = () => exportExcel(filteredInventory);
