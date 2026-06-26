@@ -296,17 +296,13 @@ function bindEvents() {
     });
 
     $('#btnResetFilters').onclick = () => {
-    // Очищаем поле поиска и переменную поиска
     $('#searchInput').value = '';
     searchQuery = '';
-    // Сбрасываем фильтры типа и оборудования
     filterTypeValue = '';
     filterEquipmentValue = '';
     $('#filterType').value = '';
     $('#filterEquipment').value = '';
-    // Снимаем выделение строки, если было
     selectedRowCode = null;
-    // Показываем полный список
     applyFilterAndRender();
 };
     
