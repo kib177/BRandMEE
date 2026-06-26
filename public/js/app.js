@@ -159,16 +159,19 @@ async function startScanner() {
     const readerElement = document.getElementById('reader');
     if (!readerElement) return;
 
-    readerElement.style.display = 'block';
+    // Показываем модальное окно
+    $('#scannerModalOverlay').classList.remove('hidden');
 
+    // Очищаем предыдущий экземпляр, если был
     if (html5QrCode) {
         await html5QrCode.stop();
         html5QrCode.clear();
+        readerElement.innerHTML = '';
     }
 
     if (typeof Html5Qrcode === 'undefined') {
         showToast('Сканер временно недоступен', 'error');
-        console.error('Html5Qrcode не загружен');
+        $('#scannerModalOverlay').classList.add('hidden');
         return;
     }
 
@@ -182,29 +185,30 @@ async function startScanner() {
                 config,
                 (decodedText) => {
                     const code = decodedText.trim();
-                    $('#searchInput').value = code;
-
+                    // Останавливаем сканер и скрываем модальное окно
                     html5QrCode.stop().then(() => {
-    readerElement.style.display = 'none';
-    html5QrCode.clear();
-    html5QrCode = null;
+                        html5QrCode.clear();
+                        html5QrCode = null;
+                        readerElement.innerHTML = '';
+                        $('#scannerModalOverlay').classList.add('hidden');
 
-    // Вставляем распознанный код в поле поиска
-    $('#searchInput').value = code;
-    // Запускаем фильтрацию (поиск по точному совпадению кода)
-    searchQuery = code;   // если у вас поиск по searchQuery
-    applyFilterAndRender();
+                        // Вставляем код в поиск
+                        $('#searchInput').value = code;
+                        searchQuery = code;
+                        applyFilterAndRender();
 
-    // Сообщаем результат
-    if (filteredInventory.length === 0) {
-        showToast('Товар с таким штрихкодом не найден', 'error');
-    } else {
-        showToast(`Найдено: ${filteredInventory[0].name}`, 'success');
-    }
-}).catch(err => console.error(err));
+                        if (filteredInventory.length === 0) {
+                            showToast('Товар с таким штрихкодом не найден', 'error');
+                        } else {
+                            showToast(`Найдено: ${filteredInventory[0].name}`, 'success');
+                        }
+                    }).catch(err => {
+                        console.error(err);
+                        $('#scannerModalOverlay').classList.add('hidden');
+                    });
                 },
                 (errorMessage) => {
-                    // Некритичные ошибки сканирования игнорируем
+                    // Игнорируем некритичные ошибки
                 }
             );
             return true;
@@ -219,7 +223,8 @@ async function startScanner() {
         const userSuccess = await tryCamera("user");
         if (!userSuccess) {
             showToast('Не удалось запустить камеру. Проверьте разрешения и наличие камеры.', 'error');
-            readerElement.style.display = 'none';
+            readerElement.innerHTML = '';
+            $('#scannerModalOverlay').classList.add('hidden');
         }
     }
 }
@@ -252,6 +257,24 @@ function initScannerButton() {
     }
 }
 
+function stopScanner() {
+    const readerElement = document.getElementById('reader');
+    if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+            html5QrCode.clear();
+            html5QrCode = null;
+            if (readerElement) readerElement.innerHTML = ''; // очищаем видео
+            $('#scannerModalOverlay').classList.add('hidden');
+        }).catch(err => {
+            console.error('Ошибка остановки сканера', err);
+            $('#scannerModalOverlay').classList.add('hidden');
+        });
+    } else {
+        html5QrCode = null;
+        $('#scannerModalOverlay').classList.add('hidden');
+    }
+}
+
 function bindEvents() {
     $('#searchInput').oninput = () => { searchQuery = $('#searchInput').value; applyFilterAndRender(); };
 
@@ -264,13 +287,15 @@ function bindEvents() {
         applyFilterAndRender();
     };
 
+    
     $$('thead th[data-sort]').forEach(th => th.onclick = () => {
         const key = th.dataset.sort;
         if (sortConfig.key === key) sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
         else { sortConfig.key = key; sortConfig.direction = 'asc'; }
         applyFilterAndRender();
     });
-
+    
+$('#btnCloseScanner').addEventListener('click', stopScanner);
     $('#btnExportExcel').onclick = () => exportExcel(filteredInventory);
     $('#btnExportCSV').onclick = () => exportCSV(filteredInventory);
 
