@@ -229,11 +229,15 @@ function initScannerButton() {
     const btn = document.getElementById('btnScan');
     if (!btn) return;
 
+    if (typeof Html5Qrcode === 'undefined') {
+        console.warn('Html5Qrcode не загружен, сканер отключён');
+        return;
+    }
+
     if (isMobileDevice()) {
-        btn.style.display = 'inline-flex'; // показываем кнопку
+        btn.style.display = 'inline-flex';
         btn.addEventListener('click', () => {
             if (html5QrCode && html5QrCode.isScanning) {
-                // Если уже сканирует – останавливаем
                 html5QrCode.stop().then(() => {
                     document.getElementById('reader').style.display = 'none';
                     html5QrCode.clear();
@@ -244,7 +248,7 @@ function initScannerButton() {
             }
         });
     } else {
-        btn.style.display = 'none'; // на ПК точно скрываем
+        btn.style.display = 'none';
     }
 }
 
@@ -361,18 +365,16 @@ function initStatsAccordion() {
 
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
 (async function init() {
-    await loadDirectoriesForForm();  // эта функция определена в ui.js
+    await loadDirectoriesForForm();
     bindEvents();
     
     $('#btnCloseView').addEventListener('click', () => {
-    $('#viewModalOverlay').classList.add('hidden');});
+        $('#viewModalOverlay').classList.add('hidden');
+    });
     
-    document.addEventListener('DOMContentLoaded', () => {
-    initScannerButton();
-});
+    initScannerButton();   // ← вызов здесь
     
     await loadData();
-    
     updateDate();
     setInterval(updateDate, 60000);
     updateAuthUI();
