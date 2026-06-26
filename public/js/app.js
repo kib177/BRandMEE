@@ -147,7 +147,7 @@ function requireAuth(action, data) {
 
 // ========== ОСНОВНЫЕ СОБЫТИЯ ==========
 // Проверка, является ли устройство мобильным (имеет сенсорный экран)
-/*function isMobileDevice() {
+function isMobileDevice() {
     return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 }
 
@@ -242,7 +242,7 @@ function initScannerButton() {
     } else {
         btn.style.display = 'none'; // на ПК точно скрываем
     }
-}*/
+}
 
 function bindEvents() {
     $('#searchInput').oninput = () => { searchQuery = $('#searchInput').value; applyFilterAndRender(); };
@@ -362,11 +362,10 @@ function initStatsAccordion() {
     
     $('#btnCloseView').addEventListener('click', () => {
     $('#viewModalOverlay').classList.add('hidden');});
-    // Закрытие по Escape
-    document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        $('#viewModalOverlay').classList.add('hidden');    }});
-    //initScannerButton();
+    
+    document.addEventListener('DOMContentLoaded', () => {
+    initScannerButton();
+});
     
     await loadData();
     
