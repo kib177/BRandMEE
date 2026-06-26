@@ -676,3 +676,10 @@ tbody tr.low-stock:hover { background: #fff9e6; }
 .search-wrapper input {
     padding-right: 3rem;
 }
+
+/* Скрываем защищённые элементы по умолчанию, чтобы не было мигания */
+.auth-required,
+.moderator-only,
+.admin-only {
+    display: none;
+}
