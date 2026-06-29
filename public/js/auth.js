@@ -27,7 +27,7 @@ function logout() {
 async function checkAuth() {
     if (!token) return;
     try {
-        const res = await fetch('/api/auth/me', {
+        const res = await apiFetch('/api/auth/me', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) {
@@ -78,7 +78,7 @@ function showLoginModal(onSuccess) {
             const password = document.getElementById('loginPassword').value;
             if (!username || !password) return;
             try {
-                const res = await fetch('/api/auth/login', {
+                const res = await apiFetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
