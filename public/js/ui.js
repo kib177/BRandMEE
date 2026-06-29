@@ -180,9 +180,6 @@ function updateStats(inventory) {
     $('#statTotalM').textContent = totalM;
     $('#statQtyM').textContent = formatQty(totalMQty);
 }
-function populateFilters(inventory) {
-    // больше не используется, оставлена для совместимости
-}
 
 function initStatsAccordion() {
     const accordion = document.getElementById('statsAccordion');
