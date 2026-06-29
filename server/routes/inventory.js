@@ -305,11 +305,16 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
     });
     insertAll(items);
 
-    res.json({ 
-      ok: true, 
-      count: items.length, 
-      skipped: skipped.length > 0 ? skipped : undefined 
-    });
+    if (skipped.length > 0) {
+  console.warn(`Пропущено ${skipped.length} строк при импорте Excel`);
+  console.warn(skipped.slice(0, 10));
+}
+
+res.json({ 
+  ok: true, 
+  count: items.length,
+  skippedCount: skipped.length  // только количество, не массив
+});
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка импорта CSV' });
@@ -477,7 +482,17 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
     });
     insertAll(items);
 
-    res.json({ ok: true, count: items.length, skipped: skipped.length > 0 ? skipped : undefined });
+    if (skipped.length > 0) {
+  console.warn(`Пропущено ${skipped.length} строк при импорте Excel`);
+  console.warn(skipped.slice(0, 10));
+}
+
+// Клиенту возвращаем только статистику
+res.json({ 
+  ok: true, 
+  count: items.length,
+  skippedCount: skipped.length  // только количество, не массив
+});
   } catch (err) {
     console.error('Ошибка в import-excel:', err);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
