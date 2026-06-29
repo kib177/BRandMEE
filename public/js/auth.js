@@ -3,7 +3,7 @@
 let currentUser = null;
 let token = sessionStorage.getItem('token');
 let inactivityTimer = null;
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
+const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
 
 // Сразу скрываем элементы, требующие авторизации, инлайново (чтобы избежать конфликта CSS-классов)
 (function hideRestrictedElements() {
