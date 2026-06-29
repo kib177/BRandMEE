@@ -4,6 +4,25 @@ const path = require('path');
 const inventoryRoutes = require('./routes/inventory');
 
 const app = express();
+
+// CSP middleware
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' https://cdn.sheetjs.com https://unpkg.com; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data:; " +
+    "font-src 'self'; " +
+    "connect-src 'self'; " +
+    "frame-src 'none'; " +
+    "object-src 'none'; " +
+    "base-uri 'self'; " +
+    "form-action 'self';"
+  );
+  next();
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
