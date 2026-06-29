@@ -44,8 +44,8 @@ function openEditModal(code) {
     $('#formCode').readOnly = true;
     setVal('formName', item.name);
     setVal('formModel', item.model);
-    setVal('formType', item.type_id || '');
-    setVal('formEquipment', item.equipment_id || '');
+    setSelectWithFallback('formType', item.type_id, item.type_name);
+    setSelectWithFallback('formEquipment', item.equipment_id, item.equipment_name);
     setVal('formLocation', item.location || '');
     setVal('formUnit', item.unit);
     setVal('formQty', item.quantity.toString().replace('.', ','));
