@@ -58,5 +58,5 @@
 .auth-required,
 .moderator-only,
 .admin-only {
-    display: none !important;
+    display: none;
 }
