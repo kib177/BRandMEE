@@ -5,6 +5,13 @@ let token = sessionStorage.getItem('token');
 let inactivityTimer = null;
 const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
 
+// Сразу скрываем элементы, требующие авторизации, инлайново (чтобы избежать конфликта CSS-классов)
+(function hideRestrictedElements() {
+    document.querySelectorAll('.auth-required, .moderator-only, .admin-only').forEach(el => {
+        el.style.display = 'none';
+    });
+})();
+
 // Функция для выполнения выхода
 function logout() {
     token = null;
