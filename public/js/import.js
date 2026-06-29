@@ -10,7 +10,7 @@ async function handleImport(file) {
       throw new Error('Неподдерживаемый формат. Разрешены CSV, XLSX, XLS');
     }
 
-    if (result.skippedCount > 0) {
+    if (result.skippedCount && result.skippedCount > 0) {
       showToast(`✅ Добавлено: ${result.count}. Пропущено: ${result.skippedCount}`, 'warning');
     } else {
       showToast(`✅ Импортировано записей: ${result.count}`, 'success');
