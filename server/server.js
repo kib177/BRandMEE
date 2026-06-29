@@ -26,7 +26,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: 'https://brandmee.site', 
+  origin: 'http://localhost:3000', 
   credentials: true
 }));
 app.use(express.json({ limit: '5mb' }));
