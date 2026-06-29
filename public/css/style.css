@@ -157,6 +157,12 @@ body {
     margin-top: 0.1rem;
 }
 
+.auth-required,
+.moderator-only,
+.admin-only {
+    display: none !important;
+}
+
 /* Тулбар */
 .toolbar {
     display: flex;
