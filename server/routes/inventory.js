@@ -186,6 +186,7 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
     if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
     const csvText = req.file.buffer.toString('utf-8');
     const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+    
     if (lines.length < 2) return res.status(400).json({ error: 'Файл пуст или содержит только заголовок' });
 
     const header = lines[0].split(';');
@@ -336,6 +337,13 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
       raw: false,
       dateNF: 'dd"."mm"."yyyy'
     });
+
+    const MAX_ROWS = 10000;
+    if (rawData.length - 1 > MAX_ROWS) {   // минус 1, потому что первая строка — заголовок
+       return res.status(400).json({ 
+              error: `Слишком большой файл. Максимум ${MAX_ROWS} строк данных.` 
+       });
+    }
     
     if (rawData.length < 2) return res.status(400).json({ error: 'Файл пуст или содержит только заголовок' });
 
