@@ -53,10 +53,3 @@
 
 .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); }
 .empty-state .empty-icon { font-size: 3rem; display: block; margin-bottom: 0.8rem; }
-
-/* Скрытие авторизованных элементов по умолчанию (покажет JS) */
-.auth-required,
-.moderator-only,
-.admin-only {
-    display: none;
-}
