@@ -8,7 +8,7 @@ const app = express();
 // CSP middleware
 app.use((req, res, next) => {
   res.setHeader(
-    'Content-Security-Policy',
+    'Content-Security-Policy-Report-Only',
     "default-src 'self'; " +
     "script-src 'self' https://cdn.sheetjs.com https://unpkg.com; " +
     "style-src 'self' 'unsafe-inline'; " +
@@ -24,14 +24,6 @@ app.use((req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-
-app.use((req, res, next) => {
-  res.setHeader(
-    'Content-Security-Policy-Report-Only',
-    "default-src 'self'; script-src 'self' https://cdn.sheetjs.com https://unpkg.com; ..."
-  );
-  next();
-});
 
 app.use(cors({
   origin: 'https://brandmee.site', 
