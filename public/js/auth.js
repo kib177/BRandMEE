@@ -27,7 +27,7 @@ function logout() {
 async function checkAuth() {
     if (!token) return;
     try {
-        const res = await apiFetch('/api/auth/me', {
+        const res = await fetch('/api/auth/me', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) {
