@@ -8,7 +8,7 @@ const app = express();
 // CSP middleware
 app.use((req, res, next) => {
   res.setHeader(
-    'Content-Security-Policy-Report-Only',
+    'Content-Security-Policy',
     "default-src 'self'; " +
     "script-src 'self' https://cdn.sheetjs.com https://unpkg.com; " +
     "style-src 'self' 'unsafe-inline'; " +
