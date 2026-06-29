@@ -214,3 +214,28 @@ function updateStats(inventory) {
 function populateFilters(inventory) {
     // больше не используется, оставлена для совместимости
 }
+
+function initStatsAccordion() {
+    const accordion = document.getElementById('statsAccordion');
+    const header = document.getElementById('statsHeader');
+    if (!accordion || !header) return;
+
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+
+    function updateAccordionState() {
+        if (mediaQuery.matches) {
+            accordion.classList.add('collapsed');
+        } else {
+            accordion.classList.remove('collapsed');
+        }
+    }
+
+    header.addEventListener('click', () => {
+        if (mediaQuery.matches) {
+            accordion.classList.toggle('collapsed');
+        }
+    });
+
+    mediaQuery.addEventListener('change', updateAccordionState);
+    updateAccordionState();
+}
