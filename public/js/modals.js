@@ -71,6 +71,7 @@ async function submitForm(e) {
         quantity: parseFloat((getVal('#formQty') || '0').replace(',', '.')),
         date: getVal('#formDate').split('-').reverse().join('.')
     };
+    
 
     await saveItem(item);
     $('#modalOverlay').classList.add('hidden');
