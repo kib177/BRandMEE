@@ -1,7 +1,7 @@
  const API_BASE = '/api/inventory';
 
 async function apiFetch(url, options = {}) {
-    const res = await apiFetch(url, {
+    const res = await Fetch(url, {
         ...options,
         headers: {
             ...options.headers,
@@ -16,13 +16,13 @@ async function apiFetch(url, options = {}) {
 }
 
 async function fetchInventory() {
-    const res = await apiFetch(API_BASE);
+    const res = await Fetch(API_BASE);
     if (!res.ok) throw new Error('Ошибка загрузки');
     return res.json();
 }
 
 async function saveItem(item) {
-    await apiFetch(API_BASE, {
+    await Fetch(API_BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
         body: JSON.stringify(item)
@@ -32,7 +32,7 @@ async function saveItem(item) {
 async function importExcelFile(file) {
   const formData = new FormData();
   formData.append('file', file);
-  const res = await apiFetch('/api/inventory/import-excel', {
+  const res = await Fetch('/api/inventory/import-excel', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${getToken()}` },
     body: formData
@@ -45,7 +45,7 @@ async function importExcelFile(file) {
 }
 
 async function saveBulkItems(items) {
-    await apiFetch(`${API_BASE}/bulk`, {
+    await Fetch(`${API_BASE}/bulk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
         body: JSON.stringify(items)
@@ -53,21 +53,21 @@ async function saveBulkItems(items) {
 }
 
 async function deleteItem(code) {
-    await apiFetch(`${API_BASE}/${code}`, {
+    await Fetch(`${API_BASE}/${code}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${getToken()}` }
     });
 }
 
 async function deleteAllItems() {
-    await apiFetch(API_BASE, {
+    await Fetch(API_BASE, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${getToken()}` }
     });
 }
 
 async function verifyPassword(password) {
-    const res = await apiFetch(`${API_BASE}/auth`, {
+    const res = await Fetch(`${API_BASE}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })
@@ -79,7 +79,7 @@ async function verifyPassword(password) {
 async function importCSVFile(file) {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await apiFetch(`${API_BASE}/import-csv`, {
+    const res = await Fetch(`${API_BASE}/import-csv`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${getToken()}` },
         body: formData
