@@ -186,7 +186,12 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
     if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
     const csvText = req.file.buffer.toString('utf-8');
     const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
-    
+    const MAX_ROWS = 10000;
+if (lines.length - 1 > MAX_ROWS) {  // первая строка заголовок
+  return res.status(400).json({ 
+    error: `Слишком большой файл. Максимум ${MAX_ROWS} строк данных.` 
+  });
+}
     if (lines.length < 2) return res.status(400).json({ error: 'Файл пуст или содержит только заголовок' });
 
     const header = lines[0].split(';');
