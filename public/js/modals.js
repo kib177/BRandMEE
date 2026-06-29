@@ -139,3 +139,19 @@ async function executeDeleteAll() {
     await loadData();
     showToast('Всё удалено');
 }
+
+
+function setSelectWithFallback(selectId, valueId, valueName) {
+    const select = $('#' + selectId);
+    if (!select) return;
+    // Сначала пробуем установить как есть
+    select.value = valueId || '';
+    // Если значение не выбралось (нет такого option), добавляем
+    if (valueId && select.value !== String(valueId)) {
+        const option = document.createElement('option');
+        option.value = valueId;
+        option.textContent = valueName || `ID ${valueId}`;
+        select.appendChild(option);
+        select.value = valueId;
+    }
+}
