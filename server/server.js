@@ -6,7 +6,7 @@ const inventoryRoutes = require('./routes/inventory');
 const app = express();
 
 // CSP middleware
-app.use((req, res, next) => {
+/*app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
@@ -21,7 +21,7 @@ app.use((req, res, next) => {
     "form-action 'self';"
   );
   next();
-});
+});*/
 
 const PORT = process.env.PORT || 3000;
 
