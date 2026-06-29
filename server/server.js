@@ -9,12 +9,12 @@ const app = express();
 app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; " +
-    "script-src 'self' https://cdn.sheetjs.com https://unpkg.com; " +
+    "default-src 'self' blob:; " +
+    "script-src 'self' https://cdn.sheetjs.com https://unpkg.com blob:; " +
     "style-src 'self' 'unsafe-inline'; " +
     "img-src 'self' data:; " +
     "font-src 'self'; " +
-    "connect-src 'self'; " +
+    "connect-src 'self' blob:; " +
     "frame-src 'none'; " +
     "object-src 'none'; " +
     "base-uri 'self'; " +
