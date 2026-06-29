@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'warehouse_secret_key_change_me';
-const TOKEN_EXPIRES_IN = '5m'; // время жизни токена, можно и дольше, но для таймера бездействия достаточно
+const TOKEN_EXPIRES_IN = '8h'; 
 
 // Логин
 router.post('/login', (req, res) => {
