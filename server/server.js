@@ -10,7 +10,8 @@ app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self' blob:; " +
-    "script-src 'self' https://cdn.sheetjs.com https://unpkg.com blob:; " +
+    "script-src 'self' https://unpkg.com blob:; " +
+    "worker-src 'self' blob:; " +
     "style-src 'self' 'unsafe-inline'; " +
     "img-src 'self' data:; " +
     "font-src 'self'; " +
