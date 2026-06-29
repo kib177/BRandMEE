@@ -187,11 +187,13 @@ router.post('/import-csv', authMiddleware, upload.single('file'), (req, res) => 
     const csvText = req.file.buffer.toString('utf-8');
     const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
     const MAX_ROWS = 10000;
-if (lines.length - 1 > MAX_ROWS) {  // первая строка заголовок
-  return res.status(400).json({ 
-    error: `Слишком большой файл. Максимум ${MAX_ROWS} строк данных.` 
-  });
-}
+    
+    if (lines.length - 1 > MAX_ROWS) {  // первая строка заголовок
+       return res.status(400).json({ 
+           error: `Слишком большой файл. Максимум ${MAX_ROWS} строк данных.` 
+       });
+    }
+    
     if (lines.length < 2) return res.status(400).json({ error: 'Файл пуст или содержит только заголовок' });
 
     const header = lines[0].split(';');
@@ -316,11 +318,11 @@ if (lines.length - 1 > MAX_ROWS) {  // первая строка заголов�
   console.warn(skipped.slice(0, 10));
 }
 
-res.json({ 
-  ok: true, 
-  count: items.length,
-  skippedCount: skipped.length  // только количество, не массив
-});
+res.json({
+      ok: true,
+      count: items.length,
+      skippedCount: skipped.length
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка импорта CSV' });
@@ -501,14 +503,14 @@ router.post('/import-excel', authMiddleware, upload.single('file'), (req, res) =
 }
 
 // Клиенту возвращаем только статистику
-res.json({ 
-  ok: true, 
-  count: items.length,
-  skippedCount: skipped.length  // только количество, не массив
-});
+res.json({
+      ok: true,
+      count: items.length,
+      skippedCount: skipped.length
+    });
   } catch (err) {
-    console.error('Ошибка в import-excel:', err);
-    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка импорта Excel' });
   }
 });
 
