@@ -1,7 +1,7 @@
  const API_BASE = '/api/inventory';
 
 async function apiFetch(url, options = {}) {
-    const res = await Fetch(url, {
+    const res = await apiFetch(url, {
         ...options,
         headers: {
             ...options.headers,
