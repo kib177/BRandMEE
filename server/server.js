@@ -6,7 +6,10 @@ const inventoryRoutes = require('./routes/inventory');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://brandmee.site', 
+  credentials: true
+}));
 app.use(express.json({ limit: '5mb' }));
 
 // API маршруты
