@@ -1,5 +1,20 @@
  const API_BASE = '/api/inventory';
 
+async function apiFetch(url, options = {}) {
+    const res = await fetch(url, {
+        ...options,
+        headers: {
+            ...options.headers,
+            'Authorization': `Bearer ${getToken()}`
+        }
+    });
+    if (res.status === 401) {
+        logout();
+        throw new Error('Сессия истекла. Пожалуйста, войдите заново.');
+    }
+    return res;
+}
+
 async function fetchInventory() {
     const res = await fetch(API_BASE);
     if (!res.ok) throw new Error('Ошибка загрузки');
