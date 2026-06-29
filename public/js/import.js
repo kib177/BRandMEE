@@ -10,10 +10,8 @@ async function handleImport(file) {
       throw new Error('Неподдерживаемый формат. Разрешены CSV, XLSX, XLS');
     }
 
-    if (result.skipped && result.skipped.length > 0) {
-      console.warn('Пропущенные строки:', result.skipped);
-      const skippedInfo = result.skipped.map(s => `Строка ${s.row || s.line}: ${s.reason}`).join('\n');
-      showToast(`✅ Добавлено: ${result.count}. Пропущено:\n${skippedInfo}`, 'warning');
+    if (result.skippedCount > 0) {
+      showToast(`✅ Добавлено: ${result.count}. Пропущено: ${result.skippedCount}`, 'warning');
     } else {
       showToast(`✅ Импортировано записей: ${result.count}`, 'success');
     }
