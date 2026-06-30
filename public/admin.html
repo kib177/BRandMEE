@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Справочники</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/mobile.css">
+</head>
+  
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <a href="/" style="color:#fff; text-decoration:none;">📦 Склад</a>
+        <span style="margin-left:2rem;">→ Справочники</span>
+      </div>
+      <div>
+        <button class="btn-logout" id="btnLogout">Выйти</button>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width:1000px; margin:2rem auto; padding:0 1rem;">
+    <!-- Типы запчастей -->
+    <div class="accordion" id="accordionTypes">
+      <div class="accordion-header">
+        <span>Типы запчастей</span>
+      </div>
+      <div class="accordion-body">
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+          <input type="text" id="newTypeName" placeholder="Новый тип" style="flex:1;">
+          <button class="btn btn-primary btn-sm" id="addType">Добавить</button>
+        </div>
+        <div class="table-wrapper">
+          <table id="typesTable" class="compact-table">
+            <thead><tr><th>ID</th><th>Название</th><th>Действия</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Оборудование -->
+    <div class="accordion" id="accordionEquip">
+      <div class="accordion-header">
+        <span>Оборудование</span>
+      </div>
+      <div class="accordion-body">
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+          <input type="text" id="newEquipName" placeholder="Новое оборудование" style="flex:1;">
+          <button class="btn btn-primary btn-sm" id="addEquip">Добавить</button>
+        </div>
+        <div class="table-wrapper">
+          <table id="equipTable" class="compact-table">
+            <thead><tr><th>ID</th><th>Название</th><th>Действия</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const API = '/api/directories';
+    let token = sessionStorage.getItem('token');
+
+    // Проверка авторизации
+    async function checkAuth() {
+      if (!token) {
+        window.location.href = '/';
+        return false;
+      }
+      try {
+        const res = await fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) throw new Error('Unauthorized');
+        const data = await res.json();
+        if (data.user.role !== 'admin' && data.user.role !== 'moderator') {
+          alert('Доступ запрещён');
+          window.location.href = '/';
+          return false;
+        }
+        return true;
+      } catch (e) {
+        window.location.href = '/';
+        return false;
+      }
+    }
+
+    function authHeaders() {
+      return { 'Authorization': `Bearer ${token}` };
+    }
+
+    async function loadTypes() {
+      try {
+        const res = await fetch(`${API}/types`, { headers: authHeaders() });
+        if (!res.ok) throw new Error('Ошибка загрузки типов');
+        const types = await res.json();
+        const tbody = $('#typesTable tbody');
+        tbody.innerHTML = types.map(t => `
+          <tr>
+            <td>${t.id}</td>
+            <td><input type="text" value="${t.name}" data-id="${t.id}" class="type-edit"></td>
+            <td>
+              <button class="btn btn-sm btn-outline save-type" data-id="${t.id}">💾</button>
+              <button class="btn btn-sm btn-danger delete-type" data-id="${t.id}">🗑️</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+        alert('Не удалось загрузить типы');
+      }
+    }
+
+    async function loadEquipment() {
+      try {
+        const res = await fetch(`${API}/equipment`, { headers: authHeaders() });
+        if (!res.ok) throw new Error('Ошибка загрузки оборудования');
+        const equips = await res.json();
+        const tbody = $('#equipTable tbody');
+        tbody.innerHTML = equips.map(e => `
+          <tr>
+            <td>${e.id}</td>
+            <td><input type="text" value="${e.name}" data-id="${e.id}" class="equip-edit" ></td>
+            <td>
+              <button class="btn btn-sm btn-outline save-equip" data-id="${e.id}">💾</button>
+              <button class="btn btn-sm btn-danger delete-equip" data-id="${e.id}">🗑️</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+        alert('Не удалось загрузить оборудование');
+      }
+    }
+
+    // Добавление типа
+    $('#addType').addEventListener('click', async () => {
+      const name = $('#newTypeName').value.trim();
+      if (!name) return alert('Введите название типа');
+      try {
+        const res = await fetch(`${API}/types`, {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error);
+        }
+        $('#newTypeName').value = '';
+        loadTypes();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
+    });
+
+    // Добавление оборудования
+    $('#addEquip').addEventListener('click', async () => {
+      const name = $('#newEquipName').value.trim();
+      if (!name) return alert('Введите название оборудования');
+      try {
+        const res = await fetch(`${API}/equipment`, {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error);
+        }
+        $('#newEquipName').value = '';
+        loadEquipment();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
+    });
+
+    // Делегирование событий для сохранения и удаления
+    document.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('save-type')) {
+        const id = e.target.dataset.id;
+        const input = document.querySelector(`input.type-edit[data-id="${id}"]`);
+        const name = input.value.trim();
+        if (!name) return;
+        try {
+          const res = await fetch(`${API}/types/${id}`, {
+            method: 'PUT',
+            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error);
+          }
+          loadTypes();
+        } catch (e) {
+          alert('Ошибка: ' + e.message);
+        }
+      } else if (e.target.classList.contains('delete-type')) {
+        if (!confirm('Удалить тип?')) return;
+        const id = e.target.dataset.id;
+        try {
+          const res = await fetch(`${API}/types/${id}`, { method: 'DELETE', headers: authHeaders() });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error);
+          }
+          loadTypes();
+        } catch (e) {
+          alert('Ошибка: ' + e.message);
+        }
+      } else if (e.target.classList.contains('save-equip')) {
+        const id = e.target.dataset.id;
+        const input = document.querySelector(`input.equip-edit[data-id="${id}"]`);
+        const name = input.value.trim();
+        if (!name) return;
+        try {
+          const res = await fetch(`${API}/equipment/${id}`, {
+            method: 'PUT',
+            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error);
+          }
+          loadEquipment();
+        } catch (e) {
+          alert('Ошибка: ' + e.message);
+        }
+      } else if (e.target.classList.contains('delete-equip')) {
+        if (!confirm('Удалить оборудование?')) return;
+        const id = e.target.dataset.id;
+        try {
+          const res = await fetch(`${API}/equipment/${id}`, { method: 'DELETE', headers: authHeaders() });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error);
+          }
+          loadEquipment();
+        } catch (e) {
+          alert('Ошибка: ' + e.message);
+        }
+      }
+    });
+
+    // Аккордеон: сворачивание/разворачивание секций
+    document.querySelectorAll('.accordion-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const accordion = header.closest('.accordion');
+        accordion.classList.toggle('collapsed');
+      });
+    });
+
+    $('#btnLogout').addEventListener('click', () => {
+      sessionStorage.removeItem('token');
+      window.location.href = '/';
+    });
+
+    // Инициализация
+    checkAuth().then((authorized) => {
+      if (authorized) {
+        loadTypes();
+        loadEquipment();
+      }
+    });
+  </script>
+</body>
+</html>
