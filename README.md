@@ -30,34 +30,90 @@ A lightweight, self-hosted web application for managing electronic components in
 
 ## 📁 Структура проекта
 ``` text
-warehouse-server/
-├── public/ # Статические файлы фронтенда
-│ ├── index.html # Главная страница (инвентарь)
-│ ├── writeoff.html # Страница создания заявки на списание
-│ ├── admin-writeoffs.html # Админ-панель управления списаниями
-│ ├── admin.html # Управление справочниками (типы и оборудование)
+warehouse/
+├── public/ # Static frontend files
+│ ├── index.html # Main inventory page
+│ ├── writeoff.html # Write‑off request form
+│ ├── admin.html # Directories management (types, equipment)
+│ ├── admin-writeoffs.html # Admin panel for write‑offs & reports
 │ ├── css/
-│ │ ├── style.css # Основные стили
-│ │ └── mobile.css # Адаптивные стили
-│ └── js/
-│ ├── utils.js # Вспомогательные функции ($, форматирование, toast)
-│ ├── api.js # Взаимодействие с API инвентаря
-│ ├── auth.js # Логин, логаут, таймер бездействия, обновление UI
-│ ├── filters.js # Фильтрация и сортировка
-│ ├── ui.js # Отрисовка таблицы, справочники, статистика
-│ ├── import.js # Обработка импорта CSV/Excel
-│ ├── export.js # Экспорт в Excel и CSV
-│ └── app.js # Основная логика главной страницы
-├── server/ # Серверная часть
-│ ├── server.js # Точка входа, настройка Express
-│ ├── db.js # Инициализация БД, миграции, начальные пользователи
+│ │ ├── base.css
+│ │ ├── layout.css
+│ │ ├── components.css
+│ │ ├── utilities.css
+│ │ └── mobile.css
+│ ├── js/
+│ │ ├── api.js, auth.js, filters.js, ui.js, modals.js, ...
+│ │ └── xlsx.full.min.js, html5-qrcode.min.js, chart.min.js
+│ └── uploads/ # Uploaded attachments
+├── server/
+│ ├── server.js # Express app entry point
+│ ├── db.js # Database setup, migrations
 │ ├── middleware/
-│ │ └── auth.js # Middleware проверки JWT и ролей
-│ └── routes/
-│ ├── auth.js # Роуты аутентификации (/api/auth)
-│ ├── inventory.js # CRUD инвентаря, импорт/экспорт
-│ ├── writeoffs.js # Создание и управление списаниями, отчёты
-│ └── directories.js # Управление справочниками (типы, оборудование)
+│ │ └── auth.js # JWT verification, role checks
+│ ├── routes/
+│ │ ├── inventory.js # CRUD, import, export, history
+│ │ ├── auth.js # Login, token verification
+│ │ ├── writeoffs.js # Write‑off requests & reports
+│ │ └── directories.js # Part types, equipment CRUD
+│ └── utils/
+│ └── logger.js # Change logging
 ├── package.json
+├── TODO.md # Roadmap and planned features
 └── README.md
 ```
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v16 or later)
+- npm
+- (Optional) Git
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   -git clone https://github.com/yourusername/warehouse.git
+   -cd warehouse
+   
+2. **Install dependencies**
+   ```bash
+   -npm install
+
+3. **Set environment variables (optional but recommended)**
+   Create a .env file in the root directory:
+   ```text
+   -PORT=3000
+   -JWT_SECRET=your_very_long_random_secret
+   If JWT_SECRET is not set, a default secret is used (change it in production).
+
+4. **Run the server**
+   ```bash
+   -npm start
+The app will be available at http://localhost:3000.
+
+## 🔐 Security
+- **JWT Authentication** – Tokens expire after 12 hours by default; all API endpoints (except write‑off submission and public data) require a valid token.
+- **Role‑Based Access Control** – Each route verifies the user’s role (admin, moderator, viewer) before allowing write operations.
+- **Content Security Policy** – Strict CSP header is applied to prevent XSS; external scripts (like CDN libraries) are allowed only from trusted sources (or served locally).
+- **Input Sanitisation** – All user‑supplied data is escaped before rendering in the DOM.
+- **Session Timeout** – Automatic logout after 5 minutes of inactivity (client‑side timer).
+- **Backup Encryption** – Database backups can be downloaded and restored manually; store them securely.
+
+## 📈 Usage
+### Main Inventory Page (/)
+- **Search & Filter** – Search by code, name or model; filter by part type or equipment.
+- **Add / Edit** – Click the add button or select a row and click edit. Fill in the form (code, name, type, quantity, etc.).
+- **Bulk Actions** – Select multiple checkboxes, then choose an action from the dropdown (change type, equipment, location).
+- **Import** – Upload an Excel or CSV file. The first row must contain column headers (see sample files).
+- **Export** – Export the currently visible (filtered) list to Excel or CSV.
+  
+### Write‑Off Requests (/writeoff.html)
+- Search for an item, select it, specify quantity, equipment and optionally a comment.
+- The request appears in the admin panel with status “pending”.
+
+### Administration
+- **Directories** (/admin.html) – Manage part types and equipment lists.
+- **Write‑Off Management** (/admin-writeoffs.html) – Approve/reject requests, view reports with charts.
+- **User Management** – (Coming soon) Create and manage user accounts.
