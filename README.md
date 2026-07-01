@@ -1,32 +1,32 @@
-# 📦 Склад электронных компонентов
+# 📦 Warehouse – Electronics Inventory Management System
 
-Полнофункциональное веб-приложение для учёта складских запасов электронных компонентов с системой списания и гибким управлением справочниками. Поддерживает ролевую модель, импорт/экспорт данных и адаптивный интерфейс для мобильных устройств.
+A lightweight, self-hosted web application for managing electronic components inventory. Track parts, record write-offs, handle user roles, scan barcodes, and import/export data from Excel or CSV. Built with Node.js, Express, SQLite and vanilla JavaScript.
 
-## 🚀 Возможности
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Version](https://img.shields.io/badge/version-1.1.0-green)
 
-- **Управление инвентарём**: добавление, редактирование, удаление запчастей; массовая загрузка из CSV/Excel.
-- **Поиск и фильтрация**: быстрый поиск по всем полям, фильтры по типу и оборудованию, сортировка по столбцам.
-- **Справочники**: отдельные таблицы для типов запчастей и оборудования, редактируемые через административный интерфейс.
-- **Система списания**: сотрудники могут создавать заявки на списание с выбором детали и оборудования; администратор подтверждает или отклоняет заявки, после чего остатки автоматически уменьшаются.
-- **Отчётность**: просмотр статистики списаний по месяцам и оборудованию, экспорт в Excel/CSV.
-- **Ролевая модель**:
-  - Неавторизованный пользователь – только просмотр инвентаря и создание заявок на списание.
-  - Модератор – добавление, редактирование, удаление запчастей, управление справочниками.
-  - Администратор – полный доступ, включая панель управления списаниями.
-- **Экспорт данных**: инвентарь и отчёты по списаниям выгружаются в форматах Excel (XLSX) и CSV.
-- **Импорт**: поддержка CSV и Excel с автоматическим созданием новых типов и оборудования при необходимости.
-- **Адаптивный интерфейс**: оптимизирован для работы на настольных компьютерах, планшетах и смартфонах.
-- **Безопасность**: JWT-аутентификация с таймером бездействия (5 минут), bcrypt-хеширование паролей, защищённые API-маршруты.
+## ✨ Features
 
-## 🛠️ Технологический стек
+- **Inventory Management** – Add, edit, delete parts with metadata (code, name, model, type, equipment, location, unit, quantity, min. stock).
+- **Write‑Off Requests** – Employees can submit write‑off requests; admins approve or reject them.
+- **Role‑Based Access** – Three roles (`admin`, `moderator`, `viewer`) with different permissions.
+- **Barcode Scanner** – Use the device camera to scan barcodes and instantly find items (mobile-friendly).
+- **Import & Export** – Import data from Excel (.xlsx) or CSV files; export filtered inventory to Excel or CSV.
+- **Bulk Editing** – Select multiple items and update type, equipment or location in one action.
+- **Change History** – Every modification of an item is logged (old/new values, author, timestamp).
+- **Low‑Stock Alerts** – Set minimum quantity per item; items below that threshold are highlighted and can be filtered.
+- **Attachment Support** – Attach images to inventory items (e.g., photos of labels or storage locations).
+- **Reports** – Visual analytics for write‑offs (charts by month, equipment, top items) and turnover statements.
+- **Backup & Restore** – Download a database backup or upload a previously saved backup directly from the admin interface.
+- **Responsive Design** – Fully usable on desktops, tablets and phones.
 
-| Компонент | Технологии |
-|-----------|-------------|
-| **Бэкенд** | Node.js, Express, better-sqlite3, jsonwebtoken, bcryptjs, multer, xlsx |
-| **Фронтенд** | Vanilla JavaScript (ES6+), HTML5, CSS3 (кастомные свойства) |
-| **База данных** | SQLite (через better-sqlite3), файл warehouse.db |
-| **Аутентификация** | JWT (access token), роли admin / moderator |
-| **Развёртывание** | PM2, Nginx (обратный прокси), поддержка переменных окружения |
+## 🛠️ Tech Stack
+
+- **Backend:** Node.js, Express, SQLite (via `better-sqlite3`), JWT authentication, `multer` for file uploads.
+- **Frontend:** Vanilla HTML, CSS (custom properties, grid/flexbox), JavaScript (modular, no framework).
+- **Libraries:** SheetJS (xlsx) for Excel handling, `html5-qrcode` for barcode scanning, Chart.js for reports.
+- **Security:** Content Security Policy (CSP), JWT with configurable expiration, HTTPS ready, input sanitisation.
+
 
 ## 📁 Структура проекта
 ``` text
