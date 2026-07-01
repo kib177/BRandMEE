@@ -34,6 +34,7 @@ warehouse/
 ├── public/ # Static frontend files
 │ ├── index.html # Main inventory page
 │ ├── writeoff.html # Write‑off request form
+| ├── admin.html # Directories management (types, equipment)
 │ ├── admin-writeoffs.html # Admin panel for write‑offs & reports
 │ ├── css/
 │ │ ├── base.css
