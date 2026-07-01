@@ -86,7 +86,7 @@ warehouse/
    ```text
    -PORT=3000
    -JWT_SECRET=your_very_long_random_secret
-   If JWT_SECRET is not set, a default secret is used (change it in production).
+If JWT_SECRET is not set, a default secret is used (change it in production).
 
 4. **Run the server**
    ```bash
