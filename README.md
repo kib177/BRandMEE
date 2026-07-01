@@ -34,7 +34,6 @@ warehouse/
 ├── public/ # Static frontend files
 │ ├── index.html # Main inventory page
 │ ├── writeoff.html # Write‑off request form
-│ ├── admin.html # Directories management (types, equipment)
 │ ├── admin-writeoffs.html # Admin panel for write‑offs & reports
 │ ├── css/
 │ │ ├── base.css
@@ -56,8 +55,6 @@ warehouse/
 │ │ ├── auth.js # Login, token verification
 │ │ ├── writeoffs.js # Write‑off requests & reports
 │ │ └── directories.js # Part types, equipment CRUD
-│ └── utils/
-│ └── logger.js # Change logging
 ├── package.json
 ├── TODO.md # Roadmap and planned features
 └── README.md
