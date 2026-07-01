@@ -1,3 +1,9 @@
+/**
+ * Warehouse Management System
+ * Copyright (c) 2026 Kirill Brigi
+ * Licensed under MIT
+ */
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
