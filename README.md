@@ -86,12 +86,12 @@ warehouse/
    ```text
    -PORT=3000
    -JWT_SECRET=your_very_long_random_secret
-If JWT_SECRET is not set, a default secret is used (change it in production).
+   If JWT_SECRET is not set, a default secret is used (change it in production).
 
 4. **Run the server**
    ```bash
    -npm start
-The app will be available at http://localhost:3000.
+   The app will be available at http://localhost:3000.
 
 ## 🔐 Security
 - **JWT Authentication** – Tokens expire after 12 hours by default; all API endpoints (except write‑off submission and public data) require a valid token.
