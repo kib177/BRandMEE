@@ -117,3 +117,16 @@ warehouse/
 - **Directories** (/admin.html) – Manage part types and equipment lists.
 - **Write‑Off Management** (/admin-writeoffs.html) – Approve/reject requests, view reports with charts.
 - **User Management** – (Coming soon) Create and manage user accounts.
+
+## 🧪 Development & Contributing
+Contributions are welcome! Please see the TODO.md for a list of planned features and known issues.
+1. Fork the repository
+2. Create a feature branch (git checkout -b feature/awesome-feature)
+3. Commit your changes (git commit -m 'Add awesome feature')
+4. Push to the branch (git push origin feature/awesome-feature)
+5. Open a Pull Request
+
+For major changes, please open an issue first to discuss what you would like to change.
+
+## 📄 License
+This project is licensed under the MIT License. See the LICENSE file for details.
