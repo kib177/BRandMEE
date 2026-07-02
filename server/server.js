@@ -33,7 +33,7 @@ app.use((req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: 'http://localhost:3000', 
+  origin: 'https://brandmee.site', 
   credentials: true
 }));
 app.use(express.json({ limit: '5mb' }));
