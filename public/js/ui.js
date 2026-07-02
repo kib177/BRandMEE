@@ -12,6 +12,11 @@ async function loadDirectoriesForForm() {
       fetch('/api/directories/equipment')
     ]);
 
+    // Проверка кэша для типов
+    if (typesRes.ok && typesRes.headers.get('X-Cache') === 'HIT') {
+      showToast('Справочники загружены из кэша', 'warning');
+    }
+
     if (typesRes.ok) {
       const data = await typesRes.json();
       allTypes = Array.isArray(data) ? data : [];
