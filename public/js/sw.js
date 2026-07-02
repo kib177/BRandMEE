@@ -1,10 +1,9 @@
-const CACHE_NAME = 'warehouse-v1';
-const ASSETS_TO_CACHE = [
+const CACHE_NAME = 'warehouse-v2'; // увеличивайте версию при изменениях
+
+// Ресурсы, которые нужно кэшировать при установке
+const PRECACHE_ASSETS = [
   '/',
   '/index.html',
-  '/writeoff.html',
-  '/admin.html',
-  '/admin-writeoffs.html',
   '/css/base.css',
   '/css/layout.css',
   '/css/components.css',
@@ -22,43 +21,68 @@ const ASSETS_TO_CACHE = [
   '/js/app.js',
   '/js/xlsx.full.min.js',
   '/js/html5-qrcode.min.js',
-  '/js/qrcode.min.js'
+  '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png'
 ];
 
-// Установка: кэшируем все основные файлы
-self.addEventListener('install', (event) => {
+// Установка: кэшируем статические файлы
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(PRECACHE_ASSETS))
+      .then(() => self.skipWaiting()) // активировать сразу
   );
 });
 
-// Стратегия "сначала кэш, потом сеть"
-self.addEventListener('fetch', (event) => {
+// Активация: удаляем старые кэши
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))
+    )
+  );
+  self.clients.claim();
+});
+
+// Стратегия: для статики – кэш, для API – сеть, для HTML – кэш с fallback на сеть
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  // Для API-запросов всегда пытаемся сеть, при неудаче – показать ошибку
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(event.request).catch(() =>
+        new Response(JSON.stringify({ error: 'Нет сети' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
+    );
+    return;
+  }
+
+  // Для HTML-страниц (навигация) – сначала сеть, при недоступности – кэш
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() =>
+        caches.match('/index.html') // или event.request
+      )
+    );
+    return;
+  }
+
+  // Для всех остальных статических ресурсов – сначала кэш, потом сеть
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request).then((response) => {
-        // Кэшируем новые запросы (кроме API)
-        if (event.request.url.includes('/api/') === false) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+    caches.match(event.request).then(cached => {
+      return cached || fetch(event.request).then(fetchResponse => {
+        // Кэшируем новые статические файлы (кроме API)
+        if (fetchResponse.ok && !url.pathname.startsWith('/api/')) {
+          const responseClone = fetchResponse.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
         }
-        return response;
+        return fetchResponse;
       });
-    })
-  );
-});
-
-// Очистка старых кэшей при активации
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))
-      );
     })
   );
 });
