@@ -1,6 +1,6 @@
-const CACHE_NAME = 'warehouse-v2'; // увеличивайте версию при изменениях
+const STATIC_CACHE = 'warehouse-static-v2';
+const API_CACHE = 'warehouse-api-v1';
 
-// Ресурсы, которые нужно кэшировать при установке
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -26,12 +26,12 @@ const PRECACHE_ASSETS = [
   '/icons/icon-512.png'
 ];
 
-// Установка: кэшируем статические файлы
+// Установка: кэшируем статику
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
+    caches.open(STATIC_CACHE)
       .then(cache => cache.addAll(PRECACHE_ASSETS))
-      .then(() => self.skipWaiting()) // активировать сразу
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -39,50 +39,68 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))
+      Promise.all(keys.filter(key => key !== STATIC_CACHE && key !== API_CACHE).map(key => caches.delete(key)))
     )
   );
   self.clients.claim();
 });
 
-// Стратегия: для статики – кэш, для API – сеть, для HTML – кэш с fallback на сеть
+// Обработка запросов
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Для API-запросов всегда пытаемся сеть, при неудаче – показать ошибку
+  // API инвентаря и справочников: сеть с fallback на кэш
+  if (url.pathname.startsWith('/api/inventory') || url.pathname.startsWith('/api/directories')) {
+    event.respondWith(networkFirstWithCache(event.request));
+    return;
+  }
+
+  // Остальные API (авторизация, списания) – только сеть
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() =>
-        new Response(JSON.stringify({ error: 'Нет сети' }), {
-          status: 503,
-          headers: { 'Content-Type': 'application/json' }
-        })
+        new Response(JSON.stringify({ error: 'Нет сети' }), { status: 503 })
       )
     );
     return;
   }
 
-  // Для HTML-страниц (навигация) – сначала сеть, при недоступности – кэш
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() =>
-        caches.match('/index.html') // или event.request
-      )
-    );
-    return;
-  }
-
-  // Для всех остальных статических ресурсов – сначала кэш, потом сеть
+  // Статические файлы: кэш с fallback на сеть
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).then(fetchResponse => {
-        // Кэшируем новые статические файлы (кроме API)
-        if (fetchResponse.ok && !url.pathname.startsWith('/api/')) {
-          const responseClone = fetchResponse.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+    caches.match(event.request).then(cached =>
+      cached || fetch(event.request).then(response => {
+        if (response.ok && !url.pathname.startsWith('/api/')) {
+          const clone = response.clone();
+          caches.open(STATIC_CACHE).then(cache => cache.put(event.request, clone));
         }
-        return fetchResponse;
-      });
-    })
+        return response;
+      })
+    )
   );
 });
+
+// Стратегия: сначала сеть, при неудаче – кэш
+async function networkFirstWithCache(request) {
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const clone = networkResponse.clone();
+      const cache = await caches.open(API_CACHE);
+      cache.put(request, clone);
+    }
+    return networkResponse;
+  } catch (error) {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      // Добавляем заголовок, чтобы клиент узнал о кэше
+      const headers = new Headers(cachedResponse.headers);
+      headers.set('X-Cache', 'HIT');
+      return new Response(cachedResponse.body, {
+        status: cachedResponse.status,
+        statusText: cachedResponse.statusText,
+        headers
+      });
+    }
+    return new Response(JSON.stringify({ error: 'Нет сети и нет кэша' }), { status: 503 });
+  }
+}
