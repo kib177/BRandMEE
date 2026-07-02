@@ -16,8 +16,13 @@ async function apiFetch(url, options = {}) {
 }
 
 async function fetchInventory() {
-    const res = await fetch(API_BASE);
+    const res = await fetch(API_BASE, {
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+    });
     if (!res.ok) throw new Error('Ошибка загрузки');
+    if (res.headers.get('X-Cache') === 'HIT') {
+        showToast('Данные загружены из кэша', 'warning');
+    }
     return res.json();
 }
 
