@@ -66,16 +66,19 @@ self.addEventListener('fetch', event => {
   }
 
   // Статические файлы: кэш с fallback на сеть
-  event.respondWith(
-    caches.match(event.request).then(cached =>
-      cached || fetch(event.request).then(response => {
-        if (response.ok && !url.pathname.startsWith('/api/')) {
-          const clone = response.clone();
-          caches.open(STATIC_CACHE).then(cache => cache.put(event.request, clone));
+ event.respondWith(
+    caches.match(event.request).then(cached => {
+      return cached || fetch(event.request).then(fetchResponse => {
+        // Кэшируем только успешные GET-запросы
+        if (fetchResponse.ok &&
+            event.request.method === 'GET' &&   // <-- добавляем проверку
+            !url.pathname.startsWith('/api/')) {
+          const responseClone = fetchResponse.clone();
+          caches.open(STATIC_CACHE).then(cache => cache.put(event.request, responseClone));
         }
-        return response;
-      })
-    )
+        return fetchResponse;
+      });
+    })
   );
 });
 
