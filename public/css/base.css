@@ -81,3 +81,38 @@ body {
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
 }
+
+/* ===== Улучшения тёмной темы ===== */
+[data-theme="dark"] {
+
+    /* 1. Убираем резкие разделители в таблице */
+    tbody td {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);  /* почти незаметная линия */
+    }
+
+    /* 2. Кнопка «Войти» в шапке — делаем светлой и заметной */
+    #btnLoginLogout {
+        background: #3a3a3a;
+        color: #ffffff;
+        border: 2px solid #777777;
+    }
+    #btnLoginLogout:hover {
+        background: #4a4a4a;
+        border-color: #90caf9;
+    }
+
+    /* 3. Обычные контурные кнопки — тоже делаем контрастнее */
+    .btn-outline {
+        background: #2a2a2a;
+        color: #e0e0e0;
+        border-color: #555;
+    }
+    .btn-outline:hover {
+        background: #3a3a3a;
+        border-color: #90caf9;
+    }
+
+    /* 4. Слегка смягчаем фон страницы и карточек, чтобы меньше давило на глаза */
+    --bg: #1a1a1a;
+    --card-bg: #242424;
+}
