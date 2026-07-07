@@ -91,7 +91,7 @@ function showItemDetails(code) {
     $('#viewModalContent').innerHTML = `
         <p><strong>Код:</strong> ${escapeHtml(item.code)}</p>
         <p><strong>Наименование:</strong> ${escapeHtml(item.name)}</p>
-        <p><strong>Модель:</strong> ${escapeHtml(item.model || '—')}</p>
+        <p><strong>Артикул:</strong> ${escapeHtml(item.model || '—')}</p>
         <p><strong>Тип:</strong> ${escapeHtml(typeName)}</p>
         <p><strong>Оборудование:</strong> ${escapeHtml(equipName)}</p>
         <p><strong>Расположение:</strong> ${escapeHtml(item.location || '—')}</p>
