@@ -111,7 +111,9 @@ function initScannerButton() {
             } else {
                 startScanner();
             }
+            
         });
+        document.getElementById('btnCloseScanner')?.addEventListener('click', stopScanner);
     } else {
         btn.style.display = 'none';
     }
