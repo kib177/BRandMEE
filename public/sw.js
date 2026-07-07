@@ -1,116 +1,56 @@
-const STATIC_CACHE = 'warehouse-static-v3';
-const API_CACHE = 'warehouse-api-v1';
+const CACHE_NAME = 'warehouse-dynamic-v1'; // Можно не менять, кэш будет обновляться автоматически
 
-const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/base.css',
-  '/css/layout.css',
-  '/css/components.css',
-  '/css/utilities.css',
-  '/css/mobile.css',
-  '/js/utils.js',
-  '/js/api.js',
-  '/js/auth.js',
-  '/js/filters.js',
-  '/js/ui.js',
-  '/js/import.js',
-  '/js/export.js',
-  '/js/modals.js',
-  '/js/scanner.js',
-  '/js/app.js',
-  '/js/xlsx.full.min.js',
-  '/js/html5-qrcode.min.js',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
-];
-
-// Установка: кэшируем статику
+// Установка: ничего не кэшируем заранее, просто активируемся
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then(cache => cache.addAll(PRECACHE_ASSETS))
-      .then(() => self.skipWaiting())
-  );
+  console.log('Service Worker: installing');
+  self.skipWaiting();
 });
 
-// Активация: удаляем старые кэши
+// Активация: удаляем старые кэши, если они есть
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(key => key !== STATIC_CACHE && key !== API_CACHE).map(key => caches.delete(key)))
-    )
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+      );
+    })
   );
   self.clients.claim();
 });
 
-// Обработка запросов
+// Стратегия "Сеть сначала, при неудаче — кэш" для всех запросов
 self.addEventListener('fetch', event => {
+  // Пропускаем запросы к API и другие не-GET запросы
+  if (event.request.method !== 'GET') return;
+
   const url = new URL(event.request.url);
 
-  // API инвентаря и справочников: сеть с fallback на кэш
-  if (url.pathname.startsWith('/api/inventory') || url.pathname.startsWith('/api/directories')) {
-    event.respondWith(networkFirstWithCache(event.request));
-    return;
-  }
-
-  // Остальные API (авторизация, списания) – только сеть
+  // Для API оставляем только сеть (можно добавить fallback, если нужно)
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(event.request).catch(() =>
-        new Response(JSON.stringify({ error: 'Нет сети' }), { status: 503 })
-      )
-    );
+    event.respondWith(fetch(event.request).catch(() => {
+      return new Response(JSON.stringify({ error: 'Нет сети' }), { status: 503 });
+    }));
     return;
   }
 
-  // Статические файлы: кэш с fallback на сеть
- event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).then(fetchResponse => {
-        // Кэшируем только успешные GET-запросы
-        if (fetchResponse.ok &&
-            event.request.method === 'GET' &&   // <-- добавляем проверку
-            !url.pathname.startsWith('/api/')) {
-          const responseClone = fetchResponse.clone();
-          caches.open(STATIC_CACHE).then(cache => cache.put(event.request, responseClone));
+  // Статические файлы: сеть -> кэш -> офлайн-заглушка
+  event.respondWith(
+    fetch(event.request)
+      .then(networkResponse => {
+        // Если ответ успешный, клонируем и кладём в кэш
+        if (networkResponse.ok) {
+          const clonedResponse = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, clonedResponse);
+          });
         }
-        return fetchResponse;
-      });
-    })
+        return networkResponse;
+      })
+      .catch(() => {
+        // Сеть недоступна — пытаемся отдать из кэша
+        return caches.match(event.request).then(cachedResponse => {
+          return cachedResponse || new Response('Офлайн - ресурс недоступен', { status: 408 });
+        });
+      })
   );
-});
-
-// Стратегия: сначала сеть, при неудаче – кэш
-async function networkFirstWithCache(request) {
-  try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const clone = networkResponse.clone();
-      const cache = await caches.open(API_CACHE);
-      cache.put(request, clone);
-    }
-    return networkResponse;
-  } catch (error) {
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      // Добавляем заголовок, чтобы клиент узнал о кэше
-      const headers = new Headers(cachedResponse.headers);
-      headers.set('X-Cache', 'HIT');
-      return new Response(cachedResponse.body, {
-        status: cachedResponse.status,
-        statusText: cachedResponse.statusText,
-        headers
-      });
-    }
-    return new Response(JSON.stringify({ error: 'Нет сети и нет кэша' }), { status: 503 });
-  }
-}
-
-// Немедленная активация нового воркера
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
 });
