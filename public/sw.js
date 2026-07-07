@@ -107,3 +107,10 @@ async function networkFirstWithCache(request) {
     return new Response(JSON.stringify({ error: 'Нет сети и нет кэша' }), { status: 503 });
   }
 }
+
+// Немедленная активация нового воркера
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
