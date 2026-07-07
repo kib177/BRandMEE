@@ -22,6 +22,55 @@
     --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Тёмная тема */
+[data-theme="dark"] {
+    --primary: #90caf9;
+    --primary-light: #64b5f6;
+    --accent: #42a5f5;
+    --accent-light: #1e3a5f;
+    --bg: #121212;
+    --card-bg: #1e1e1e;
+    --text: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --border: #333333;
+    --warning-bg: #332b00;
+    --warning-border: #665500;
+    --danger: #ef5350;
+    --danger-light: #3e1a1a;
+    --success: #66bb6a;
+    --success-light: #1a3a1a;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow: 0 2px 8px rgba(0,0,0,0.4);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+}
+
+/* Дополнительные переопределения для элементов, не использующих переменные */
+[data-theme="dark"] .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+}
+[data-theme="dark"] thead th {
+    background: #2a2a2a;
+    color: #ccc;
+}
+[data-theme="dark"] tbody tr:hover {
+    background: #2a2a2a;
+}
+[data-theme="dark"] tbody tr.low-stock {
+    background: #2e2b1a;
+    border-left-color: #f0c040;
+}
+[data-theme="dark"] .btn-outline {
+    border-color: #555;
+    color: #ddd;
+}
+[data-theme="dark"] .btn-outline:hover {
+    background: #333;
+}
+[data-theme="dark"] .toast {
+    background: #333;
+    color: #fff;
+}
+
 * { margin:0; padding:0; box-sizing:border-box; }
 
 body {
