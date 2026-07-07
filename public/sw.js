@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'warehouse-static-v2';
+const STATIC_CACHE = 'warehouse-static-v3';
 const API_CACHE = 'warehouse-api-v1';
 
 const PRECACHE_ASSETS = [
