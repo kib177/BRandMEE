@@ -63,7 +63,7 @@ function renderTable(requests) {
             <td>${r.quantity} ${r.unit}</td>
             <td>${r.equipment_name || '—'}</td>
             <td>${r.requested_by}</td>
-            <td>${new Date(r.requested_at).toLocaleDateString('ru')}</td>
+            <td>${new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })}</td>
             <td class="status" style="color:${r.status==='approved'?'green':r.status==='rejected'?'red':'orange'}">${r.status}</td>
             <td title="${r.comment || ''}">${r.comment ? r.comment.substring(0, 30) + (r.comment.length > 30 ? '…' : '') : '—'}</td>
             <td>
@@ -129,9 +129,9 @@ async function exportExcel() {
             'Ед.изм.': r.unit,
             'Оборудование': r.equipment_name || '',
             'Запросил': r.requested_by,
-            'Дата запроса': new Date(r.requested_at).toLocaleString('ru'),
+            'Дата запроса': new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }),
             'Статус': r.status,
-            'Дата решения': r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru') : '',
+            'Дата решения': r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '',
             'Комментарий': r.comment || ''
         }));
         const ws = XLSX.utils.json_to_sheet(exportData);
@@ -152,9 +152,9 @@ async function exportCSV() {
         const rows = allData.map(r => [
             r.id, r.item_code, r.item_name, r.quantity, r.unit,
             r.equipment_name || '', r.requested_by,
-            new Date(r.requested_at).toLocaleString('ru'),
+            new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }),
             r.status,
-            r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru') : '',
+            r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '',
             r.comment || ''
         ]);
         const csv = [headers, ...rows]
@@ -220,8 +220,8 @@ async function loadReport() {
                 <th>Статус</th><th>Дата решения</th><th>Комментарий</th>
             </tr></thead><tbody>`;
             data.details.forEach(r => {
-                const reqDate = new Date(r.requested_at).toLocaleString('ru');
-                const resDate = r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru') : '—';
+                const reqDate = new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' });
+                const resDate = r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '—';
                 html += `<tr>
                     <td>${r.id}</td>
                     <td>${reqDate}</td>
