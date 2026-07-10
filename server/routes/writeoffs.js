@@ -108,6 +108,8 @@ router.patch('/:id', authMiddleware, requireRole('admin'), (req, res) => {
 router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
   try {
     const year = req.query.year || new Date().getFullYear();
+    
+    // Агрегация по месяцам
     const monthly = db.prepare(`
       SELECT strftime('%m', requested_at) AS month,
              SUM(quantity) AS total_quantity,
@@ -119,6 +121,7 @@ router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
       ORDER BY month
     `).all(String(year));
 
+    // Агрегация по оборудованию
     const byEquipment = db.prepare(`
       SELECT eq.name AS equipment, SUM(wo.quantity) AS total_quantity, COUNT(*) AS count_requests
       FROM write_offs wo
@@ -128,11 +131,25 @@ router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
       ORDER BY total_quantity DESC
     `).all(String(year));
 
-    res.json({ year, monthly, byEquipment });
+    // Полная детализация за год (все записи, включая неподтверждённые)
+    const details = db.prepare(`
+      SELECT wo.id, wo.item_code, wo.item_name, wo.quantity, wo.unit,
+             eq.name AS equipment_name,
+             wo.requested_by,
+             wo.requested_at,
+             wo.status,
+             wo.resolved_at,
+             wo.comment
+      FROM write_offs wo
+      LEFT JOIN equipment eq ON wo.equipment_id = eq.id
+      WHERE strftime('%Y', wo.requested_at) = ?
+      ORDER BY wo.requested_at DESC
+    `).all(String(year));
+
+    res.json({ year, monthly, byEquipment, details });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка формирования отчёта' });
   }
 });
-
 module.exports = router;
