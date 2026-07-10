@@ -1,147 +1,140 @@
- const $ = (s) => document.querySelector(s);
-    const API = '/api/write-offs';
-    let token = sessionStorage.getItem('token');
-    let currentUser = null;
-    let inactivityTimer;
+const $ = (s) => document.querySelector(s);
+const API = '/api/write-offs';
+let token = sessionStorage.getItem('token');
+let currentUser = null;
 
-    // Таймер бездействия
-    function resetInactivityTimer() {
-        clearTimeout(inactivityTimer);
-        inactivityTimer = setTimeout(() => {
-            sessionStorage.removeItem('token');
-            alert('Вы были разлогинены из-за бездействия');
-            window.location.href = '/';
-        }, 5 * 60 * 1000);
+// Проверка токена и роли
+async function init() {
+    if (!token) {
+        window.location.href = '/';
+        return;
     }
-    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(ev => {
-        document.addEventListener(ev, resetInactivityTimer);
-    });
-    resetInactivityTimer();
-
-    // Проверка токена и роли
-    async function init() {
-        if (!token) {
+    try {
+        const res = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Unauthorized');
+        const data = await res.json();
+        if (data.user.role !== 'admin') {
+            alert('Доступ запрещён');
             window.location.href = '/';
             return;
         }
-        try {
-            const res = await fetch('/api/auth/me', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error('Unauthorized');
-            const data = await res.json();
-            if (data.user.role !== 'admin') {
-                alert('Доступ запрещён');
-                window.location.href = '/';
+        currentUser = data.user;
+        loadRequests({ status: 'pending' });
+    } catch (e) {
+        window.location.href = '/';
+    }
+}
+
+function authHeaders() {
+    return { 'Authorization': `Bearer ${token}` };
+}
+
+// Загрузка списка списаний
+async function loadRequests(params = {}) {
+    const url = new URL(API, window.location.origin);
+    Object.entries(params).forEach(([k, v]) => {
+        if (v) url.searchParams.set(k, v);
+    });
+    try {
+        const res = await fetch(url, { headers: authHeaders() });
+        if (!res.ok) {
+            if (res.status === 401) {
+                alert('Сессия истекла, войдите заново');
+                sessionStorage.removeItem('token');
+                window.location.reload();
                 return;
             }
-            currentUser = data.user;
-            loadRequests({ status: 'pending' });
-        } catch (e) {
-            window.location.href = '/';
+            throw new Error('Ошибка загрузки');
         }
+        const data = await res.json();
+        renderTable(data);
+    } catch (e) {
+        alert(e.message);
     }
+}
 
-    function authHeaders() {
-        return { 'Authorization': `Bearer ${token}` };
-    }
+// Рендер таблицы с data-атрибутами (без инлайн-событий)
+function renderTable(requests) {
+    const tbody = $('#requestsTable tbody');
+    tbody.innerHTML = requests.map(r => `
+        <tr>
+            <td>${r.id}</td>
+            <td>${r.item_code}</td>
+            <td>${r.item_name}</td>
+            <td>${r.quantity} ${r.unit}</td>
+            <td>${r.equipment_name || '—'}</td>
+            <td>${r.requested_by}</td>
+            <td>${new Date(r.requested_at).toLocaleDateString('ru')}</td>
+            <td class="status" style="color:${r.status==='approved'?'green':r.status==='rejected'?'red':'orange'}">${r.status}</td>
+            <td>
+                ${r.status === 'pending' ? `
+                    <button class="btn btn-success btn-sm js-resolve" data-id="${r.id}" data-status="approved">✅</button>
+                    <button class="btn btn-danger btn-sm js-resolve" data-id="${r.id}" data-status="rejected">❌</button>
+                ` : '<span style="font-size:0.8rem;">—</span>'}
+            </td>
+        </tr>
+    `).join('');
 
-    async function loadRequests(params = {}) {
-        const url = new URL(API, window.location.origin);
-        Object.entries(params).forEach(([k,v]) => {
-            if (v) url.searchParams.set(k, v);
-        });
-        try {
-            const res = await fetch(url, { headers: authHeaders() });
-            if (!res.ok) {
-                if (res.status === 401) {
-                    alert('Сессия истекла, войдите заново');
-                    sessionStorage.removeItem('token');
-                    window.location.reload();
-                    return;
-                }
-                throw new Error('Ошибка загрузки');
-            }
-            const data = await res.json();
-            renderTable(data);
-        } catch(e) {
-            alert(e.message);
-        }
-    }
+    // Удаляем старый обработчик, чтобы не дублировался
+    tbody.removeEventListener('click', onTableClick);
+    tbody.addEventListener('click', onTableClick);
+}
 
-    function renderTable(requests) {
-        const tbody = $('#requestsTable tbody');
-        tbody.innerHTML = requests.map(r => `
-            <tr>
-                <td>${r.id}</td>
-                <td>${r.item_code}</td>
-                <td>${r.item_name}</td>
-                <td>${r.quantity} ${r.unit}</td>
-                <td>${r.equipment_name || '—'}</td>
-                <td>${r.requested_by}</td>
-                <td>${new Date(r.requested_at).toLocaleDateString('ru')}</td>
-                <td class="status" style="color:${r.status==='approved'?'green':r.status==='rejected'?'red':'orange'}">${r.status}</td>
-                <td>
-                    ${r.status === 'pending' ? `
-                        <button class="btn btn-success btn-sm" onclick="resolve(${r.id},'approved')">✅</button>
-                        <button class="btn btn-danger btn-sm" onclick="resolve(${r.id},'rejected')">❌</button>
-                    ` : '<span style="font-size:0.8rem;">—</span>'}
-                </td>
-            </tr>
-        `).join('');
-    }
+// Обработчик клика по кнопкам ✅/❌ в таблице
+function onTableClick(e) {
+    const btn = e.target.closest('.js-resolve');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const status = btn.dataset.status;
+    resolve(Number(id), status);
+}
 
-    async function resolve(id, status) {
-    const msg = status === 'approved' ? 'списание' : 'отклонение';
-    if (!confirm(`Подтвердить ${msg}?`)) return;
+// Изменение статуса
+async function resolve(id, status) {
+    const msg = status === 'approved' ? 'подтвердить списание' : 'отклонить';
+    if (!confirm(`Вы уверены, что хотите ${msg}?`)) return;
     try {
         const res = await fetch(`${API}/${id}`, {
             method: 'PATCH',
             headers: { ...authHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ status })
         });
-        const data = await res.json();
         if (!res.ok) {
-            alert(data.error || 'Ошибка');
+            const err = await res.json();
+            alert(err.error || 'Ошибка');
         } else {
             loadRequests(getCurrentFilters());
-            showToast?.(`Заявка ${status === 'approved' ? 'подтверждена' : 'отклонена'}`);
+            showToast(`Заявка ${status === 'approved' ? 'подтверждена' : 'отклонена'}`, 'success');
         }
     } catch (e) {
         alert('Ошибка сети');
     }
 }
-    function getCurrentFilters() {
-        return {
-            status: $('#filterStatus').value,
-            from: $('#filterFrom').value,
-            to: $('#filterTo').value,
-            equipment: $('#filterEquip').value
-        };
-    }
 
-    $('#applyFilter').addEventListener('click', () => loadRequests(getCurrentFilters()));
-    $('#filterStatus').addEventListener('change', () => loadRequests(getCurrentFilters()));
+// Получить текущие фильтры
+function getCurrentFilters() {
+    return {
+        status: $('#filterStatus').value,
+        from: $('#filterFrom').value,
+        to: $('#filterTo').value,
+        equipment: $('#filterEquip').value
+    };
+}
 
-    // Экспорт
-    async function fetchAllForExport(filters) {
-        const url = new URL(API, window.location.origin);
-        Object.entries(filters).forEach(([k,v]) => {
-            if (v) url.searchParams.set(k, v);
-        });
-        const res = await fetch(url, { headers: authHeaders() });
-        if (!res.ok) throw new Error('Ошибка загрузки для экспорта');
-        return await res.json();
-    }
-
-    function exportToExcel(data) {
-        const exportData = data.map(r => ({
+// Экспорт Excel
+async function exportExcel() {
+    try {
+        const filters = getCurrentFilters();
+        const allData = await fetchAllForExport(filters);
+        const exportData = allData.map(r => ({
             'ID': r.id,
             'Код': r.item_code,
             'Наименование': r.item_name,
             'Количество': r.quantity,
             'Ед.изм.': r.unit,
-            'Оборудование': r.equipment || '',
+            'Оборудование': r.equipment_name || '',
             'Запросил': r.requested_by,
             'Дата запроса': new Date(r.requested_at).toLocaleDateString('ru'),
             'Статус': r.status,
@@ -151,15 +144,22 @@
         const ws = XLSX.utils.json_to_sheet(exportData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Списания');
-        XLSX.writeFile(wb, `spisaniya_${new Date().toISOString().slice(0,10)}.xlsx`);
-        alert('Excel-отчёт сохранён');
+        XLSX.writeFile(wb, `spisaniya_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        showToast('Excel-отчёт сохранён');
+    } catch (e) {
+        alert('Ошибка экспорта: ' + e.message);
     }
+}
 
-    function exportToCSV(data) {
-        const headers = ['ID','Код','Наименование','Количество','Ед.изм.','Оборудование','Запросил','Дата запроса','Статус','Дата решения','Комментарий'];
-        const rows = data.map(r => [
+// Экспорт CSV
+async function exportCSV() {
+    try {
+        const filters = getCurrentFilters();
+        const allData = await fetchAllForExport(filters);
+        const headers = ['ID', 'Код', 'Наименование', 'Количество', 'Ед.изм.', 'Оборудование', 'Запросил', 'Дата запроса', 'Статус', 'Дата решения', 'Комментарий'];
+        const rows = allData.map(r => [
             r.id, r.item_code, r.item_name, r.quantity, r.unit,
-            r.equipment || '', r.requested_by,
+            r.equipment_name || '', r.requested_by,
             new Date(r.requested_at).toLocaleDateString('ru'),
             r.status,
             r.resolved_at ? new Date(r.resolved_at).toLocaleDateString('ru') : '',
@@ -171,67 +171,81 @@
         const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `spisaniya_${new Date().toISOString().slice(0,10)}.csv`;
+        a.download = `spisaniya_${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
-        alert('CSV-отчёт сохранён');
+        showToast('CSV-отчёт сохранён');
+    } catch (e) {
+        alert('Ошибка экспорта: ' + e.message);
     }
+}
 
-    $('#exportExcel').addEventListener('click', async () => {
-        try {
-            const filters = getCurrentFilters();
-            const allData = await fetchAllForExport(filters);
-            exportToExcel(allData);
-        } catch(e) {
-            alert('Ошибка экспорта: ' + e.message);
-        }
+async function fetchAllForExport(filters) {
+    const url = new URL(API, window.location.origin);
+    Object.entries(filters).forEach(([k, v]) => {
+        if (v) url.searchParams.set(k, v);
     });
+    const res = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) throw new Error('Ошибка загрузки для экспорта');
+    return await res.json();
+}
 
-    $('#exportCSV').addEventListener('click', async () => {
-        try {
-            const filters = getCurrentFilters();
-            const allData = await fetchAllForExport(filters);
-            exportToCSV(allData);
-        } catch(e) {
-            alert('Ошибка экспорта: ' + e.message);
+// Загрузка отчёта
+async function loadReport() {
+    const year = $('#reportYear').value;
+    try {
+        const res = await fetch(`${API}/report?year=${year}`, { headers: authHeaders() });
+        if (!res.ok) throw new Error('Ошибка загрузки отчёта');
+        const data = await res.json();
+        let html = `<h3>${year} год</h3>`;
+        html += '<table><tr><th>Месяц</th><th>Списано единиц</th><th>Заявок</th></tr>';
+        const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+        if (data.monthly && data.monthly.length) {
+            data.monthly.forEach(m => {
+                html += `<tr><td>${months[parseInt(m.month) - 1]}</td><td>${m.total_quantity}</td><td>${m.count_requests}</td></tr>`;
+            });
+        } else {
+            html += '<tr><td colspan="3">Нет данных</td></tr>';
         }
-    });
-
-    // Отчёт за год
-    $('#loadReport').addEventListener('click', async () => {
-        const year = $('#reportYear').value;
-        try {
-            const res = await fetch(`${API}/report?year=${year}`, { headers: authHeaders() });
-            const data = await res.json();
-            let html = `<h3>${year} год</h3>`;
-            html += '<table><tr><th>Месяц</th><th>Списано единиц</th><th>Заявок</th></tr>';
-            const months = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
-            if (data.monthly && data.monthly.length) {
-                data.monthly.forEach(m => {
-                    html += `<tr><td>${months[parseInt(m.month)-1]}</td><td>${m.total_quantity}</td><td>${m.count_requests}</td></tr>`;
-                });
-            } else {
-                html += '<tr><td colspan="3">Нет данных</td></tr>';
-            }
-            html += '</table>';
-            html += '<h4>По оборудованию</h4><ul>';
-            if (data.byEquipment && data.byEquipment.length) {
-                data.byEquipment.forEach(e => {
-                    html += `<li>${e.equipment || 'Без указания'}: ${e.total_quantity} ед. (${e.count_requests} заявок)</li>`;
-                });
-            } else {
-                html += '<li>Нет данных</li>';
-            }
-            html += '</ul>';
-            $('#reportArea').innerHTML = html;
-        } catch(e) {
-            alert('Ошибка загрузки отчёта');
+        html += '</table>';
+        html += '<h4>По оборудованию</h4><ul>';
+        if (data.byEquipment && data.byEquipment.length) {
+            data.byEquipment.forEach(e => {
+                html += `<li>${e.equipment || 'Без указания'}: ${e.total_quantity} ед. (${e.count_requests} заявок)</li>`;
+            });
+        } else {
+            html += '<li>Нет данных</li>';
         }
-    });
+        html += '</ul>';
+        $('#reportArea').innerHTML = html;
+    } catch (e) {
+        alert('Ошибка загрузки отчёта');
+    }
+}
 
+// Toast уведомление (простая версия)
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Привязка событий к элементам интерфейса (без инлайн-событий)
+function bindUIEvents() {
+    $('#applyFilter').addEventListener('click', () => loadRequests(getCurrentFilters()));
+    $('#filterStatus').addEventListener('change', () => loadRequests(getCurrentFilters()));
+    $('#exportExcel').addEventListener('click', exportExcel);
+    $('#exportCSV').addEventListener('click', exportCSV);
+    $('#loadReport').addEventListener('click', loadReport);
     $('#btnLogout').addEventListener('click', () => {
         sessionStorage.removeItem('token');
         window.location.href = '/';
     });
+}
 
-    // Запуск инициализации
-    init();
+// Старт
+init();
+bindUIEvents();
