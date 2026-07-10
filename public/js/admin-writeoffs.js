@@ -129,9 +129,9 @@ async function exportExcel() {
             'Ед.изм.': r.unit,
             'Оборудование': r.equipment_name || '',
             'Запросил': r.requested_by,
-            'Дата запроса': new Date(r.requested_at).toLocaleDateString('ru'),
+            'Дата запроса': new Date(r.requested_at).toLocaleString('ru'),
             'Статус': r.status,
-            'Дата решения': r.resolved_at ? new Date(r.resolved_at).toLocaleDateString('ru') : '',
+            'Дата решения': r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru') : '',
             'Комментарий': r.comment || ''
         }));
         const ws = XLSX.utils.json_to_sheet(exportData);
@@ -152,9 +152,9 @@ async function exportCSV() {
         const rows = allData.map(r => [
             r.id, r.item_code, r.item_name, r.quantity, r.unit,
             r.equipment_name || '', r.requested_by,
-            new Date(r.requested_at).toLocaleDateString('ru'),
+            new Date(r.requested_at).toLocaleString('ru'),
             r.status,
-            r.resolved_at ? new Date(r.resolved_at).toLocaleDateString('ru') : '',
+            r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru') : '',
             r.comment || ''
         ]);
         const csv = [headers, ...rows]
