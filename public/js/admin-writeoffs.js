@@ -3,7 +3,6 @@ const API = '/api/write-offs';
 let token = sessionStorage.getItem('token');
 let currentUser = null;
 
-// Проверка токена и роли
 async function init() {
     if (!token) {
         window.location.href = '/';
@@ -31,7 +30,6 @@ function authHeaders() {
     return { 'Authorization': `Bearer ${token}` };
 }
 
-// Загрузка списка списаний
 async function loadRequests(params = {}) {
     const url = new URL(API, window.location.origin);
     Object.entries(params).forEach(([k, v]) => {
@@ -55,7 +53,6 @@ async function loadRequests(params = {}) {
     }
 }
 
-// Рендер таблицы с data-атрибутами (без инлайн-событий)
 function renderTable(requests) {
     const tbody = $('#requestsTable tbody');
     tbody.innerHTML = requests.map(r => `
@@ -68,6 +65,7 @@ function renderTable(requests) {
             <td>${r.requested_by}</td>
             <td>${new Date(r.requested_at).toLocaleDateString('ru')}</td>
             <td class="status" style="color:${r.status==='approved'?'green':r.status==='rejected'?'red':'orange'}">${r.status}</td>
+            <td title="${r.comment || ''}">${r.comment ? r.comment.substring(0, 30) + (r.comment.length > 30 ? '…' : '') : '—'}</td>
             <td>
                 ${r.status === 'pending' ? `
                     <button class="btn btn-success btn-sm js-resolve" data-id="${r.id}" data-status="approved">✅</button>
@@ -77,12 +75,10 @@ function renderTable(requests) {
         </tr>
     `).join('');
 
-    // Удаляем старый обработчик, чтобы не дублировался
     tbody.removeEventListener('click', onTableClick);
     tbody.addEventListener('click', onTableClick);
 }
 
-// Обработчик клика по кнопкам ✅/❌ в таблице
 function onTableClick(e) {
     const btn = e.target.closest('.js-resolve');
     if (!btn) return;
@@ -91,7 +87,6 @@ function onTableClick(e) {
     resolve(Number(id), status);
 }
 
-// Изменение статуса
 async function resolve(id, status) {
     const msg = status === 'approved' ? 'подтвердить списание' : 'отклонить';
     if (!confirm(`Вы уверены, что хотите ${msg}?`)) return;
@@ -113,7 +108,6 @@ async function resolve(id, status) {
     }
 }
 
-// Получить текущие фильтры
 function getCurrentFilters() {
     return {
         status: $('#filterStatus').value,
@@ -123,7 +117,6 @@ function getCurrentFilters() {
     };
 }
 
-// Экспорт Excel
 async function exportExcel() {
     try {
         const filters = getCurrentFilters();
@@ -151,7 +144,6 @@ async function exportExcel() {
     }
 }
 
-// Экспорт CSV
 async function exportCSV() {
     try {
         const filters = getCurrentFilters();
@@ -189,24 +181,26 @@ async function fetchAllForExport(filters) {
     return await res.json();
 }
 
-// Загрузка отчёта
 async function loadReport() {
     const year = $('#reportYear').value;
     try {
         const res = await fetch(`${API}/report?year=${year}`, { headers: authHeaders() });
         if (!res.ok) throw new Error('Ошибка загрузки отчёта');
         const data = await res.json();
-        let html = `<h3>${year} год</h3>`;
+
+        // Сводка по месяцам и оборудованию
+        let html = `<h3>${year} год — сводка</h3>`;
         html += '<table><tr><th>Месяц</th><th>Списано единиц</th><th>Заявок</th></tr>';
-        const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+        const months = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
         if (data.monthly && data.monthly.length) {
             data.monthly.forEach(m => {
-                html += `<tr><td>${months[parseInt(m.month) - 1]}</td><td>${m.total_quantity}</td><td>${m.count_requests}</td></tr>`;
+                html += `<tr><td>${months[parseInt(m.month)-1]}</td><td>${m.total_quantity}</td><td>${m.count_requests}</td></tr>`;
             });
         } else {
             html += '<tr><td colspan="3">Нет данных</td></tr>';
         }
         html += '</table>';
+
         html += '<h4>По оборудованию</h4><ul>';
         if (data.byEquipment && data.byEquipment.length) {
             data.byEquipment.forEach(e => {
@@ -216,13 +210,43 @@ async function loadReport() {
             html += '<li>Нет данных</li>';
         }
         html += '</ul>';
+
+        // Детальная таблица всех записей за год
+        html += `<h3>Детализация всех списаний за ${year} год</h3>`;
+        if (data.details && data.details.length) {
+            html += `<table><thead><tr>
+                <th>ID</th><th>Дата/время запроса</th><th>Код</th><th>Наименование</th>
+                <th>Кол-во</th><th>Ед.</th><th>Оборудование</th><th>Запросил</th>
+                <th>Статус</th><th>Дата решения</th><th>Комментарий</th>
+            </tr></thead><tbody>`;
+            data.details.forEach(r => {
+                const reqDate = new Date(r.requested_at).toLocaleString('ru');
+                const resDate = r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru') : '—';
+                html += `<tr>
+                    <td>${r.id}</td>
+                    <td>${reqDate}</td>
+                    <td>${r.item_code}</td>
+                    <td>${r.item_name}</td>
+                    <td>${r.quantity}</td>
+                    <td>${r.unit}</td>
+                    <td>${r.equipment_name || '—'}</td>
+                    <td>${r.requested_by}</td>
+                    <td style="color:${r.status==='approved'?'green':r.status==='rejected'?'red':'orange'}">${r.status}</td>
+                    <td>${resDate}</td>
+                    <td>${r.comment || '—'}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+        } else {
+            html += '<p>Нет записей за этот год.</p>';
+        }
+
         $('#reportArea').innerHTML = html;
     } catch (e) {
         alert('Ошибка загрузки отчёта');
     }
 }
 
-// Toast уведомление (простая версия)
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -233,7 +257,6 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.remove(), 3000);
 }
 
-// Привязка событий к элементам интерфейса (без инлайн-событий)
 function bindUIEvents() {
     $('#applyFilter').addEventListener('click', () => loadRequests(getCurrentFilters()));
     $('#filterStatus').addEventListener('change', () => loadRequests(getCurrentFilters()));
@@ -246,6 +269,5 @@ function bindUIEvents() {
     });
 }
 
-// Старт
 init();
 bindUIEvents();
