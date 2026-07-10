@@ -92,24 +92,25 @@
     }
 
     async function resolve(id, status) {
-        if (!confirm(`Подтвердить ${status === 'approved' ? 'списание' : 'отклонение'}?`)) return;
-        try {
-            const res = await fetch(`${API}/${id}`, {
-                method: 'PATCH',
-                headers: { ...authHeaders(), 'Content-Type':'application/json' },
-                body: JSON.stringify({ status })
-            });
-            if (!res.ok) {
-                const err = await res.json();
-                alert(err.error);
-            } else {
-                loadRequests(getCurrentFilters());
-            }
-        } catch(e) {
-            alert('Ошибка сети');
+    const msg = status === 'approved' ? 'списание' : 'отклонение';
+    if (!confirm(`Подтвердить ${msg}?`)) return;
+    try {
+        const res = await fetch(`${API}/${id}`, {
+            method: 'PATCH',
+            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            alert(data.error || 'Ошибка');
+        } else {
+            loadRequests(getCurrentFilters());
+            showToast?.(`Заявка ${status === 'approved' ? 'подтверждена' : 'отклонена'}`);
         }
+    } catch (e) {
+        alert('Ошибка сети');
     }
-
+}
     function getCurrentFilters() {
         return {
             status: $('#filterStatus').value,
