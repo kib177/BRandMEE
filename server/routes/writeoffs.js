@@ -64,7 +64,7 @@ router.get('/', authMiddleware, requireRole('admin'), (req, res) => {
 });
 
 // Изменение статуса (админ)
-router.patch('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
+router.patch('/:id', authMiddleware, requireRole('admin'), (req, res) => {
   try {
     const { status } = req.body;
     if (!['approved', 'rejected'].includes(status)) {
@@ -93,12 +93,13 @@ router.patch('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
       });
       transaction();
     } else {
+      // rejected
       db.prepare('UPDATE write_offs SET status = ?, resolved_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
     }
 
     res.json({ ok: true });
   } catch (err) {
-    console.error(err);
+    console.error('Ошибка обработки списания:', err);
     res.status(500).json({ error: 'Ошибка обработки списания' });
   }
 });
