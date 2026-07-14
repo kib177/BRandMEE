@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
+const { sendMail } = require('../mailer');
 
 // Создание заявки (сотрудник)
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { item_code, equipment_id, quantity, requested_by, comment } = req.body;
     if (!item_code || quantity == null || quantity <= 0) {
@@ -21,6 +22,32 @@ router.post('/', (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
     const result = stmt.run(item_code, item.name, equipment_id || null, quantity, item.unit, requested_by || 'сотрудник', comment || '');
+
+    // Отправка уведомлений администраторам (асинхронно, не блокирует ответ)
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (adminEmails.length > 0) {
+      const equipmentName = equipment_id
+        ? (db.prepare('SELECT name FROM equipment WHERE id = ?').get(equipment_id)?.name || 'не указано')
+        : 'не указано';
+      const mailHtml = `
+        <h3>Новая заявка на списание</h3>
+        <table border="1" cellpadding="5" style="border-collapse:collapse; font-family: Arial, sans-serif;">
+          <tr><td><b>Код</b></td><td>${item_code}</td></tr>
+          <tr><td><b>Наименование</b></td><td>${item.name}</td></tr>
+          <tr><td><b>Количество</b></td><td>${quantity} ${item.unit}</td></tr>
+          <tr><td><b>Оборудование</b></td><td>${equipmentName}</td></tr>
+          <tr><td><b>Запросил</b></td><td>${requested_by || 'сотрудник'}</td></tr>
+          <tr><td><b>Комментарий</b></td><td>${comment || '—'}</td></tr>
+        </table>
+        <p>Перейти в <a href="${process.env.APP_URL || 'https://brandmee.site'}/admin-writeoffs.html">админ-панель</a></p>
+      `;
+      sendMail({
+        to: adminEmails.join(','),
+        subject: `Новая заявка на списание: ${item.name}`,
+        html: mailHtml
+      }).catch(err => console.error('Ошибка отправки уведомления:', err));
+    }
+
     res.json({ ok: true, id: result.lastInsertRowid });
   } catch (err) {
     console.error(err);
