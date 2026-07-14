@@ -31,7 +31,7 @@ router.post('/', (req, res) => {
 // Получение списка (админ)
 router.get('/', authMiddleware, requireRole('admin'), (req, res) => {
   try {
-    let query = `SELECT wo.*, eq.name AS equipment_name, i.model AS model
+   let query = `SELECT wo.*, eq.name AS equipment_name, i.model AS model
              FROM write_offs wo
              LEFT JOIN equipment eq ON wo.equipment_id = eq.id
              LEFT JOIN inventory i ON wo.item_code = i.code
