@@ -115,6 +115,73 @@ body {
     /* 4. Слегка смягчаем фон страницы и карточек, чтобы меньше давило на глаза */
     --bg: #1a1a1a;
     --card-bg: #242424;
+
+    /* ===== Тёмная тема для модальных окон ===== */
+[data-theme="dark"] .modal {
+    background: #1e1e1e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+}
+
+[data-theme="dark"] .modal h2,
+[data-theme="dark"] .confirm-box h3 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .modal .form-group label {
+    color: #b0b0b0;
+}
+
+[data-theme="dark"] .modal .form-group input,
+[data-theme="dark"] .modal .form-group select,
+[data-theme="dark"] .modal .form-group textarea {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+[data-theme="dark"] .modal .form-group input:focus,
+[data-theme="dark"] .modal .form-group select:focus,
+[data-theme="dark"] .modal .form-group textarea:focus {
+    border-color: #90caf9;
+    box-shadow: 0 0 0 3px rgba(144, 202, 249, 0.2);
+}
+
+[data-theme="dark"] .modal .btn-outline {
+    background: #2a2a2a;
+    color: #ddd;
+    border-color: #555;
+}
+[data-theme="dark"] .modal .btn-outline:hover {
+    background: #3a3a3a;
+    border-color: #90caf9;
+}
+
+[data-theme="dark"] .modal .btn-primary {
+    background: #42a5f5;
+    color: #fff;
+}
+[data-theme="dark"] .modal .btn-primary:hover {
+    background: #1e88e5;
+}
+
+[data-theme="dark"] .modal .btn-danger {
+    background: #3e1a1a;
+    color: #ef5350;
+    border-color: #b71c1c;
+}
+[data-theme="dark"] .modal .btn-danger:hover {
+    background: #5c2828;
+}
+
+/* Окна подтверждения */
+[data-theme="dark"] .confirm-box {
+    background: #1e1e1e;
+    color: #e0e0e0;
+}
+[data-theme="dark"] .confirm-box p {
+    color: #b0b0b0;
+}
 }
 
 /* Кнопка-иконка в правом верхнем углу модального окна */
