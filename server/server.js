@@ -38,13 +38,6 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '5mb' }));
 
-app.use((req, res, next) => {
-  if (req.url === '/sw.js') {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  }
-  next();
-});
-
 // API маршруты
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/auth', require('./routes/auth'));
