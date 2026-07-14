@@ -111,16 +111,21 @@ router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
     const year = req.query.year || new Date().getFullYear();
     
     // Агрегация по месяцам
-    const monthly = db.prepare(`
-      SELECT strftime('%m', requested_at) AS month,
-             SUM(quantity) AS total_quantity,
-             COUNT(*) AS count_requests
-      FROM write_offs
-      WHERE status = 'approved'
-        AND strftime('%Y', requested_at) = ?
-      GROUP BY month
-      ORDER BY month
-    `).all(String(year));
+    const details = db.prepare(`
+  SELECT wo.id, wo.item_code, wo.item_name, wo.quantity, wo.unit,
+         eq.name AS equipment_name,
+         i.model AS model,
+         wo.requested_by,
+         wo.requested_at,
+         wo.status,
+         wo.resolved_at,
+         wo.comment
+  FROM write_offs wo
+  LEFT JOIN equipment eq ON wo.equipment_id = eq.id
+  LEFT JOIN inventory i ON wo.item_code = i.code
+  WHERE strftime('%Y', wo.requested_at) = ?
+  ORDER BY wo.requested_at DESC
+`).all(String(year));
 
     // Агрегация по оборудованию
     const byEquipment = db.prepare(`
