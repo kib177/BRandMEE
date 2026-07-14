@@ -31,11 +31,11 @@ router.post('/', (req, res) => {
 // Получение списка (админ)
 router.get('/', authMiddleware, requireRole('admin'), (req, res) => {
   try {
-   let query = `SELECT wo.*, eq.name AS equipment_name, i.model AS model
-             FROM write_offs wo
-             LEFT JOIN equipment eq ON wo.equipment_id = eq.id
-             LEFT JOIN inventory i ON wo.item_code = i.code
-             WHERE 1=1`;
+    let query = `SELECT wo.*, eq.name AS equipment_name, i.model AS model
+                 FROM write_offs wo
+                 LEFT JOIN equipment eq ON wo.equipment_id = eq.id
+                 LEFT JOIN inventory i ON wo.item_code = i.code
+                 WHERE 1=1`;
     const params = [];
 
     if (req.query.status) {
@@ -132,7 +132,7 @@ router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
       ORDER BY total_quantity DESC
     `).all(String(year));
 
-    // Полная детализация за год (включая артикул)
+    // Полная детализация за год (все записи, включая неподтверждённые, с артикулом)
     const details = db.prepare(`
       SELECT wo.id, wo.item_code, wo.item_name, wo.quantity, wo.unit,
              eq.name AS equipment_name,
@@ -155,5 +155,5 @@ router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
     res.status(500).json({ error: 'Ошибка формирования отчёта' });
   }
 });
-});
+
 module.exports = router;
