@@ -105,7 +105,7 @@ function showItemDetails(code) {
     const btnInfo = $('#btnPartInfo');
     if (btnInfo) {
         btnInfo.style.display = 'inline-flex';
-        btnInfo.onclick = () => fetchPartInfo(item.code, item.name);
+        btnInfo.onclick = () => fetchPartInfo(item.model, item.name);
     }
 
     // Даташит (если осталась кнопка – можно оставить)
@@ -128,17 +128,18 @@ function showItemDetails(code) {
 }
 
 // Функция запроса информации о детали
-async function fetchPartInfo(code, name) {
+async function fetchPartInfo(model, name) {
     const block = $('#partInfoBlock');
-    block.innerHTML = '<p>Загрузка информации с Wikipedia...</p>';
+    const searchTerm = model && model.trim() ? model.trim() : name;  // приоритет – артикул
+    block.innerHTML = `<p>Поиск информации по: "${searchTerm}"...</p>`;
 
     try {
-        const res = await fetch(`/api/part-info/${encodeURIComponent(code)}`);
+        const res = await fetch(`/api/part-info/${encodeURIComponent(searchTerm)}`);
         if (!res.ok) throw new Error('Ошибка запроса');
         const data = await res.json();
 
         if (!data.found) {
-            block.innerHTML = `<p>Информация не найдена. Попробуйте вручную поискать на <a href="https://www.google.com/search?q=${encodeURIComponent(name)}+datasheet" target="_blank">Google</a>.</p>`;
+            block.innerHTML = `<p>Информация не найдена. Попробуйте вручную поискать на <a href="https://www.google.com/search?q=${encodeURIComponent(name || searchTerm)}+datasheet" target="_blank">Google</a>.</p>`;
             return;
         }
 
