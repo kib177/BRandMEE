@@ -141,6 +141,7 @@ router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
     const details = db.prepare(`
       SELECT wo.id, wo.item_code, wo.item_name, wo.quantity, wo.unit,
              eq.name AS equipment_name,
+             i.model AS model,
              wo.requested_by,
              wo.requested_at,
              wo.status,
