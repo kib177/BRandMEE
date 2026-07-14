@@ -116,3 +116,31 @@ body {
     --bg: #1a1a1a;
     --card-bg: #242424;
 }
+
+/* Кнопка-иконка в правом верхнем углу модального окна */
+.btn-icon-info {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #666;
+    line-height: 1;
+    padding: 4px;
+    border-radius: 50%;
+    transition: 0.2s;
+}
+.btn-icon-info:hover {
+    background: #eee;
+    color: #1a3c5e;
+}
+[data-theme="dark"] .btn-icon-info {
+    color: #ccc;
+}
+[data-theme="dark"] .btn-icon-info:hover {
+    background: #333;
+    color: #90caf9;
+}
+
