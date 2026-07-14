@@ -60,6 +60,7 @@ function renderTable(requests) {
             <td>${r.id}</td>
             <td>${r.item_code}</td>
             <td>${r.item_name}</td>
+            <td>${r.model || '—'}</td>
             <td>${r.quantity} ${r.unit}</td>
             <td>${r.equipment_name || '—'}</td>
             <td>${r.requested_by}</td>
@@ -216,9 +217,10 @@ async function loadReport() {
         if (data.details && data.details.length) {
             html += `<table><thead><tr>
                 <th>ID</th><th>Дата/время запроса</th><th>Код</th><th>Наименование</th>
-                <th>Кол-во</th><th>Ед.</th><th>Оборудование</th><th>Запросил</th>
+                <th>Артикул</th><th>Кол-во</th><th>Ед.</th><th>Оборудование</th><th>Запросил</th>
                 <th>Статус</th><th>Дата решения</th><th>Комментарий</th>
             </tr></thead><tbody>`;
+            
             data.details.forEach(r => {
                 const reqDate = new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' });
                 const resDate = r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '—';
@@ -227,6 +229,7 @@ async function loadReport() {
                     <td>${reqDate}</td>
                     <td>${r.item_code}</td>
                     <td>${r.item_name}</td>
+                    <td>${r.model || '—'}</td>
                     <td>${r.quantity}</td>
                     <td>${r.unit}</td>
                     <td>${r.equipment_name || '—'}</td>
