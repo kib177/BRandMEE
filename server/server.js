@@ -37,6 +37,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({ limit: '5mb' }));
+app.use('/api/part-info', require('./routes/partinfo'));
 
 // API маршруты
 app.use('/api/inventory', inventoryRoutes);
