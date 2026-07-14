@@ -1,4 +1,4 @@
-const CACHE_NAME = 'warehouse-dynamic-v1'; // Можно не менять, кэш будет обновляться автоматически
+/*const CACHE_NAME = 'warehouse-dynamic-v1'; // Можно не менять, кэш будет обновляться автоматически
 
 // Установка: ничего не кэшируем заранее, просто активируемся
 self.addEventListener('install', event => {
@@ -53,4 +53,4 @@ self.addEventListener('fetch', event => {
         });
       })
   );
-});
+});*/
