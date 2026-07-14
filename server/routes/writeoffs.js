@@ -109,23 +109,18 @@ router.patch('/:id', authMiddleware, requireRole('admin'), (req, res) => {
 router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
   try {
     const year = req.query.year || new Date().getFullYear();
-    
+
     // Агрегация по месяцам
-    const details = db.prepare(`
-  SELECT wo.id, wo.item_code, wo.item_name, wo.quantity, wo.unit,
-         eq.name AS equipment_name,
-         i.model AS model,
-         wo.requested_by,
-         wo.requested_at,
-         wo.status,
-         wo.resolved_at,
-         wo.comment
-  FROM write_offs wo
-  LEFT JOIN equipment eq ON wo.equipment_id = eq.id
-  LEFT JOIN inventory i ON wo.item_code = i.code
-  WHERE strftime('%Y', wo.requested_at) = ?
-  ORDER BY wo.requested_at DESC
-`).all(String(year));
+    const monthly = db.prepare(`
+      SELECT strftime('%m', requested_at) AS month,
+             SUM(quantity) AS total_quantity,
+             COUNT(*) AS count_requests
+      FROM write_offs
+      WHERE status = 'approved'
+        AND strftime('%Y', requested_at) = ?
+      GROUP BY month
+      ORDER BY month
+    `).all(String(year));
 
     // Агрегация по оборудованию
     const byEquipment = db.prepare(`
@@ -137,7 +132,7 @@ router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
       ORDER BY total_quantity DESC
     `).all(String(year));
 
-    // Полная детализация за год (все записи, включая неподтверждённые)
+    // Полная детализация за год (включая артикул)
     const details = db.prepare(`
       SELECT wo.id, wo.item_code, wo.item_name, wo.quantity, wo.unit,
              eq.name AS equipment_name,
@@ -149,6 +144,7 @@ router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
              wo.comment
       FROM write_offs wo
       LEFT JOIN equipment eq ON wo.equipment_id = eq.id
+      LEFT JOIN inventory i ON wo.item_code = i.code
       WHERE strftime('%Y', wo.requested_at) = ?
       ORDER BY wo.requested_at DESC
     `).all(String(year));
@@ -158,5 +154,6 @@ router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Ошибка формирования отчёта' });
   }
+});
 });
 module.exports = router;
