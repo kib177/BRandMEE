@@ -100,20 +100,11 @@ function showItemDetails(code) {
         <p><strong>Дата:</strong> ${escapeHtml(item.date)}</p>
     `;
 
-    // Кнопка «ℹ️ Инфо»
     const btnInfo = $('#btnPartInfo');
-    if (btnInfo) {
-        btnInfo.style.display = 'inline-flex';
-        btnInfo.onclick = () => fetchPartInfo(item.model, item.name);
-    }
-
-    // Даташит (если осталась кнопка – можно оставить)
-    const btnDatasheet = $('#btnDatasheet');
-    if (btnDatasheet) {
-        const datasheetUrl = `/datasheets/${encodeURIComponent(item.code)}.pdf`;
-        btnDatasheet.href = datasheetUrl;
-        btnDatasheet.style.display = 'none'; // или показывать, если нужно
-    }
+if (btnInfo) {
+    btnInfo.style.display = 'block';   // показываем иконку
+    btnInfo.onclick = () => fetchPartInfo(item.model, item.name);
+}
 
     const btnWriteOff = $('#btnWriteOffFromView');
     if (btnWriteOff) {
