@@ -5,6 +5,7 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 const { sendMail } = require('../mailer');
 
 // Создание заявки (сотрудник)
+// Создание заявки (сотрудник)
 router.post('/', async (req, res) => {
   try {
     const { item_code, equipment_id, quantity, requested_by, comment } = req.body;
@@ -23,7 +24,10 @@ router.post('/', async (req, res) => {
     `);
     const result = stmt.run(item_code, item.name, equipment_id || null, quantity, item.unit, requested_by || 'сотрудник', comment || '');
 
-    // Отправка уведомлений администраторам (асинхронно, не блокирует ответ)
+    // Сразу отвечаем клиенту
+    res.json({ ok: true, id: result.lastInsertRowid });
+
+    // Асинхронная отправка письма (не блокирует ответ)
     const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim()).filter(Boolean);
     if (adminEmails.length > 0) {
       const equipmentName = equipment_id
@@ -31,7 +35,7 @@ router.post('/', async (req, res) => {
         : 'не указано';
       const mailHtml = `
         <h3>Новая заявка на списание</h3>
-        <table border="1" cellpadding="5" style="border-collapse:collapse; font-family: Arial, sans-serif;">
+        <table border="1" cellpadding="5" style="border-collapse:collapse;">
           <tr><td><b>Код</b></td><td>${item_code}</td></tr>
           <tr><td><b>Наименование</b></td><td>${item.name}</td></tr>
           <tr><td><b>Количество</b></td><td>${quantity} ${item.unit}</td></tr>
@@ -48,7 +52,6 @@ router.post('/', async (req, res) => {
       }).catch(err => console.error('Ошибка отправки уведомления:', err));
     }
 
-    res.json({ ok: true, id: result.lastInsertRowid });   
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка создания запроса на списание' });
