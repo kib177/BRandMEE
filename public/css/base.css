@@ -199,6 +199,10 @@ body {
     border-radius: 50%;
     transition: 0.2s;
 }
+.modal {
+    position: relative;  /* ← чтобы иконка держалась внутри */
+}
+
 .btn-icon-info:hover {
     background: #eee;
     color: #1a3c5e;
