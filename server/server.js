@@ -8,6 +8,8 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const inventoryRoutes = require('./routes/inventory');
+const cron = require('node-cron');
+const { sendMail } = require('./mailer');
 
 const app = express();
 
@@ -54,4 +56,61 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Сервер запущен на https://brandmee.site`);
+});
+
+// Каждую пятницу в 9:00 по Москве (UTC+3 → 6:00 UTC)
+cron.schedule('0 6 * * 5', async () => {
+  console.log('Запуск еженедельной рассылки отчёта');
+  try {
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (adminEmails.length === 0) return;
+
+    // Собираем отчёт за последнюю неделю
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const year = weekAgo.getFullYear();
+    const month = String(weekAgo.getMonth() + 1).padStart(2, '0');
+    const day = String(weekAgo.getDate()).padStart(2, '0');
+    const fromDate = `${year}-${month}-${day}`;
+
+    const query = `SELECT wo.*, eq.name AS equipment_name
+                   FROM write_offs wo
+                   LEFT JOIN equipment eq ON wo.equipment_id = eq.id
+                   WHERE wo.requested_at >= ?
+                   ORDER BY wo.requested_at DESC`;
+    const rows = db.prepare(query).all(fromDate);
+
+    if (rows.length === 0) {
+      // Можно отправить письмо "нет списаний" или пропустить
+      return;
+    }
+
+    let html = `<h2>Списания за последние 7 дней (с ${fromDate})</h2>`;
+    html += '<table border="1" cellpadding="5" style="border-collapse:collapse">';
+    html += '<tr><th>ID</th><th>Код</th><th>Название</th><th>Кол-во</th><th>Ед.</th><th>Оборудование</th><th>Запросил</th><th>Статус</th></tr>';
+    rows.forEach(r => {
+      html += `<tr>
+        <td>${r.id}</td>
+        <td>${r.item_code}</td>
+        <td>${r.item_name}</td>
+        <td>${r.quantity}</td>
+        <td>${r.unit}</td>
+        <td>${r.equipment_name || '—'}</td>
+        <td>${r.requested_by}</td>
+        <td>${r.status}</td>
+      </tr>`;
+    });
+    html += '</table>';
+
+    await sendMail({
+      to: adminEmails.join(','),
+      subject: `Еженедельный отчёт по списаниям (${new Date().toLocaleDateString('ru')})`,
+      html
+    });
+    console.log('Еженедельный отчёт отправлен');
+  } catch (err) {
+    console.error('Ошибка отправки еженедельного отчёта:', err);
+  }
+}, {
+  timezone: 'Europe/Moscow'
 });
