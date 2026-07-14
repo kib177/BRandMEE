@@ -128,32 +128,10 @@ function showItemDetails(code) {
 }
 
 // Функция запроса информации о детали
-async function fetchPartInfo(model, name) {
-    const block = $('#partInfoBlock');
-    const searchTerm = model && model.trim() ? model.trim() : name;  // приоритет – артикул
-    block.innerHTML = `<p>Поиск информации по: "${searchTerm}"...</p>`;
-
-    try {
-        const res = await fetch(`/api/part-info/${encodeURIComponent(searchTerm)}`);
-        if (!res.ok) throw new Error('Ошибка запроса');
-        const data = await res.json();
-
-        if (!data.found) {
-            block.innerHTML = `<p>Информация не найдена. Попробуйте вручную поискать на <a href="https://www.google.com/search?q=${encodeURIComponent(name || searchTerm)}+datasheet" target="_blank">Google</a>.</p>`;
-            return;
-        }
-
-        block.innerHTML = `
-            <div style="background: #f8f9fb; padding: 0.8rem; border-radius: 6px; border: 1px solid #ddd;">
-                <strong>${escapeHtml(data.title)}</strong>
-                <p style="margin-top: 0.5rem; font-size: 0.9rem;">${escapeHtml(data.description)}</p>
-                <a href="${data.pageUrl}" target="_blank" class="btn btn-sm btn-outline" style="margin-top: 0.5rem;">Открыть статью</a>
-            </div>
-        `;
-    } catch (e) {
-        console.error(e);
-        block.innerHTML = '<p style="color:red;">Не удалось загрузить информацию. Проверьте подключение к интернету.</p>';
-    }
+function fetchPartInfo(model, name) {
+    const searchTerm = (model && model.trim()) ? model.trim() : name;
+    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}+datasheet`;
+    window.open(googleUrl, '_blank');
 }
 
 // ========== МОДАЛКИ ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ ==========
