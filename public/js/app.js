@@ -158,7 +158,7 @@ function updateDate() {
     updateAuthUI();
 })();
 
-if ('serviceWorker' in navigator) {
+/*if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').then(reg => {
     reg.addEventListener('updatefound', () => {
       const newWorker = reg.installing;
@@ -172,4 +172,4 @@ if ('serviceWorker' in navigator) {
       });
     });
   });
-}
+}*/
