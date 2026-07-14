@@ -98,7 +98,6 @@ function showItemDetails(code) {
         <p><strong>Ед. изм.:</strong> ${escapeHtml(item.unit)}</p>
         <p><strong>Количество:</strong> ${formatQty(item.quantity)}</p>
         <p><strong>Дата:</strong> ${escapeHtml(item.date)}</p>
-        <div id="partInfoBlock" style="margin-top: 1rem;"></div>
     `;
 
     // Кнопка «ℹ️ Инфо»
