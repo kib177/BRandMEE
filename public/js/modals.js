@@ -98,7 +98,23 @@ function showItemDetails(code) {
         <p><strong>Ед. изм.:</strong> ${escapeHtml(item.unit)}</p>
         <p><strong>Количество:</strong> ${formatQty(item.quantity)}</p>
         <p><strong>Дата:</strong> ${escapeHtml(item.date)}</p>
+        <div id="partInfoBlock" style="margin-top: 1rem;"></div>
     `;
+
+    // Кнопка «ℹ️ Инфо»
+    const btnInfo = $('#btnPartInfo');
+    if (btnInfo) {
+        btnInfo.style.display = 'inline-flex';
+        btnInfo.onclick = () => fetchPartInfo(item.code, item.name);
+    }
+
+    // Даташит (если осталась кнопка – можно оставить)
+    const btnDatasheet = $('#btnDatasheet');
+    if (btnDatasheet) {
+        const datasheetUrl = `/datasheets/${encodeURIComponent(item.code)}.pdf`;
+        btnDatasheet.href = datasheetUrl;
+        btnDatasheet.style.display = 'none'; // или показывать, если нужно
+    }
 
     const btnWriteOff = $('#btnWriteOffFromView');
     if (btnWriteOff) {
@@ -109,6 +125,34 @@ function showItemDetails(code) {
     }
 
     $('#viewModalOverlay').classList.remove('hidden');
+}
+
+// Функция запроса информации о детали
+async function fetchPartInfo(code, name) {
+    const block = $('#partInfoBlock');
+    block.innerHTML = '<p>Загрузка информации с Wikipedia...</p>';
+
+    try {
+        const res = await fetch(`/api/part-info/${encodeURIComponent(code)}`);
+        if (!res.ok) throw new Error('Ошибка запроса');
+        const data = await res.json();
+
+        if (!data.found) {
+            block.innerHTML = `<p>Информация не найдена. Попробуйте вручную поискать на <a href="https://www.google.com/search?q=${encodeURIComponent(name)}+datasheet" target="_blank">Google</a>.</p>`;
+            return;
+        }
+
+        block.innerHTML = `
+            <div style="background: #f8f9fb; padding: 0.8rem; border-radius: 6px; border: 1px solid #ddd;">
+                <strong>${escapeHtml(data.title)}</strong>
+                <p style="margin-top: 0.5rem; font-size: 0.9rem;">${escapeHtml(data.description)}</p>
+                <a href="${data.pageUrl}" target="_blank" class="btn btn-sm btn-outline" style="margin-top: 0.5rem;">Открыть статью</a>
+            </div>
+        `;
+    } catch (e) {
+        console.error(e);
+        block.innerHTML = '<p style="color:red;">Не удалось загрузить информацию. Проверьте подключение к интернету.</p>';
+    }
 }
 
 // ========== МОДАЛКИ ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ ==========
