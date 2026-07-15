@@ -34,7 +34,11 @@ async function getOrCreateEquipmentId(equipName) {
 router.get('/', authMiddleware, async (req, res) => {
   try {
     let query = `
-      SELECT i.*, pt.name AS type_name, eq.name AS equipment_name, d.name AS department_name
+      SELECT i.code, i.department_id, i.name, i.model, i.type_id, i.equipment_id,
+             i.location, i.unit, i.quantity,
+             TO_CHAR(i.date, 'DD.MM.YYYY') AS date,
+             i.created_at, i.updated_at,
+             pt.name AS type_name, eq.name AS equipment_name, d.name AS department_name
       FROM inventory i
       LEFT JOIN part_types pt ON i.type_id = pt.id
       LEFT JOIN equipment eq ON i.equipment_id = eq.id
@@ -44,7 +48,6 @@ router.get('/', authMiddleware, async (req, res) => {
     const params = [];
     let paramIndex = 1;
 
-    // Фильтр по отделу: не-админ видит только свой отдел
     if (req.user.role !== 'admin') {
       query += ` AND i.department_id = $${paramIndex++}`;
       params.push(req.user.department_id);
@@ -66,7 +69,9 @@ router.get('/', authMiddleware, async (req, res) => {
 router.get('/export-excel', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT i.*, pt.name AS type_name, eq.name AS equipment_name
+      SELECT i.code, i.name, i.model, i.location, i.unit, i.quantity,
+             TO_CHAR(i.date, 'DD.MM.YYYY') AS date,
+             pt.name AS type_name, eq.name AS equipment_name
       FROM inventory i
       LEFT JOIN part_types pt ON i.type_id = pt.id
       LEFT JOIN equipment eq ON i.equipment_id = eq.id
@@ -88,7 +93,6 @@ router.get('/export-excel', async (req, res) => {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Склад');
-
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
     res.setHeader('Content-Disposition', 'attachment; filename=warehouse.xlsx');
@@ -104,7 +108,11 @@ router.get('/export-excel', async (req, res) => {
 router.get('/:code', authMiddleware, async (req, res) => {
   try {
     let query = `
-      SELECT i.*, pt.name AS type_name, eq.name AS equipment_name
+      SELECT i.code, i.department_id, i.name, i.model, i.type_id, i.equipment_id,
+             i.location, i.unit, i.quantity,
+             TO_CHAR(i.date, 'DD.MM.YYYY') AS date,
+             i.created_at, i.updated_at,
+             pt.name AS type_name, eq.name AS equipment_name
       FROM inventory i
       LEFT JOIN part_types pt ON i.type_id = pt.id
       LEFT JOIN equipment eq ON i.equipment_id = eq.id
@@ -134,16 +142,15 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'code, name, date обязательны' });
     }
 
-    // Определяем отдел
     let departmentId = req.user.department_id;
     if (req.user.role === 'admin' && req.body.department_id) {
       departmentId = req.body.department_id;
     }
-    if (!departmentId) departmentId = 1; // fallback на основной склад
+    if (!departmentId) departmentId = 1;
 
     await pool.query(`
       INSERT INTO inventory (code, department_id, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TO_DATE($10, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
       ON CONFLICT (code, department_id) DO UPDATE SET
         name = EXCLUDED.name, model = EXCLUDED.model, type_id = EXCLUDED.type_id,
         equipment_id = EXCLUDED.equipment_id, location = EXCLUDED.location,
@@ -173,7 +180,7 @@ router.post('/bulk', authMiddleware, async (req, res) => {
       for (const item of items) {
         await client.query(`
           INSERT INTO inventory (code, department_id, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, CURRENT_TIMESTAMP)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, TO_DATE($10, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
           ON CONFLICT (code, department_id) DO UPDATE SET
             name = EXCLUDED.name, model = EXCLUDED.model, type_id = EXCLUDED.type_id,
             equipment_id = EXCLUDED.equipment_id, location = EXCLUDED.location,
@@ -208,7 +215,7 @@ router.delete('/:code', authMiddleware, async (req, res) => {
   }
 });
 
-// ---------- DELETE / (очистка всей таблицы, только админ) ----------
+// ---------- DELETE / ----------
 router.delete('/', authMiddleware, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Только для администратора' });
   try {
@@ -311,7 +318,6 @@ router.post('/import-csv', authMiddleware, upload.single('file'), async (req, re
         continue;
       }
 
-      // Преобразуем названия в ID (создаём при необходимости)
       const typeId = await getOrCreateTypeId(typeName || 'Прочее');
       const equipmentId = await getOrCreateEquipmentId(equipName);
 
@@ -330,7 +336,6 @@ router.post('/import-csv', authMiddleware, upload.single('file'), async (req, re
       return res.status(400).json({ error: 'Не удалось извлечь ни одной корректной записи', skipped });
     }
 
-    // Вставляем в БД
     const departmentId = req.user.department_id || 1;
     const client = await pool.connect();
     try {
@@ -338,7 +343,7 @@ router.post('/import-csv', authMiddleware, upload.single('file'), async (req, re
       for (const item of items) {
         await client.query(`
           INSERT INTO inventory (code, department_id, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, CURRENT_TIMESTAMP)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, TO_DATE($10, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
           ON CONFLICT (code, department_id) DO UPDATE SET
             name = EXCLUDED.name, model = EXCLUDED.model, type_id = EXCLUDED.type_id,
             equipment_id = EXCLUDED.equipment_id, location = EXCLUDED.location,
@@ -465,7 +470,7 @@ router.post('/import-excel', authMiddleware, upload.single('file'), async (req, 
       for (const item of items) {
         await client.query(`
           INSERT INTO inventory (code, department_id, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, CURRENT_TIMESTAMP)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, TO_DATE($10, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
           ON CONFLICT (code, department_id) DO UPDATE SET
             name = EXCLUDED.name, model = EXCLUDED.model, type_id = EXCLUDED.type_id,
             equipment_id = EXCLUDED.equipment_id, location = EXCLUDED.location,
