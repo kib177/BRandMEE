@@ -1,5 +1,5 @@
 // admin-users.js
-const token = sessionStorage.getItem('token');
+const token = localStorage.getItem('token');
 if (!token) {
   alert('Вы не авторизованы!');
   window.location.href = '/';
