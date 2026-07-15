@@ -14,7 +14,7 @@ let token = localStorage.getItem('token');
 function logout() {
     token = null;
     currentUser = null;
-    sessionStorage.removeItem('token');
+    localStorage.removeItem('token');
     updateAuthUI();
     window.location.href = '/welcome.html';
 }
