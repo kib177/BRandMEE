@@ -62,9 +62,9 @@ app.get('*', (req, res) => {
 });
 
 // Для всех остальных запросов (SPA) отдаём index.html
-app.listen(PORT, () => {
+/*app.listen(PORT, () => {
   console.log(`🚀 Сервер запущен на https://brandmee.site`);
-});
+});*/
 
 // Еженедельный отчёт – каждую пятницу в 9:00 по Москве (6:00 UTC)
 cron.schedule('0 6 * * 3', async () => {
