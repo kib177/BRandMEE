@@ -10,6 +10,7 @@ const path = require('path');
 const inventoryRoutes = require('./routes/inventory');
 const cron = require('node-cron');
 const { sendMail } = require('./mailer');
+const db = require('./db');
 
 const app = express();
 
@@ -59,7 +60,7 @@ app.listen(PORT, () => {
 });
 
 // Еженедельный отчёт – каждую пятницу в 9:00 по Москве (6:00 UTC)
-cron.schedule('0 6 * * 5', async () => {
+cron.schedule('0 6 * * 3', async () => {
   console.log('Запуск еженедельной рассылки отчёта');
   try {
     const reportEmails = (process.env.WEEKLY_REPORT_EMAILS || '').split(',').map(s => s.trim()).filter(Boolean);
