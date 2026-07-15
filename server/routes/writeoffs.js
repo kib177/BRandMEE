@@ -5,7 +5,6 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 const { sendMail } = require('../mailer');
 
 // Создание заявки (сотрудник)
-// Создание заявки (сотрудник)
 router.post('/', async (req, res) => {
   try {
     const { item_code, equipment_id, quantity, requested_by, comment } = req.body;
@@ -24,10 +23,10 @@ router.post('/', async (req, res) => {
     `);
     const result = stmt.run(item_code, item.name, equipment_id || null, quantity, item.unit, requested_by || 'сотрудник', comment || '');
 
-    // Сразу отвечаем клиенту
+    // Отвечаем клиенту сразу
     res.json({ ok: true, id: result.lastInsertRowid });
 
-    // Асинхронная отправка письма (не блокирует ответ)
+    // Отправка уведомлений администраторам (асинхронно)
     const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim()).filter(Boolean);
     if (adminEmails.length > 0) {
       const equipmentName = equipment_id
@@ -124,7 +123,6 @@ router.patch('/:id', authMiddleware, requireRole('admin'), (req, res) => {
       });
       transaction();
     } else {
-      // rejected
       db.prepare('UPDATE write_offs SET status = ?, resolved_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
     }
 
@@ -140,7 +138,6 @@ router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
   try {
     const year = req.query.year || new Date().getFullYear();
 
-    // Агрегация по месяцам
     const monthly = db.prepare(`
       SELECT strftime('%m', requested_at) AS month,
              SUM(quantity) AS total_quantity,
@@ -152,7 +149,6 @@ router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
       ORDER BY month
     `).all(String(year));
 
-    // Агрегация по оборудованию
     const byEquipment = db.prepare(`
       SELECT eq.name AS equipment, SUM(wo.quantity) AS total_quantity, COUNT(*) AS count_requests
       FROM write_offs wo
@@ -162,7 +158,6 @@ router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
       ORDER BY total_quantity DESC
     `).all(String(year));
 
-    // Полная детализация за год (все записи, включая неподтверждённые, с артикулом)
     const details = db.prepare(`
       SELECT wo.id, wo.item_code, wo.item_name, wo.quantity, wo.unit,
              eq.name AS equipment_name,
