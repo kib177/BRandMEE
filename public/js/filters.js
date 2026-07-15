@@ -16,6 +16,7 @@ function applyFilters(inventory) {
     }
     if (filterTypeValue) result = result.filter(i => i.type_id == filterTypeValue);
     if (filterEquipmentValue) result = result.filter(i => i.equipment_id == filterEquipmentValue);
+    if (filterDepartmentValue) result = result.filter(i => i.department_id == filterDepartmentValue);
 
     if (sortConfig.key) {
         const key = sortConfig.key;
