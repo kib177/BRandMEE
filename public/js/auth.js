@@ -92,7 +92,7 @@ function showLoginModal(onSuccess) {
                 const data = await res.json();
                 token = data.token;
                 currentUser = data.user;
-                sessionStorage.setItem('token', token);
+                localStorage.setItem('token', token);
                 overlay.classList.add('hidden');
                 updateAuthUI();
                 if (onSuccess) onSuccess();
