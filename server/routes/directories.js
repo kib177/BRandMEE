@@ -13,6 +13,7 @@ router.get('/types', async (req, res) => {
   }
 });
 
+// Получить все отделы (открыто для всех)
 router.get('/departments', async (req, res) => {
   try {
     const result = await pool.query('SELECT id, name FROM departments ORDER BY name');
