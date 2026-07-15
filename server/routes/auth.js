@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const pool = require('../db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'warehouse_secret_key_change_me';
-const TOKEN_EXPIRES_IN = '8h';
+const TOKEN_EXPIRES_IN = '7d';
 
 // Логин
 router.post('/login', async (req, res) => {
