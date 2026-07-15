@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Рассылка писем</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <style>
+    .mailing-page { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 1.5rem; margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); display: block; margin-bottom: 0.3rem; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.65rem; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9rem; background: #fafbfc; }
+    .recipient-options { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .recipient-options label { display: flex; align-items: center; gap: 0.3rem; cursor: pointer; }
+    .btn-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; }
+    .status { margin-top: 1rem; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <a href="/" style="color:#fff; text-decoration:none;">📦 Склад</a>
+        <span style="margin-left:2rem;">→ Рассылка</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="mailing-page">
+    <div class="card">
+      <h2>Рассылка писем</h2>
+      <form id="mailingForm">
+        <div class="form-group">
+          <label>Получатели</label>
+          <div class="recipient-options">
+            <label><input type="radio" name="recipientType" value="all" checked> Все пользователи</label>
+            <label><input type="radio" name="recipientType" value="emails"> Указать email'ы</label>
+            <label><input type="radio" name="recipientType" value="departments"> По отделам</label>
+          </div>
+          <div id="recipientInput" style="display: none; margin-top: 0.5rem;">
+            <input type="text" id="emailsInput" placeholder="email1@example.com, email2@example.com">
+            <select id="departmentsSelect" multiple style="height: auto; display: none;">
+              <!-- заполнится динамически -->
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="subject">Тема письма</label>
+          <input type="text" id="subject" required placeholder="Введите тему">
+        </div>
+        <div class="form-group">
+          <label for="messageText">Текст письма</label>
+          <textarea id="messageText" rows="6" placeholder="Введите сообщение (можно HTML)"></textarea>
+        </div>
+        <div class="btn-row">
+          <button type="submit" class="btn btn-primary">Отправить</button>
+          <span class="status" id="statusMsg"></span>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script src="../js/theme.js"></script>
+  <script>
+    const token = sessionStorage.getItem('token');
+    if (!token) window.location.href = '/welcome.html';
+
+    // Загружаем список отделов для выбора
+    fetch('/api/mailing/data', { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => {
+        const select = document.getElementById('departmentsSelect');
+        select.innerHTML = data.departments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+      })
+      .catch(() => {});
+
+    // Переключение типа получателей
+    document.querySelectorAll('input[name="recipientType"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const inputDiv = document.getElementById('recipientInput');
+        const emailsInput = document.getElementById('emailsInput');
+        const deptsSelect = document.getElementById('departmentsSelect');
+
+        if (this.value === 'all') {
+          inputDiv.style.display = 'none';
+        } else if (this.value === 'emails') {
+          inputDiv.style.display = 'block';
+          emailsInput.style.display = 'block';
+          deptsSelect.style.display = 'none';
+        } else if (this.value === 'departments') {
+          inputDiv.style.display = 'block';
+          emailsInput.style.display = 'none';
+          deptsSelect.style.display = 'block';
+        }
+      });
+    });
+
+    // Отправка формы
+    document.getElementById('mailingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const recipientType = document.querySelector('input[name="recipientType"]:checked').value;
+      let recipients = 'all';
+      if (recipientType === 'emails') {
+        recipients = document.getElementById('emailsInput').value.trim();
+        if (!recipients) return alert('Введите адреса');
+      } else if (recipientType === 'departments') {
+        const selected = Array.from(document.getElementById('departmentsSelect').selectedOptions).map(opt => opt.value);
+        if (selected.length === 0) return alert('Выберите хотя бы один отдел');
+        recipients = selected.join(',');
+      }
+
+      const subject = document.getElementById('subject').value.trim();
+      const text = document.getElementById('messageText').value.trim();
+
+      if (!subject || !text) return alert('Заполните тему и текст');
+
+      const statusEl = document.getElementById('statusMsg');
+      statusEl.textContent = 'Отправка...';
+      statusEl.style.color = '#333';
+
+      try {
+        const res = await fetch('/api/mailing/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ recipients, subject, text })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Ошибка');
+        statusEl.textContent = `Отправлено ${data.sent} писем`;
+        statusEl.style.color = 'green';
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.style.color = 'red';
+      }
+    });
+  </script>
+</body>
+</html>
