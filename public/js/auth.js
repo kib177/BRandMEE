@@ -21,26 +21,27 @@ function logout() {
 
 // Проверка токена при старте
 async function checkAuth() {
-    if (!token) {
-        if (!window.location.pathname.includes('welcome.html')) {
-            window.location.href = '/welcome.html';
-        }
-        return;
+  if (!token) {
+    // На странице welcome.html не делаем редирект
+    if (!window.location.pathname.includes('welcome.html')) {
+      window.location.href = '/welcome.html';
     }
-    try {
-        const res = await fetch('/api/auth/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!res.ok) {
-            logout();
-            return;
-        }
-        const data = await res.json();
-        currentUser = data.user;
-        updateAuthUI();
-    } catch (e) {
-        logout();
+    return;
+  }
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      logout();
+      return;
     }
+    const data = await res.json();
+    currentUser = data.user;
+    updateAuthUI();
+  } catch (e) {
+    logout();
+  }
 }
 
 // Показ модального окна входа (используется на главной, если требуется)
