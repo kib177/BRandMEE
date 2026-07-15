@@ -2,8 +2,8 @@
 
 let currentUser = null;
 let token = sessionStorage.getItem('token');
-let inactivityTimer = null;
-const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
+//let inactivityTimer = null;
+//const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
 
 // Сразу скрываем элементы, требующие авторизации, инлайново (чтобы избежать конфликта CSS-классов)
 (function hideRestrictedElements() {
@@ -176,7 +176,7 @@ function updateAuthUI() {
 }
 
 // Сброс таймера бездействия при активности
-function resetInactivityTimer() {
+/*function resetInactivityTimer() {
     clearTimeout(inactivityTimer);
     if (!currentUser) return;
     inactivityTimer = setTimeout(() => {
@@ -188,7 +188,7 @@ function resetInactivityTimer() {
 // Вешаем слушателей активности на документ
 ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(event => {
     document.addEventListener(event, resetInactivityTimer);
-});
+});*/
 
 // При загрузке страницы проверяем токен
 checkAuth();
