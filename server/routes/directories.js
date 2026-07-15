@@ -1,107 +1,100 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const pool = require('../db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 
-// ========== ТИПЫ ==========
-
-// Получение всех типов – доступно всем
-router.get('/types', (req, res) => {
+// Получение типов
+router.get('/types', async (req, res) => {
   try {
-    const types = db.prepare('SELECT * FROM part_types ORDER BY name').all();
-    res.json(types);
+    const result = await pool.query('SELECT * FROM part_types ORDER BY name');
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Ошибка получения типов' });
   }
 });
 
-// Добавление – только модератор/админ
-router.post('/types', authMiddleware, requireRole('admin', 'moderator'), (req, res) => {
+// Добавление типа (модератор/админ)
+router.post('/types', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
   const { name } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ error: 'Имя типа обязательно' });
   try {
-    const result = db.prepare('INSERT INTO part_types (name) VALUES (?)').run(name.trim());
-    res.json({ id: result.lastInsertRowid, name: name.trim() });
+    const result = await pool.query('INSERT INTO part_types (name) VALUES ($1) RETURNING id', [name.trim()]);
+    res.json({ id: result.rows[0].id, name: name.trim() });
   } catch (err) {
-    if (err.message.includes('UNIQUE')) return res.status(400).json({ error: 'Такой тип уже существует' });
+    if (err.code === '23505') return res.status(400).json({ error: 'Такой тип уже существует' });
     res.status(500).json({ error: 'Ошибка создания типа' });
   }
 });
 
-// Обновление – только модератор/админ
-router.put('/types/:id', authMiddleware, requireRole('admin', 'moderator'), (req, res) => {
+// Обновление типа
+router.put('/types/:id', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
   const { name } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ error: 'Имя типа обязательно' });
   try {
-    const info = db.prepare('UPDATE part_types SET name = ? WHERE id = ?').run(name.trim(), req.params.id);
-    if (info.changes === 0) return res.status(404).json({ error: 'Тип не найден' });
+    const result = await pool.query('UPDATE part_types SET name = $1 WHERE id = $2 RETURNING id', [name.trim(), req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Тип не найден' });
     res.json({ id: Number(req.params.id), name: name.trim() });
   } catch (err) {
-    if (err.message.includes('UNIQUE')) return res.status(400).json({ error: 'Такой тип уже существует' });
+    if (err.code === '23505') return res.status(400).json({ error: 'Такой тип уже существует' });
     res.status(500).json({ error: 'Ошибка обновления типа' });
   }
 });
 
-// Удаление – только модератор/админ
-router.delete('/types/:id', authMiddleware, requireRole('admin', 'moderator'), (req, res) => {
+// Удаление типа
+router.delete('/types/:id', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
   try {
-    const used = db.prepare('SELECT COUNT(*) AS cnt FROM inventory WHERE type_id = ?').get(req.params.id);
-    if (used.cnt > 0) return res.status(400).json({ error: 'Тип используется в запчастях, удаление невозможно' });
-    db.prepare('DELETE FROM part_types WHERE id = ?').run(req.params.id);
+    const used = await pool.query('SELECT COUNT(*) as cnt FROM inventory WHERE type_id = $1', [req.params.id]);
+    if (used.rows[0].cnt > 0) return res.status(400).json({ error: 'Тип используется в запчастях, удаление невозможно' });
+    await pool.query('DELETE FROM part_types WHERE id = $1', [req.params.id]);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Ошибка удаления типа' });
   }
 });
 
-// ========== ОБОРУДОВАНИЕ ==========
-
-// Получение – доступно всем
-router.get('/equipment', (req, res) => {
+// Аналогично для оборудования
+router.get('/equipment', async (req, res) => {
   try {
-    const equipment = db.prepare('SELECT * FROM equipment ORDER BY name').all();
-    res.json(equipment);
+    const result = await pool.query('SELECT * FROM equipment ORDER BY name');
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Ошибка получения оборудования' });
   }
 });
 
-// Добавление – только модератор/админ
-router.post('/equipment', authMiddleware, requireRole('admin', 'moderator'), (req, res) => {
+router.post('/equipment', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
   const { name } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ error: 'Имя оборудования обязательно' });
   try {
-    const result = db.prepare('INSERT INTO equipment (name) VALUES (?)').run(name.trim());
-    res.json({ id: result.lastInsertRowid, name: name.trim() });
+    const result = await pool.query('INSERT INTO equipment (name) VALUES ($1) RETURNING id', [name.trim()]);
+    res.json({ id: result.rows[0].id, name: name.trim() });
   } catch (err) {
-    if (err.message.includes('UNIQUE')) return res.status(400).json({ error: 'Такое оборудование уже существует' });
+    if (err.code === '23505') return res.status(400).json({ error: 'Такое оборудование уже существует' });
     res.status(500).json({ error: 'Ошибка создания оборудования' });
   }
 });
 
-// Обновление – только модератор/админ
-router.put('/equipment/:id', authMiddleware, requireRole('admin', 'moderator'), (req, res) => {
+router.put('/equipment/:id', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
   const { name } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ error: 'Имя оборудования обязательно' });
   try {
-    const info = db.prepare('UPDATE equipment SET name = ? WHERE id = ?').run(name.trim(), req.params.id);
-    if (info.changes === 0) return res.status(404).json({ error: 'Оборудование не найдено' });
+    const result = await pool.query('UPDATE equipment SET name = $1 WHERE id = $2 RETURNING id', [name.trim(), req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Оборудование не найдено' });
     res.json({ id: Number(req.params.id), name: name.trim() });
   } catch (err) {
-    if (err.message.includes('UNIQUE')) return res.status(400).json({ error: 'Такое оборудование уже существует' });
+    if (err.code === '23505') return res.status(400).json({ error: 'Такое оборудование уже существует' });
     res.status(500).json({ error: 'Ошибка обновления оборудования' });
   }
 });
 
-// Удаление – только модератор/админ
-router.delete('/equipment/:id', authMiddleware, requireRole('admin', 'moderator'), (req, res) => {
+router.delete('/equipment/:id', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
   try {
-    const usedInv = db.prepare('SELECT COUNT(*) AS cnt FROM inventory WHERE equipment_id = ?').get(req.params.id);
-    const usedWO = db.prepare('SELECT COUNT(*) AS cnt FROM write_offs WHERE equipment_id = ?').get(req.params.id);
-    if (usedInv.cnt > 0 || usedWO.cnt > 0) {
+    const usedInv = await pool.query('SELECT COUNT(*) as cnt FROM inventory WHERE equipment_id = $1', [req.params.id]);
+    const usedWO = await pool.query('SELECT COUNT(*) as cnt FROM write_offs WHERE equipment_id = $1', [req.params.id]);
+    if (usedInv.rows[0].cnt > 0 || usedWO.rows[0].cnt > 0) {
       return res.status(400).json({ error: 'Оборудование используется, удаление невозможно' });
     }
-    db.prepare('DELETE FROM equipment WHERE id = ?').run(req.params.id);
+    await pool.query('DELETE FROM equipment WHERE id = $1', [req.params.id]);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Ошибка удаления оборудования' });
