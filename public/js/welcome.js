@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Если токен уже есть — сразу на главную
-  if (sessionStorage.getItem('token')) {
+  if (localStorage.getItem('token')) {
     window.location.href = '/';
     return;
   }
