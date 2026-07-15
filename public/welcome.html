@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Склад электронных компонентов — Вход</title>
+  <link rel="stylesheet" href="css/base.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f2027 0%, #1a3c5e 40%, #1e5a8a 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .welcome-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 2rem 2.5rem;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+    }
+    .welcome-card h1 { color: #1a3c5e; margin-bottom: 0.5rem; }
+    .welcome-card p { color: #5a5f72; margin-bottom: 1.5rem; font-size: 0.9rem; }
+    .form-group { text-align: left; margin-bottom: 1rem; }
+    .form-group label { font-weight: 600; font-size: 0.8rem; color: #333; display: block; margin-bottom: 0.2rem; }
+    .form-group input {
+      width: 100%; padding: 0.65rem; border: 2px solid #dde4ed;
+      border-radius: 8px; font-size: 1rem; outline: none;
+    }
+    .form-group input:focus { border-color: #2e86c1; }
+    .btn-welcome {
+      width: 100%; padding: 0.7rem; background: #2e86c1; color: white;
+      border: none; border-radius: 8px; font-weight: 600; font-size: 1rem;
+      cursor: pointer; margin-top: 0.5rem;
+    }
+    .btn-welcome:hover { background: #247ab5; }
+    .error-msg { color: #c0392b; font-size: 0.8rem; margin-top: 0.5rem; display: none; }
+    .features { margin-top: 1.5rem; font-size: 0.85rem; color: #555; }
+    .features span { display: block; margin-bottom: 0.3rem; }
+  </style>
+</head>
+<body>
+  <div class="welcome-card">
+    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📦</div>
+    <h1>Склад компонентов</h1>
+    <p>Управление запасами, учёт списаний, отслеживание оборудования</p>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Имя пользователя</label>
+        <input type="text" id="username" placeholder="Введите логин" required autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="password">Пароль</label>
+        <input type="password" id="password" placeholder="Введите пароль" required>
+      </div>
+      <div class="error-msg" id="loginError">Неверное имя пользователя или пароль</div>
+      <button type="submit" class="btn-welcome">Войти в систему</button>
+    </form>
+    <div class="features">
+      <span>🔍 Поиск и фильтрация запчастей</span>
+      <span>📊 Отчёты по списаниям</span>
+      <span>👥 Управление пользователями и отделами</span>
+    </div>
+  </div>
+  <script src="js/welcome.js"></script>
+</body>
+</html>
