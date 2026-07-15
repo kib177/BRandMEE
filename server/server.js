@@ -47,6 +47,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/write-offs', require('./routes/writeoffs'));
 app.use('/api/directories', require('./routes/directories'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/mailing', require('./routes/mailing'));
 
 // Статические файлы (фронтенд)
 app.use(express.static(path.join(__dirname, '..', 'public')));
