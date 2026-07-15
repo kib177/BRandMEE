@@ -40,7 +40,7 @@ async function loadRequests(params = {}) {
         if (!res.ok) {
             if (res.status === 401) {
                 alert('Сессия истекла, войдите заново');
-                sessionStorage.removeItem('token');
+                localStorage.removeItem('token');
                 window.location.reload();
                 return;
             }
