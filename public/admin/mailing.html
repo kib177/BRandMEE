@@ -68,7 +68,7 @@
     if (!token) window.location.href = '/welcome.html';
 
     // Загружаем список отделов для выбора
-    fetch('/api/mailing/data', { headers: { 'Authorization': `Bearer ${token}` } })
+    fetch('/api/mailing_admin/data', { headers: { 'Authorization': `Bearer ${token}` } })
       .then(r => r.json())
       .then(data => {
         const select = document.getElementById('departmentsSelect');
