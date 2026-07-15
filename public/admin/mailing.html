@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Рассылка писем</title>
+  <title>Управление списаниями</title>
+  <!-- ВСЕ пути теперь начинаются с ../ -->
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/layout.css">
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/utilities.css">
   <link rel="stylesheet" href="../css/mobile.css">
-  <link rel="stylesheet" href="../css/admin_page.css">
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="../manifest.json">
   <meta name="theme-color" content="#1a3c5e">
 </head>
 <body>
@@ -18,46 +18,52 @@
     <div class="header-inner">
       <div class="header-logo">
         <a href="/index.html" style="color:#fff; text-decoration:none;">📦 Склад</a>
-        <span style="margin-left:2rem;">→ Рассылка</span>
+        <span style="margin-left:2rem;">→ Администрирование списаний</span>
+      </div>
+      <div>
+        <button class="btn-logout" id="btnLogout">Выйти</button>
       </div>
     </div>
   </header>
 
-  <main class="mailing-page">
-    <div class="card">
-      <h2>Рассылка писем</h2>
-      <form id="mailingForm">
-        <div class="form-group">
-          <label>Получатели</label>
-          <div class="recipient-options">
-            <label><input type="radio" name="recipientType" value="all" checked> Все пользователи</label>
-            <label><input type="radio" name="recipientType" value="emails"> Указать email'ы</label>
-            <label><input type="radio" name="recipientType" value="departments"> По отделам</label>
-          </div>
-          <div id="recipientInput" style="display: none; margin-top: 0.5rem;">
-            <input type="text" id="emailsInput" placeholder="email1@example.com, email2@example.com">
-            <select id="departmentsSelect" multiple style="height: auto; display: none;">
-              <!-- заполнится динамически -->
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="subject">Тема письма</label>
-          <input type="text" id="subject" required placeholder="Введите тему">
-        </div>
-        <div class="form-group">
-          <label for="messageText">Текст письма</label>
-          <textarea id="messageText" rows="6" placeholder="Введите сообщение (можно HTML)"></textarea>
-        </div>
-        <div class="btn-row">
-          <button type="submit" class="btn btn-primary">Отправить</button>
-          <span class="status" id="statusMsg"></span>
-        </div>
-      </form>
+  <main style="max-width:1200px; margin:2rem auto; padding:0 1rem;">
+    <div class="filters">
+      <select id="filterStatus">
+        <option value="">Все статусы</option>
+        <option value="pending" selected>Ожидают</option>
+        <option value="approved">Подтверждённые</option>
+        <option value="rejected">Отклонённые</option>
+      </select>
+      <input type="date" id="filterFrom" placeholder="С">
+      <input type="date" id="filterTo" placeholder="По">
+      <input type="text" id="filterEquip" placeholder="Оборудование">
+      <button class="btn btn-primary btn-sm" id="applyFilter">Применить</button>
+      <button class="btn btn-outline btn-sm" id="exportExcel">📊 Excel</button>
+      <button class="btn btn-outline btn-sm" id="exportCSV">📄 CSV</button>
     </div>
+
+    <div class="table-wrapper">
+      <table id="requestsTable">
+        <thead><tr>
+          <th>ID</th><th>Код</th><th>Название</th><th>Кол-во</th><th>Оборудование</th>
+          <th>Запросил</th><th>Дата</th><th>Статус</th><th>Комментарий</th><th>Действие</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <hr>
+    <h2>Отчёт за год</h2>
+    <select id="reportYear">
+      <option value="2026">2026</option>
+    </select>
+    <button class="btn btn-outline btn-sm" id="loadReport">Загрузить</button>
+    <div id="reportArea" style="margin-top:1rem;"></div>
   </main>
 
+  <!-- Подключаем скрипты с верными путями -->
+  <script src="../js/library/xlsx.full.min.js"></script>
+  <script src="../js/admin/admin-writeoffs.js"></script>
   <script src="../js/theme.js"></script>
-  <script src="../js/admin/admin_mailing.js"></script>
 </body>
 </html>
