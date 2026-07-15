@@ -1,13 +1,13 @@
-// server/mailer.js
 const nodemailer = require('nodemailer');
+require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false, // true для 465
+  secure: false,
   auth: {
-    user: process.env.SMTP_USER,     // ваш email, например warehouse@brandmee.site
-    pass: process.env.SMTP_PASS      // пароль приложения (не основной пароль)
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
   }
 });
 
