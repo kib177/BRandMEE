@@ -268,7 +268,7 @@ function bindUIEvents() {
     $('#exportCSV').addEventListener('click', exportCSV);
     $('#loadReport').addEventListener('click', loadReport);
     $('#btnLogout').addEventListener('click', () => {
-        sessionStorage.removeItem('token');
+        localStorage.removeItem('token');
         window.location.href = '/';
     });
 }
