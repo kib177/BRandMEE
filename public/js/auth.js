@@ -21,19 +21,21 @@ function logout() {
 
 // Проверка токена при старте
 async function checkAuth() {
+  token = localStorage.getItem('token');
   if (!token) {
-    // На странице welcome.html не делаем редирект
+    // Токена нет совсем – точно разлогинен, можно редиректить
     if (!window.location.pathname.includes('welcome.html')) {
       window.location.href = '/welcome.html';
     }
     return;
   }
+
   try {
     const res = await fetch('/api/auth/me', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!res.ok) {
-      logout();
+      logout();  // logout сам сделает редирект на /welcome.html
       return;
     }
     const data = await res.json();
