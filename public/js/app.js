@@ -59,6 +59,14 @@ function bindEvents() {
         applyFilterAndRender();
     };
 
+    const filterDeptEl = $('#filterDepartment');
+if (filterDeptEl) {
+    filterDeptEl.addEventListener('change', function() {
+        filterDepartmentValue = this.value;
+        applyFilterAndRender();
+    });
+}
+
     // Сброс фильтров
     $('#btnResetFilters').onclick = () => {
         $('#searchInput').value = '';
