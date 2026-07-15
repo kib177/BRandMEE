@@ -1,57 +1,50 @@
-// auth.js – управление авторизацией, роли, таймер бездействия
+// auth.js – управление авторизацией, роли, без таймера бездействия (сессия 5 дней)
 
 let currentUser = null;
 let token = sessionStorage.getItem('token');
-//let inactivityTimer = null;
-//const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
 
-// Сразу скрываем элементы, требующие авторизации, инлайново (чтобы избежать конфликта CSS-классов)
+// Сразу скрываем элементы, требующие авторизации
 (function hideRestrictedElements() {
     document.querySelectorAll('.auth-required, .moderator-only, .admin-only').forEach(el => {
         el.style.display = 'none';
     });
 })();
 
-// Функция для выполнения выхода
+// Функция выхода
 function logout() {
-  token = null;
-  currentUser = null;
-  sessionStorage.removeItem('token');
-  clearTimeout(inactivityTimer);
-  updateAuthUI();
-  window.location.href = '/welcome.html';
+    token = null;
+    currentUser = null;
+    sessionStorage.removeItem('token');
+    updateAuthUI();
+    window.location.href = '/welcome.html';
 }
 
 // Проверка токена при старте
 async function checkAuth() {
-  const token = sessionStorage.getItem('token');
-  if (!token) {
-    // Чтобы не зациклиться на самой странице входа
-    if (!window.location.pathname.includes('welcome.html')) {
-      window.location.href = '/welcome.html';
+    if (!token) {
+        if (!window.location.pathname.includes('welcome.html')) {
+            window.location.href = '/welcome.html';
+        }
+        return;
     }
-    return;
-  }
-  try {
-    const res = await fetch('/api/auth/me', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) {
-      logout();
-      return;
+    try {
+        const res = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            logout();
+            return;
+        }
+        const data = await res.json();
+        currentUser = data.user;
+        updateAuthUI();
+    } catch (e) {
+        logout();
     }
-    const data = await res.json();
-    currentUser = data.user;
-    updateAuthUI();
-    resetInactivityTimer();
-  } catch (e) {
-    logout();
-  }
 }
 
-// Показ модального окна входа
+// Показ модального окна входа (используется на главной, если требуется)
 function showLoginModal(onSuccess) {
-    // Создаём оверлей с формой входа, если его нет
     let overlay = document.getElementById('loginOverlay');
     if (!overlay) {
         overlay = document.createElement('div');
@@ -84,7 +77,7 @@ function showLoginModal(onSuccess) {
             const password = document.getElementById('loginPassword').value;
             if (!username || !password) return;
             try {
-                const res = await apiFetch('/api/auth/login', {
+                const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
@@ -99,9 +92,8 @@ function showLoginModal(onSuccess) {
                 sessionStorage.setItem('token', token);
                 overlay.classList.add('hidden');
                 updateAuthUI();
-                resetInactivityTimer();
                 if (onSuccess) onSuccess();
-                showToast(`Добро пожаловать, ${currentUser.username}`, 'success');
+                window.location.reload();
             } catch (e) {
                 document.getElementById('loginError').style.display = 'block';
             }
@@ -119,80 +111,57 @@ function updateAuthUI() {
     const isLoggedIn = !!currentUser;
     const role = currentUser?.role;
 
-    // Показываем/скрываем кнопки в тулбаре
     const adminOnlyElements = document.querySelectorAll('.admin-only');
     const moderatorElements = document.querySelectorAll('.moderator-only');
     const authRequiredElements = document.querySelectorAll('.auth-required');
 
-    // Все элементы, требующие авторизации, показываем только если залогинен
     authRequiredElements.forEach(el => {
         el.style.display = isLoggedIn ? '' : 'none';
     });
 
-    // Элементы только для модераторов и админов (оба видят)
     moderatorElements.forEach(el => {
         el.style.display = (isLoggedIn && (role === 'moderator' || role === 'admin')) ? '' : 'none';
     });
 
-    // Элементы только для админов
     adminOnlyElements.forEach(el => {
         el.style.display = (isLoggedIn && role === 'admin') ? '' : 'none';
     });
 
-    // Обновляем блок в шапке
     const authDot = document.getElementById('authDot');
     const authLabel = document.getElementById('authLabel');
     if (isLoggedIn) {
-        authDot.classList.remove('locked');
-        authLabel.textContent = `${currentUser.username} (${role})`;
+        if (authDot) authDot.classList.remove('locked');
+        if (authLabel) authLabel.textContent = `${currentUser.username} (${role})`;
     } else {
-        authDot.classList.add('locked');
-        authLabel.textContent = 'Не авторизован';
+        if (authDot) authDot.classList.add('locked');
+        if (authLabel) authLabel.textContent = 'Не авторизован';
     }
 
-    // Кнопка входа/выхода
     let loginBtn = document.getElementById('btnLoginLogout');
     if (!loginBtn) {
-        // Создаём кнопку в шапке, если ещё нет
         loginBtn = document.createElement('button');
         loginBtn.id = 'btnLoginLogout';
         loginBtn.className = 'btn btn-sm btn-outline';
-        document.querySelector('.header-inner').appendChild(loginBtn);
+        loginBtn.style.color = '#1a3c5e';
+        loginBtn.style.borderColor = 'rgba(255,255,255,0.7)';
+        document.querySelector('.header-inner')?.appendChild(loginBtn);
     }
     if (isLoggedIn) {
         loginBtn.textContent = 'Выйти';
         loginBtn.onclick = logout;
     } else {
         loginBtn.textContent = 'Войти';
-        loginBtn.onclick = () => showLoginModal(() => {
-            // после входа можно обновить текущие данные, если нужно
-        });
+        loginBtn.onclick = () => showLoginModal();
     }
 
-    // Обновляем видимость кнопок действий с чекбоксом
     if (typeof updateActionButtons === 'function') {
         updateActionButtons();
     }
 }
 
-// Сброс таймера бездействия при активности
-/*function resetInactivityTimer() {
-    clearTimeout(inactivityTimer);
-    if (!currentUser) return;
-    inactivityTimer = setTimeout(() => {
-        logout();
-        showToast('Вы были разлогинены из-за бездействия', 'warning');
-    }, INACTIVITY_TIMEOUT);
-}
-
-// Вешаем слушателей активности на документ
-['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(event => {
-    document.addEventListener(event, resetInactivityTimer);
-});*/
-
-// При загрузке страницы проверяем токен
-checkAuth();
-
 function getToken() {
-  return token;
+    return token;
 }
+
+// Запускаем проверку при загрузке
+checkAuth();
