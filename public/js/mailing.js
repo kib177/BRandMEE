@@ -1,6 +1,6 @@
 // mailing.js – логика страницы рассылки, без inline-скриптов
 document.addEventListener('DOMContentLoaded', () => {
-  const token = sessionStorage.getItem('token');
+  const token = localStorage.getItem('token');
   if (!token) {
     window.location.href = '/welcome.html';
     return;
