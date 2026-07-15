@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Если токен уже есть — сразу на главную
   if (localStorage.getItem('token')) {            // ← проверяем localStorage
-    window.location.href = '/';
+    window.location.href = '/index.html';
     return;
   }
 
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Сохраняем токен в localStorage и переходим на главную
       localStorage.setItem('token', data.token);   // ← сохраняем в localStorage
-      window.location.href = '/';
+      window.location.href = '/index.html';
     } catch (err) {
       errorDiv.style.display = 'block';
       errorDiv.textContent = 'Ошибка сети';
