@@ -53,10 +53,15 @@ app.use('/api/mailing', require('./routes/mailing'));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Для SPA — все остальные запросы на index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'welcome.html'));
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
+// Для всех остальных запросов (SPA) отдаём index.html
 app.listen(PORT, () => {
   console.log(`🚀 Сервер запущен на https://brandmee.site`);
 });
