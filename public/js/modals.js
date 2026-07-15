@@ -2,6 +2,7 @@
 
 // ========== МОДАЛКА ДОБАВЛЕНИЯ / РЕДАКТИРОВАНИЯ ==========
 function openAddModal() {
+    loadDepartmentsForForm();
     $('#formMode').value = 'add';
     $('#formOriginalCode').value = '';
     $('#modalTitle').textContent = 'Добавить позицию';
@@ -28,6 +29,8 @@ function openAddModal() {
 }
 
 function openEditModal(code) {
+    loadDepartmentsForForm();
+    select.value = item.department_id;
     const item = inventory.find(i => i.code === code);
     if (!item) return;
 
@@ -168,4 +171,18 @@ function setSelectWithFallback(selectId, valueId, valueName) {
         select.appendChild(option);
         select.value = valueId;
     }
+}
+
+async function loadDepartmentsForForm() {
+  if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) {
+    document.getElementById('deptGroup').classList.add('hidden');
+    return;
+  }
+  document.getElementById('deptGroup').classList.remove('hidden');
+  const res = await fetch('/api/users/departments', {
+    headers: { 'Authorization': `Bearer ${getToken()}` }
+  });
+  const depts = await res.json();
+  const select = document.getElementById('formDepartment');
+  select.innerHTML = depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
 }
