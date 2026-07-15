@@ -3,20 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Управление пользователями</title>
-  <link rel="stylesheet" href="/css/base.css">
-  <link rel="stylesheet" href="/css/layout.css">
-  <link rel="stylesheet" href="/css/components.css">
-  <link rel="stylesheet" href="/css/utilities.css">
-  <link rel="stylesheet" href="/css/mobile.css">
-  <script src="/js/theme.js"></script>
+  <title>Управление пользователями и отделами</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/utilities.css">
+  <link rel="stylesheet" href="../css/mobile.css">
   <style>
-    .admin-container { max-width: 900px; margin: 2rem auto; padding: 1rem; }
-    .user-table th, .user-table td { padding: 0.5rem; }
-    .btn-row { display: flex; gap: 0.5rem; margin-top: 1rem; }
-    .form-inline { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: end; }
-    .form-inline select, .form-inline input { padding: 0.4rem; }
-    .hidden { display: none; }
+    .admin-page { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+    .section { margin-bottom: 2rem; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 1.5rem; }
+    .flex-row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+    .form-inline { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .form-inline input, .form-inline select { padding: 0.5rem; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9rem; background: #fafbfc; }
+    .table-users { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    .table-users th, .table-users td { padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
+    .table-users th { background: #f7f9fb; font-weight: 600; }
+    .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.1rem; margin: 0 0.2rem; }
+    .hidden { display: none !important; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 200; display: flex; align-items: center; justify-content: center; }
+    .modal { background: var(--card-bg); border-radius: var(--radius); padding: 1.5rem; max-width: 500px; width: 90%; box-shadow: var(--shadow-lg); }
+    .modal h2 { margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 600; font-size: 0.8rem; margin-bottom: 0.3rem; color: var(--text-secondary); }
+    .form-group input, .form-group select { width: 100%; padding: 0.6rem; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9rem; background: #fafbfc; }
+    .form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem; }
   </style>
 </head>
 <body>
@@ -26,231 +36,265 @@
         <a href="/" style="color:#fff; text-decoration:none;">📦 Склад</a>
         <span style="margin-left:2rem;">→ Управление пользователями</span>
       </div>
-      <div>
-        <button class="btn-logout" id="btnLogout">Выйти</button>
-      </div>
     </div>
   </header>
 
-  <div class="admin-container">
-    <h2>Пользователи</h2>
-    <div id="message" style="color:green; margin-bottom:1rem;"></div>
-    <div id="error" style="color:red; margin-bottom:1rem;"></div>
-    
-    <div class="form-inline" style="margin-bottom:2rem;">
-      <div class="form-group">
-        <label>Логин</label>
-        <input type="text" id="newUsername" placeholder="Логин">
+  <main class="admin-page">
+    <div class="section">
+      <h2>Пользователи</h2>
+      <div class="flex-row">
+        <button class="btn btn-primary" id="btnAddUser">+ Добавить пользователя</button>
+        <button class="btn btn-outline" id="btnRefreshUsers">🔄 Обновить</button>
       </div>
-      <div class="form-group">
-        <label>Пароль</label>
-        <input type="password" id="newPassword" placeholder="Пароль">
-      </div>
-      <div class="form-group">
-        <label>Роль</label>
-        <select id="newRole">
-          <option value="user">user</option>
-          <option value="storekeeper">storekeeper</option>
-          <option value="moderator">moderator</option>
-          <option value="admin">admin</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Отдел (для user/storekeeper)</label>
-        <select id="newDept"></select>
-      </div>
-      <button class="btn btn-primary btn-sm" id="btnAddUser">➕ Создать</button>
+      <table class="table-users" id="usersTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>Логин</th><th>Email</th><th>Роль</th><th>Отдел</th><th>Создан</th><th>Действия</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
 
-    <table class="user-table table-wrapper">
-      <thead><tr>
-        <th>ID</th><th>Логин</th><th>Роль</th><th>Отдел</th><th>Дата создания</th><th>Действия</th>
-      </tr></thead>
-      <tbody id="userTableBody"></tbody>
-    </table>
-  </div>
+    <div class="section">
+      <h2>Отделы</h2>
+      <div class="form-inline" id="addDeptForm">
+        <input type="text" id="newDeptName" placeholder="Название отдела">
+        <button class="btn btn-primary btn-sm" id="btnAddDept">Добавить</button>
+      </div>
+      <table class="table-users" id="deptsTable" style="margin-top:1rem;">
+        <thead><tr><th>ID</th><th>Название</th><th>Действия</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
 
-  <!-- Модальное окно редактирования -->
-  <div class="modal-overlay hidden" id="editModal">
-    <div class="modal" style="max-width:400px;">
-      <h3>Редактировать пользователя</h3>
-      <div class="form-group">
-        <label>Логин</label>
-        <input type="text" id="editUsername">
-      </div>
-      <div class="form-group">
-        <label>Новый пароль (оставьте пустым, чтобы не менять)</label>
-        <input type="password" id="editPassword">
-      </div>
-      <div class="form-group">
-        <label>Роль</label>
-        <select id="editRole">
-          <option value="user">user</option>
-          <option value="storekeeper">storekeeper</option>
-          <option value="moderator">moderator</option>
-          <option value="admin">admin</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Отдел</label>
-        <select id="editDept"></select>
-      </div>
-      <input type="hidden" id="editUserId">
-      <div class="btn-row">
-        <button class="btn btn-outline" id="btnCancelEdit">Отмена</button>
-        <button class="btn btn-primary" id="btnSaveEdit">Сохранить</button>
-      </div>
+  <!-- Модальное окно пользователя -->
+  <div class="modal-overlay hidden" id="userModalOverlay">
+    <div class="modal">
+      <h2 id="userModalTitle">Добавить пользователя</h2>
+      <form id="userForm">
+        <input type="hidden" id="userId">
+        <div class="form-group">
+          <label for="username">Логин</label>
+          <input type="text" id="username" required maxlength="50">
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Пароль <small>(оставьте пустым при редактировании, если не хотите менять)</small></label>
+          <input type="password" id="password">
+        </div>
+        <div class="form-group">
+          <label for="role">Роль</label>
+          <select id="role">
+            <option value="user">Пользователь</option>
+            <option value="storekeeper">Кладовщик</option>
+            <option value="moderator">Модератор</option>
+            <option value="admin">Администратор</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="department">Отдел</label>
+          <select id="department">
+            <option value="">— Без отдела —</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline" id="btnCancelUser">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
     </div>
   </div>
 
+  <script src="../js/theme.js"></script>
   <script>
     const token = sessionStorage.getItem('token');
-    if (!token) { window.location.href = '/'; }
-    // Проверим роль
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    if (payload.role !== 'admin') {
-      alert('Доступ запрещён');
-      window.location.href = '/';
-    }
+    if (!token) window.location.href = '/';
 
     const API = '/api/users';
-    const DEPT_API = '/api/directories/equipment'; // пока нет справочника отделов, используем equipment? Исправим позже
-    const DEPT_API_URL = '/api/directories/departments'; // нужно создать такой эндпоинт, но пока используем /api/directories/equipment для теста? 
-    // Лучше добавить эндпоинт departments в directories.js
 
-    // Временно заглушка отделов
-    async function loadDepartments() {
-      const res = await fetch('/api/directories/departments');
-      if (res.ok) {
-        return await res.json();
-      } else {
-        // Если эндпоинта нет, создадим дефолтный
-        return [{ id: 1, name: 'Основной склад' }];
+    async function apiFetch(url, options = {}) {
+      const res = await fetch(url, {
+        ...options,
+        headers: {
+          ...options.headers,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (res.status === 401) {
+        alert('Сессия истекла');
+        sessionStorage.removeItem('token');
+        window.location.href = '/';
+        return null;
       }
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Ошибка');
+      }
+      return res.json();
     }
 
-    function authHeaders() { return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }; }
-
+    // ========== ПОЛЬЗОВАТЕЛИ ==========
     async function loadUsers() {
-      const res = await fetch(API, { headers: { 'Authorization': `Bearer ${token}` } });
-      if (!res.ok) { alert('Ошибка загрузки пользователей'); return; }
-      const users = await res.json();
-      const tbody = document.getElementById('userTableBody');
-      tbody.innerHTML = users.map(u => `
-        <tr>
-          <td>${u.id}</td>
-          <td>${u.username}</td>
-          <td>${u.role}</td>
-          <td>${u.department_id || '—'}</td>
-          <td>${new Date(u.created_at).toLocaleDateString('ru')}</td>
-          <td>
-            <button class="btn btn-sm btn-outline" onclick="openEdit(${u.id},'${u.username}','${u.role}',${u.department_id})">✏️</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})" ${u.id == payload.id ? 'disabled' : ''}>🗑️</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    async function addUser() {
-      const username = document.getElementById('newUsername').value.trim();
-      const password = document.getElementById('newPassword').value;
-      const role = document.getElementById('newRole').value;
-      const departmentId = document.getElementById('newDept').value || null;
-      if (!username || !password) return alert('Логин и пароль обязательны');
       try {
-        const res = await fetch(API, {
-          method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify({ username, password, role, department_id: departmentId })
-        });
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error);
-        }
-        document.getElementById('newUsername').value = '';
-        document.getElementById('newPassword').value = '';
-        document.getElementById('message').textContent = 'Пользователь создан';
-        loadUsers();
+        const users = await apiFetch(API);
+        if (!users) return;
+        const tbody = document.querySelector('#usersTable tbody');
+        tbody.innerHTML = users.map(u => `
+          <tr>
+            <td>${u.id}</td>
+            <td>${u.username}</td>
+            <td>${u.email || '—'}</td>
+            <td>${u.role}</td>
+            <td>${u.department_name || '—'}</td>
+            <td>${new Date(u.created_at).toLocaleDateString('ru')}</td>
+            <td>
+              <button class="btn-icon" title="Редактировать" onclick="editUser(${u.id})">✏️</button>
+              <button class="btn-icon" title="Удалить" onclick="deleteUser(${u.id})">🗑️</button>
+            </td>
+          </tr>
+        `).join('');
       } catch (e) {
-        document.getElementById('error').textContent = e.message;
+        alert('Ошибка загрузки пользователей: ' + e.message);
       }
     }
 
-    function openEdit(id, username, role, deptId) {
-      document.getElementById('editUserId').value = id;
-      document.getElementById('editUsername').value = username;
-      document.getElementById('editRole').value = role;
-      // Установим отдел
-      const deptSelect = document.getElementById('editDept');
-      if (deptId) deptSelect.value = deptId;
-      else deptSelect.value = '';
-      document.getElementById('editModal').classList.remove('hidden');
+    async function loadDepartmentsForForm() {
+      try {
+        const depts = await apiFetch(`${API}/departments`);
+        const select = document.getElementById('department');
+        select.innerHTML = '<option value="">— Без отдела —</option>' +
+          depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+      } catch (e) {}
     }
 
-    async function saveEdit() {
-      const id = document.getElementById('editUserId').value;
-      const username = document.getElementById('editUsername').value.trim();
-      const password = document.getElementById('editPassword').value;
-      const role = document.getElementById('editRole').value;
-      const departmentId = document.getElementById('editDept').value || null;
-      const body = {};
-      if (username) body.username = username;
-      if (password) body.password = password;
-      if (role) body.role = role;
-      body.department_id = departmentId;
-      try {
-        const res = await fetch(`${API}/${id}`, {
-          method: 'PUT',
-          headers: authHeaders(),
-          body: JSON.stringify(body)
+    window.editUser = function(id) {
+      fetch(`${API}`, { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(users => {
+          const user = users.find(u => u.id == id);
+          if (!user) return;
+          document.getElementById('userId').value = user.id;
+          document.getElementById('username').value = user.username;
+          document.getElementById('email').value = user.email || '';
+          document.getElementById('password').value = '';
+          document.getElementById('role').value = user.role;
+          document.getElementById('department').value = user.department_id || '';
+          document.getElementById('userModalTitle').textContent = 'Редактировать пользователя';
+          document.getElementById('userModalOverlay').classList.remove('hidden');
         });
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error);
-        }
-        document.getElementById('editModal').classList.add('hidden');
-        document.getElementById('message').textContent = 'Пользователь обновлён';
-        loadUsers();
-      } catch (e) {
-        alert(e.message);
-      }
-    }
+    };
 
-    async function deleteUser(id) {
-      if (!confirm('Удалить пользователя безвозвратно?')) return;
+    window.deleteUser = async function(id) {
+      if (!confirm('Удалить пользователя?')) return;
       try {
-        const res = await fetch(`${API}/${id}`, { method: 'DELETE', headers: authHeaders() });
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error);
+        await apiFetch(`${API}/${id}`, { method: 'DELETE' });
+        loadUsers();
+      } catch (e) { alert(e.message); }
+    };
+
+    document.getElementById('userForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userId = document.getElementById('userId').value;
+      const payload = {
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim() || null,
+        password: document.getElementById('password').value,
+        role: document.getElementById('role').value,
+        department_id: document.getElementById('department').value || null
+      };
+
+      try {
+        if (userId) {
+          if (!payload.password) delete payload.password;
+          await apiFetch(`${API}/${userId}`, { method: 'PUT', body: JSON.stringify(payload) });
+        } else {
+          await apiFetch(API, { method: 'POST', body: JSON.stringify(payload) });
         }
-        document.getElementById('message').textContent = 'Пользователь удалён';
+        document.getElementById('userModalOverlay').classList.add('hidden');
         loadUsers();
       } catch (e) {
         alert(e.message);
       }
-    }
+    });
 
-    // Инициализация
-    async function init() {
-      // Загрузим список отделов
+    document.getElementById('btnAddUser').addEventListener('click', () => {
+      document.getElementById('userId').value = '';
+      document.getElementById('userForm').reset();
+      document.getElementById('userModalTitle').textContent = 'Добавить пользователя';
+      document.getElementById('userModalOverlay').classList.remove('hidden');
+      loadDepartmentsForForm();
+    });
+
+    document.getElementById('btnCancelUser').addEventListener('click', () => {
+      document.getElementById('userModalOverlay').classList.add('hidden');
+    });
+
+    document.getElementById('btnRefreshUsers').addEventListener('click', loadUsers);
+
+    // ========== ОТДЕЛЫ ==========
+    async function loadDepartments() {
       try {
-        const depts = await loadDepartments();
-        const newDept = document.getElementById('newDept');
-        const editDept = document.getElementById('editDept');
-        [newDept, editDept].forEach(select => {
-          select.innerHTML = '<option value="">— Без отдела —</option>' + 
-            depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-        });
-      } catch(e) {}
-      loadUsers();
+        const depts = await apiFetch(`${API}/departments`);
+        const tbody = document.querySelector('#deptsTable tbody');
+        tbody.innerHTML = depts.map(d => `
+          <tr>
+            <td>${d.id}</td>
+            <td>${d.name}</td>
+            <td>
+              <button class="btn-icon" title="Переименовать" onclick="renameDept(${d.id}, '${d.name}')">✏️</button>
+              <button class="btn-icon" title="Удалить" onclick="deleteDept(${d.id})">🗑️</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        alert('Ошибка загрузки отделов: ' + e.message);
+      }
     }
 
-    document.getElementById('btnAddUser').addEventListener('click', addUser);
-    document.getElementById('btnSaveEdit').addEventListener('click', saveEdit);
-    document.getElementById('btnCancelEdit').addEventListener('click', ()=> document.getElementById('editModal').classList.add('hidden'));
-    document.getElementById('btnLogout').addEventListener('click', ()=>{ sessionStorage.removeItem('token'); window.location.href='/'; });
-    init();
+    async function addDept() {
+      const name = document.getElementById('newDeptName').value.trim();
+      if (!name) return alert('Введите название');
+      try {
+        await apiFetch(`${API}/departments`, { method: 'POST', body: JSON.stringify({ name }) });
+        document.getElementById('newDeptName').value = '';
+        loadDepartments();
+        loadDepartmentsForForm();
+      } catch (e) { alert(e.message); }
+    }
+
+    window.renameDept = async function(id, oldName) {
+      const name = prompt('Новое название:', oldName);
+      if (!name || !name.trim()) return;
+      try {
+        await apiFetch(`${API}/departments/${id}`, { method: 'PUT', body: JSON.stringify({ name }) });
+        loadDepartments();
+        loadDepartmentsForForm();
+      } catch (e) { alert(e.message); }
+    };
+
+    window.deleteDept = async function(id) {
+      if (!confirm('Удалить отдел? Это возможно только если нет связанных пользователей и инвентаря.')) return;
+      try {
+        await apiFetch(`${API}/departments/${id}`, { method: 'DELETE' });
+        loadDepartments();
+        loadDepartmentsForForm();
+      } catch (e) { alert(e.message); }
+    };
+
+    document.getElementById('btnAddDept').addEventListener('click', addDept);
+    document.getElementById('newDeptName').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); addDept(); }
+    });
+
+    // Старт
+    loadUsers();
+    loadDepartments();
   </script>
 </body>
 </html>
