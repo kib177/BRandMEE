@@ -15,15 +15,14 @@ async function apiFetch(url, options = {}) {
     return res;
 }
 
-async function fetchInventory() {
-    const res = await fetch(API_BASE, {
-        headers: { 'Authorization': `Bearer ${getToken()}` }
-    });
-    if (!res.ok) throw new Error('Ошибка загрузки');
-    if (res.headers.get('X-Cache') === 'HIT') {
-        showToast('Данные загружены из кэша', 'warning');
-    }
-    return res.json();
+async function fetchInventory(params = {}) {
+  const url = new URL(API_BASE, window.location.origin);
+  Object.entries(params).forEach(([k,v]) => { if (v) url.searchParams.set(k, v); });
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${getToken()}` }
+  });
+  if (!res.ok) throw new Error('Ошибка загрузки');
+  return res.json();
 }
 
 async function saveItem(item) {
