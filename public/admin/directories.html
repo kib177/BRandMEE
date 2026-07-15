@@ -1,1 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Справочники</title>
+  <link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/utilities.css">
+<link rel="stylesheet" href="css/mobile.css">
+  <link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a3c5e">
+</head>
+  
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <a href="/index.html" style="color:#fff; text-decoration:none;">📦 Склад</a>
+        <span style="margin-left:2rem;">→ Справочники</span>
+      </div>
+      <div>
+        <button class="btn-logout" id="btnLogout">Выйти</button>
+      </div>
+    </div>
+  </header>
 
+  <main style="max-width:1000px; margin:2rem auto; padding:0 1rem;">
+    <!-- Типы запчастей -->
+    <div class="accordion" id="accordionTypes">
+      <div class="accordion-header">
+        <span>Типы запчастей</span>
+      </div>
+      <div class="accordion-body">
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+          <input type="text" id="newTypeName" placeholder="Новый тип" style="flex:1;">
+          <button class="btn btn-primary btn-sm" id="addType">Добавить</button>
+        </div>
+        <div class="table-wrapper">
+          <table id="typesTable" class="compact-table">
+            <thead><tr><th>ID</th><th>Название</th><th>Действия</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Оборудование -->
+    <div class="accordion" id="accordionEquip">
+      <div class="accordion-header">
+        <span>Оборудование</span>
+      </div>
+      <div class="accordion-body">
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+          <input type="text" id="newEquipName" placeholder="Новое оборудование" style="flex:1;">
+          <button class="btn btn-primary btn-sm" id="addEquip">Добавить</button>
+        </div>
+        <div class="table-wrapper">
+          <table id="equipTable" class="compact-table">
+            <thead><tr><th>ID</th><th>Название</th><th>Действия</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+ <script src="/js/directories.js"></script>
+  <script src="/js/theme.js"></script>
+ <!--<script src="js/pwa.js"></script>-->
+</body>
+</html>
