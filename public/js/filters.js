@@ -4,6 +4,7 @@ let sortConfig = { key: null, direction: 'asc' };
 let searchQuery = '';
 let filterTypeValue = '';      // теперь храним ID типа
 let filterEquipmentValue = ''; // теперь храним ID оборудования
+let filterDepartmentValue = '';
 let filteredInventory = [];
 
 function applyFilters(inventory) {
