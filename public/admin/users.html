@@ -10,15 +10,16 @@
   <link rel="stylesheet" href="../css/utilities.css">
   <link rel="stylesheet" href="../css/mobile.css">
   <style>
-    /* те же стили, что и раньше */
     .admin-page { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
     .section { margin-bottom: 2rem; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 1.5rem; }
     .flex-row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
     .form-inline { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
     .form-inline input, .form-inline select { padding: 0.5rem; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9rem; background: #fafbfc; }
-    .table-users { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    /* Таблицы с горизонтальной прокруткой */
+    .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: var(--radius); }
+    .table-users { width: 100%; border-collapse: collapse; font-size: 0.87rem; min-width: 700px; }
     .table-users th, .table-users td { padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
-    .table-users th { background: #f7f9fb; font-weight: 600; }
+    .table-users th { background: #f7f9fb; font-weight: 600; white-space: nowrap; }
     .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.1rem; margin: 0 0.2rem; }
     .hidden { display: none !important; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 200; display: flex; align-items: center; justify-content: center; }
@@ -47,14 +48,16 @@
         <button class="btn btn-primary" id="btnAddUser">+ Добавить пользователя</button>
         <button class="btn btn-outline" id="btnRefreshUsers">🔄 Обновить</button>
       </div>
-      <table class="table-users" id="usersTable">
-        <thead>
-          <tr>
-            <th>ID</th><th>Логин</th><th>Email</th><th>Роль</th><th>Отдел</th><th>Действия</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-wrapper">
+        <table class="table-users" id="usersTable">
+          <thead>
+            <tr>
+              <th>ID</th><th>Логин</th><th>Email</th><th>Роль</th><th>Отдел</th><th>Действия</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="section">
@@ -63,10 +66,12 @@
         <input type="text" id="newDeptName" placeholder="Название отдела">
         <button class="btn btn-primary btn-sm" id="btnAddDept">Добавить</button>
       </div>
-      <table class="table-users" id="deptsTable" style="margin-top:1rem;">
-        <thead><tr><th>ID</th><th>Название</th><th>Действия</th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-wrapper" style="margin-top:1rem;">
+        <table class="table-users" id="deptsTable">
+          <thead><tr><th>ID</th><th>Название</th><th>Действия</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </main>
 
@@ -112,6 +117,6 @@
   </div>
 
   <script src="../js/theme.js"></script>
-  <script src="../js/admin/admin-users.js"></script>
+  <script src="../js/admin-users.js"></script>
 </body>
 </html>
