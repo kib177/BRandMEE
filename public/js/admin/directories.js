@@ -1,6 +1,6 @@
  const $ = (s) => document.querySelector(s);
     const API = '/api/directories';
-    let token = sessionStorage.getItem('token');
+    let token = localStorage.getItem('token');
 
     // Проверка авторизации
     async function checkAuth() {
@@ -192,7 +192,7 @@
     });
 
     $('#btnLogout').addEventListener('click', () => {
-      sessionStorage.removeItem('token');
+      localStorage.removeItem('token');
       window.location.href = '/';
     });
 
