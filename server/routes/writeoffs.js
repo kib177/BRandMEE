@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const pool = require('../db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { sendMail } = require('../mailer');
 
@@ -11,27 +11,29 @@ router.post('/', async (req, res) => {
     if (!item_code || quantity == null || quantity <= 0) {
       return res.status(400).json({ error: 'Код позиции и количество обязательны' });
     }
-    const item = db.prepare('SELECT code, name, unit, quantity FROM inventory WHERE code = ?').get(item_code);
+
+    // Находим позицию по коду (учитывая отдел? пока без отдела, просто ищем первый попавшийся)
+    const itemRes = await pool.query('SELECT code, name, unit, quantity FROM inventory WHERE code = $1 LIMIT 1', [item_code]);
+    const item = itemRes.rows[0];
     if (!item) return res.status(404).json({ error: 'Позиция с таким кодом не найдена' });
     if (quantity > item.quantity) {
       return res.status(400).json({ error: `Недостаточно на складе. Доступно: ${item.quantity} ${item.unit}` });
     }
 
-    const stmt = db.prepare(`
-      INSERT INTO write_offs (item_code, item_name, equipment_id, quantity, unit, requested_by, comment)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    const result = stmt.run(item_code, item.name, equipment_id || null, quantity, item.unit, requested_by || 'сотрудник', comment || '');
+    // Вставляем заявку (department_id пока 1)
+    const result = await pool.query(`
+      INSERT INTO write_offs (item_code, department_id, item_name, equipment_id, quantity, unit, requested_by, comment)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `, [item_code, 1, item.name, equipment_id || null, quantity, item.unit, requested_by || 'сотрудник', comment || '']);
 
-    // Отвечаем клиенту сразу
-    res.json({ ok: true, id: result.lastInsertRowid });
+    const newId = result.rows[0].id;
 
-    // Отправка уведомлений администраторам (асинхронно)
+    // Отправляем уведомления (асинхронно)
     const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim()).filter(Boolean);
     if (adminEmails.length > 0) {
-      const equipmentName = equipment_id
-        ? (db.prepare('SELECT name FROM equipment WHERE id = ?').get(equipment_id)?.name || 'не указано')
-        : 'не указано';
+      const equipRes = equipment_id ? await pool.query('SELECT name FROM equipment WHERE id = $1', [equipment_id]) : { rows: [] };
+      const equipmentName = equipRes.rows[0]?.name || 'не указано';
       const mailHtml = `
         <h3>Новая заявка на списание</h3>
         <table border="1" cellpadding="5" style="border-collapse:collapse;">
@@ -51,6 +53,7 @@ router.post('/', async (req, res) => {
       }).catch(err => console.error('Ошибка отправки уведомления:', err));
     }
 
+    res.json({ ok: true, id: newId });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка создания запроса на списание' });
@@ -58,35 +61,38 @@ router.post('/', async (req, res) => {
 });
 
 // Получение списка (админ)
-router.get('/', authMiddleware, requireRole('admin'), (req, res) => {
+router.get('/', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
-    let query = `SELECT wo.*, eq.name AS equipment_name, i.model AS model
-                 FROM write_offs wo
-                 LEFT JOIN equipment eq ON wo.equipment_id = eq.id
-                 LEFT JOIN inventory i ON wo.item_code = i.code
-                 WHERE 1=1`;
+    let query = `
+      SELECT wo.*, eq.name AS equipment_name, i.model AS model
+      FROM write_offs wo
+      LEFT JOIN equipment eq ON wo.equipment_id = eq.id
+      LEFT JOIN inventory i ON wo.item_code = i.code AND wo.department_id = i.department_id
+      WHERE 1=1
+    `;
     const params = [];
+    let paramIndex = 1;
 
     if (req.query.status) {
-      query += ' AND status = ?';
+      query += ` AND wo.status = $${paramIndex++}`;
       params.push(req.query.status);
     }
     if (req.query.equipment) {
-      query += ' AND eq.name LIKE ?';
+      query += ` AND eq.name ILIKE $${paramIndex++}`;
       params.push(`%${req.query.equipment}%`);
     }
     if (req.query.from) {
-      query += ' AND wo.requested_at >= ?';
+      query += ` AND wo.requested_at >= $${paramIndex++}`;
       params.push(req.query.from);
     }
     if (req.query.to) {
-      query += ' AND wo.requested_at <= ?';
+      query += ` AND wo.requested_at <= $${paramIndex++}`;
       params.push(req.query.to + ' 23:59:59');
     }
     query += ' ORDER BY wo.requested_at DESC';
 
-    const rows = db.prepare(query).all(...params);
-    res.json(rows);
+    const result = await pool.query(query, params);
+    res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка получения списка списаний' });
@@ -94,36 +100,44 @@ router.get('/', authMiddleware, requireRole('admin'), (req, res) => {
 });
 
 // Изменение статуса (админ)
-router.patch('/:id', authMiddleware, requireRole('admin'), (req, res) => {
+router.patch('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { status } = req.body;
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ error: 'Статус может быть только approved или rejected' });
     }
 
-    const writeOff = db.prepare('SELECT * FROM write_offs WHERE id = ?').get(req.params.id);
+    const woRes = await pool.query('SELECT * FROM write_offs WHERE id = $1', [req.params.id]);
+    const writeOff = woRes.rows[0];
     if (!writeOff) return res.status(404).json({ error: 'Запрос не найден' });
     if (writeOff.status !== 'pending') {
       return res.status(400).json({ error: 'Можно изменить только ожидающие запросы' });
     }
 
     if (status === 'approved') {
-      const item = db.prepare('SELECT quantity FROM inventory WHERE code = ?').get(writeOff.item_code);
-      if (!item) return res.status(400).json({ error: 'Позиция на складе уже удалена' });
+      // Проверяем наличие на складе
+      const itemRes = await pool.query('SELECT quantity FROM inventory WHERE code = $1 AND department_id = $2', [writeOff.item_code, writeOff.department_id]);
+      if (itemRes.rows.length === 0) return res.status(400).json({ error: 'Позиция на складе уже удалена' });
+      const item = itemRes.rows[0];
       if (item.quantity < writeOff.quantity) {
         return res.status(400).json({ error: `Недостаточно на складе. Доступно: ${item.quantity}` });
       }
 
-      const updateInventory = db.prepare('UPDATE inventory SET quantity = quantity - ?, updated_at = CURRENT_TIMESTAMP WHERE code = ?');
-      const updateStatus = db.prepare('UPDATE write_offs SET status = ?, resolved_at = CURRENT_TIMESTAMP WHERE id = ?');
-
-      const transaction = db.transaction(() => {
-        updateInventory.run(writeOff.quantity, writeOff.item_code);
-        updateStatus.run(status, req.params.id);
-      });
-      transaction();
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('UPDATE inventory SET quantity = quantity - $1, updated_at = CURRENT_TIMESTAMP WHERE code = $2 AND department_id = $3',
+          [writeOff.quantity, writeOff.item_code, writeOff.department_id]);
+        await client.query('UPDATE write_offs SET status = $1, resolved_at = CURRENT_TIMESTAMP WHERE id = $2', [status, req.params.id]);
+        await client.query('COMMIT');
+      } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+      } finally {
+        client.release();
+      }
     } else {
-      db.prepare('UPDATE write_offs SET status = ?, resolved_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.params.id);
+      await pool.query('UPDATE write_offs SET status = $1, resolved_at = CURRENT_TIMESTAMP WHERE id = $2', [status, req.params.id]);
     }
 
     res.json({ ok: true });
@@ -134,47 +148,41 @@ router.patch('/:id', authMiddleware, requireRole('admin'), (req, res) => {
 });
 
 // Отчёт
-router.get('/report', authMiddleware, requireRole('admin'), (req, res) => {
+router.get('/report', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const year = req.query.year || new Date().getFullYear();
-
-    const monthly = db.prepare(`
-      SELECT strftime('%m', requested_at) AS month,
-             SUM(quantity) AS total_quantity,
-             COUNT(*) AS count_requests
+    // Здесь SQL-запросы с параметрами; для краткости используем pg
+    const monthly = await pool.query(`
+      SELECT EXTRACT(MONTH FROM requested_at) as month,
+             SUM(quantity) as total_quantity,
+             COUNT(*) as count_requests
       FROM write_offs
-      WHERE status = 'approved'
-        AND strftime('%Y', requested_at) = ?
+      WHERE status = 'approved' AND EXTRACT(YEAR FROM requested_at) = $1
       GROUP BY month
       ORDER BY month
-    `).all(String(year));
+    `, [year]);
 
-    const byEquipment = db.prepare(`
+    const byEquipment = await pool.query(`
       SELECT eq.name AS equipment, SUM(wo.quantity) AS total_quantity, COUNT(*) AS count_requests
       FROM write_offs wo
       LEFT JOIN equipment eq ON wo.equipment_id = eq.id
-      WHERE wo.status = 'approved' AND strftime('%Y', wo.requested_at) = ?
+      WHERE wo.status = 'approved' AND EXTRACT(YEAR FROM wo.requested_at) = $1
       GROUP BY eq.name
       ORDER BY total_quantity DESC
-    `).all(String(year));
+    `, [year]);
 
-    const details = db.prepare(`
+    const details = await pool.query(`
       SELECT wo.id, wo.item_code, wo.item_name, wo.quantity, wo.unit,
-             eq.name AS equipment_name,
-             i.model AS model,
-             wo.requested_by,
-             wo.requested_at,
-             wo.status,
-             wo.resolved_at,
-             wo.comment
+             eq.name AS equipment_name, i.model AS model,
+             wo.requested_by, wo.requested_at, wo.status, wo.resolved_at, wo.comment
       FROM write_offs wo
       LEFT JOIN equipment eq ON wo.equipment_id = eq.id
-      LEFT JOIN inventory i ON wo.item_code = i.code
-      WHERE strftime('%Y', wo.requested_at) = ?
+      LEFT JOIN inventory i ON wo.item_code = i.code AND wo.department_id = i.department_id
+      WHERE EXTRACT(YEAR FROM wo.requested_at) = $1
       ORDER BY wo.requested_at DESC
-    `).all(String(year));
+    `, [year]);
 
-    res.json({ year, monthly, byEquipment, details });
+    res.json({ year, monthly: monthly.rows, byEquipment: byEquipment.rows, details: details.rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка формирования отчёта' });
