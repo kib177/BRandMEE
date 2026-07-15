@@ -116,32 +116,37 @@ router.get('/export-excel', authMiddleware, resolveDepartment, async (req, res) 
 });
 
 // ---------- GET /:code (одна позиция) ----------
-router.get('/:code', authMiddleware, resolveDepartment, async (req, res) => {
+// ---------- GET /:code (одна позиция) – ОТКРЫТ ----------
+router.get('/:code', async (req, res) => {
   try {
-    let query = `
+    const { code } = req.params;
+
+    // Ищем позицию по коду (без фильтрации по отделу)
+    let result = await pool.query(`
       SELECT i.code, i.department_id, i.name, i.model, i.type_id, i.equipment_id,
              i.location, i.unit, i.quantity,
              TO_CHAR(i.date, 'DD.MM.YYYY') AS date,
+             i.created_at, i.updated_at,
              pt.name AS type_name, eq.name AS equipment_name
       FROM inventory i
       LEFT JOIN part_types pt ON i.type_id = pt.id
       LEFT JOIN equipment eq ON i.equipment_id = eq.id
       WHERE i.code = $1
-    `;
-    const params = [req.params.code];
-    if (req.allowedDepartmentId) {
-      query += ` AND i.department_id = $2`;
-      params.push(req.allowedDepartmentId);
+      ORDER BY i.department_id
+      LIMIT 1
+    `, [code]);
+
+    // Если запись не найдена – 404
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Позиция с таким кодом не найдена' });
     }
-    const result = await pool.query(query, params);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Не найдено' });
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка получения данных' });
   }
 });
-
 // ---------- POST / (добавление/обновление) ----------
 router.post('/', authMiddleware, resolveDepartment, async (req, res) => {
   try {
