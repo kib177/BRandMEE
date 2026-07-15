@@ -1,8 +1,10 @@
 let inventory = [];
 
 async function loadData() {
+    const params = {};
+    if (filterDepartmentValue) params.department_id = filterDepartmentValue;
     try {
-        inventory = await fetchInventory();
+        inventory = await fetchInventory(params);
     } catch {
         inventory = [];
         showToast('Сервер недоступен', 'error');
