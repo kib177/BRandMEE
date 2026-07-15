@@ -22,7 +22,12 @@ async function loadEquipmentList() {
 // Отображение выбранной позиции (по коду из URL)
 async function loadPreselectedItem(code) {
   try {
-    const res = await fetch(`${INVENTORY_API}/${encodeURIComponent(code)}`);
+    const headers = {};
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch(`${INVENTORY_API}/${encodeURIComponent(code)}`, { headers });
     if (!res.ok) throw new Error('Позиция не найдена');
     const item = await res.json();
     $('#selectedItem').value = `${item.code} – ${item.name} (остаток: ${item.quantity} ${item.unit})`;
