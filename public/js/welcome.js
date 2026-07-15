@@ -1,6 +1,7 @@
+// welcome.js – страница входа
 document.addEventListener('DOMContentLoaded', () => {
   // Если токен уже есть — сразу на главную
-  if (localStorage.getItem('token')) {
+  if (localStorage.getItem('token')) {            // ← проверяем localStorage
     window.location.href = '/';
     return;
   }
@@ -27,8 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Сохраняем токен и перезагружаем главную
-      sessionStorage.setItem('token', data.token);
+      // Сохраняем токен в localStorage и переходим на главную
+      localStorage.setItem('token', data.token);   // ← сохраняем в localStorage
       window.location.href = '/';
     } catch (err) {
       errorDiv.style.display = 'block';
