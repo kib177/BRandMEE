@@ -13,6 +13,15 @@ router.get('/types', async (req, res) => {
   }
 });
 
+router.get('/departments', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name FROM departments ORDER BY name');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка получения отделов' });
+  }
+});
+
 // Добавление типа (модератор/админ)
 router.post('/types', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
   const { name } = req.body;
