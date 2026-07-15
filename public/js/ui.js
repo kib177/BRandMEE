@@ -65,6 +65,27 @@ async function loadDirectoriesForForm() {
   }
 }
 
+async function loadDepartmentsForFilter() {
+  if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) return;
+  try {
+    const res = await fetch('/api/users/departments', {
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    });
+    if (!res.ok) return;
+    const depts = await res.json();
+    const select = document.getElementById('filterDepartment');
+    select.innerHTML = '<option value="">🏢 Все отделы</option>' +
+      depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// В функции bindEvents добавьте:
+document.getElementById('filterDepartment').addEventListener('change', function() {
+  filterDepartmentValue = this.value;
+  applyFilterAndRender();
+});
 // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
 function getTypeName(typeId) {
   const found = allTypes.find(t => t.id == typeId);
