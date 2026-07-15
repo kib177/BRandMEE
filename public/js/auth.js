@@ -1,7 +1,7 @@
 // auth.js – управление авторизацией, роли, без таймера бездействия (сессия 5 дней)
 
 let currentUser = null;
-let token = sessionStorage.getItem('token');
+let token = localStorage.getItem('token');
 
 // Сразу скрываем элементы, требующие авторизации
 (function hideRestrictedElements() {
