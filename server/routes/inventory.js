@@ -30,8 +30,8 @@ async function getOrCreateEquipmentId(equipName) {
   return res.rows[0].id;
 }
 
-// ---------- GET / (все позиции) ----------
-router.get('/', authMiddleware, async (req, res) => {
+// ---------- GET / (все позиции) – ОТКРЫТ ----------
+router.get('/', async (req, res) => {
   try {
     let query = `
       SELECT i.code, i.department_id, i.name, i.model, i.type_id, i.equipment_id,
@@ -48,10 +48,24 @@ router.get('/', authMiddleware, async (req, res) => {
     const params = [];
     let paramIndex = 1;
 
-    if (req.user.role !== 'admin') {
-      query += ` AND i.department_id = $${paramIndex++}`;
-      params.push(req.user.department_id);
+    // Если передан заголовок авторизации – проверяем токен и применяем фильтр по отделу
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET || 'warehouse_secret_key_change_me');
+        if (decoded.role !== 'admin') {
+          query += ` AND i.department_id = $${paramIndex++}`;
+          params.push(decoded.department_id);
+        } else if (req.query.department_id) {
+          query += ` AND i.department_id = $${paramIndex++}`;
+          params.push(req.query.department_id);
+        }
+      } catch (e) {
+        // неверный токен – игнорируем
+      }
     } else if (req.query.department_id) {
+      // без токена можно фильтровать по ?department_id=
       query += ` AND i.department_id = $${paramIndex++}`;
       params.push(req.query.department_id);
     }
@@ -65,7 +79,7 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-// ---------- GET /export-excel ----------
+// ---------- GET /export-excel (открыт) ----------
 router.get('/export-excel', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -104,8 +118,8 @@ router.get('/export-excel', async (req, res) => {
   }
 });
 
-// ---------- GET /:code (одна позиция) ----------
-router.get('/:code', authMiddleware, async (req, res) => {
+// ---------- GET /:code (одна позиция) – ОТКРЫТ ----------
+router.get('/:code', async (req, res) => {
   try {
     let query = `
       SELECT i.code, i.department_id, i.name, i.model, i.type_id, i.equipment_id,
@@ -120,9 +134,17 @@ router.get('/:code', authMiddleware, async (req, res) => {
     `;
     const params = [req.params.code];
 
-    if (req.user.role !== 'admin') {
-      query += ` AND i.department_id = $2`;
-      params.push(req.user.department_id);
+    // Опциональный фильтр по отделу для авторизованных
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET || 'warehouse_secret_key_change_me');
+        if (decoded.role !== 'admin') {
+          query += ` AND i.department_id = $2`;
+          params.push(decoded.department_id);
+        }
+      } catch (e) {}
     }
 
     const result = await pool.query(query, params);
@@ -134,7 +156,7 @@ router.get('/:code', authMiddleware, async (req, res) => {
   }
 });
 
-// ---------- POST / (добавление/обновление) ----------
+// ---------- POST / (добавление/обновление) – ТОЛЬКО АВТОРИЗОВАННЫЕ ----------
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { code, name, model, type_id, equipment_id, location, unit, quantity, date } = req.body;
@@ -226,7 +248,6 @@ router.delete('/', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Ошибка очистки' });
   }
 });
-
 // ---------- ИМПОРТ CSV ----------
 router.post('/import-csv', authMiddleware, upload.single('file'), async (req, res) => {
   try {
