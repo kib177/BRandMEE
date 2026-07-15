@@ -158,6 +158,7 @@ function updateDate() {
 
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
 (async function init() {
+    await checkAuth();
     await loadDirectoriesForForm();
     bindEvents();
     if (typeof initScannerButton === 'function') initScannerButton();
