@@ -23,7 +23,7 @@ async function loadEquipmentList() {
 async function loadPreselectedItem(code) {
   try {
     const headers = {};
-    const token = sessionStorage.getItem('token');
+    const token = localStorage.getItem('token');
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
