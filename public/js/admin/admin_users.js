@@ -18,7 +18,7 @@ async function apiFetch(url, options = {}) {
   });
   if (res.status === 401) {
     alert('Сессия истекла');
-    sessionStorage.removeItem('token');
+    localStorage.removeItem('token');
     window.location.href = '/';
     throw new Error('Unauthorized');
   }
