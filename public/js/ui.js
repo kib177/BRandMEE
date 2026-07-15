@@ -81,11 +81,6 @@ async function loadDepartmentsForFilter() {
   }
 }
 
-// В функции bindEvents добавьте:
-document.getElementById('filterDepartment').addEventListener('change', function() {
-  filterDepartmentValue = this.value;
-  applyFilterAndRender();
-});
 // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
 function getTypeName(typeId) {
   const found = allTypes.find(t => t.id == typeId);
