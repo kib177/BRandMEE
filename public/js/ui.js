@@ -12,6 +12,20 @@ async function loadDirectoriesForForm() {
       fetch('/api/directories/equipment')
     ]);
 
+    const filterDept = $('#filterDepartment');
+if (filterDept) {
+    try {
+        const res = await fetch('/api/directories/departments');
+        if (res.ok) {
+            const depts = await res.json();
+            filterDept.innerHTML = '<option value="">🏢 Все отделы</option>' +
+                depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        }
+    } catch (e) {
+        console.error('Ошибка загрузки отделов для фильтра', e);
+    }
+}
+
     // Проверка кэша для типов
     if (typesRes.ok && typesRes.headers.get('X-Cache') === 'HIT') {
       showToast('Справочники загружены из кэша', 'warning');
