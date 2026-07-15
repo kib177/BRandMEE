@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="../css/utilities.css">
   <link rel="stylesheet" href="../css/mobile.css">
   <style>
+    /* те же стили, что и раньше */
     .admin-page { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
     .section { margin-bottom: 2rem; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 1.5rem; }
     .flex-row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
@@ -49,7 +50,7 @@
       <table class="table-users" id="usersTable">
         <thead>
           <tr>
-            <th>ID</th><th>Логин</th><th>Email</th><th>Роль</th><th>Отдел</th><th>Создан</th><th>Действия</th>
+            <th>ID</th><th>Логин</th><th>Email</th><th>Роль</th><th>Отдел</th><th>Действия</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -84,7 +85,7 @@
           <input type="email" id="email">
         </div>
         <div class="form-group">
-          <label for="password">Пароль <small>(оставьте пустым при редактировании, если не хотите менять)</small></label>
+          <label for="password">Пароль <small>(оставьте пустым при редактировании)</small></label>
           <input type="password" id="password">
         </div>
         <div class="form-group">
@@ -111,190 +112,6 @@
   </div>
 
   <script src="../js/theme.js"></script>
-  <script>
-    const token = sessionStorage.getItem('token');
-    if (!token) window.location.href = '/';
-
-    const API = '/api/users';
-
-    async function apiFetch(url, options = {}) {
-      const res = await fetch(url, {
-        ...options,
-        headers: {
-          ...options.headers,
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      if (res.status === 401) {
-        alert('Сессия истекла');
-        sessionStorage.removeItem('token');
-        window.location.href = '/';
-        return null;
-      }
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Ошибка');
-      }
-      return res.json();
-    }
-
-    // ========== ПОЛЬЗОВАТЕЛИ ==========
-    async function loadUsers() {
-      try {
-        const users = await apiFetch(API);
-        if (!users) return;
-        const tbody = document.querySelector('#usersTable tbody');
-        tbody.innerHTML = users.map(u => `
-          <tr>
-            <td>${u.id}</td>
-            <td>${u.username}</td>
-            <td>${u.email || '—'}</td>
-            <td>${u.role}</td>
-            <td>${u.department_name || '—'}</td>
-            <td>${new Date(u.created_at).toLocaleDateString('ru')}</td>
-            <td>
-              <button class="btn-icon" title="Редактировать" onclick="editUser(${u.id})">✏️</button>
-              <button class="btn-icon" title="Удалить" onclick="deleteUser(${u.id})">🗑️</button>
-            </td>
-          </tr>
-        `).join('');
-      } catch (e) {
-        alert('Ошибка загрузки пользователей: ' + e.message);
-      }
-    }
-
-    async function loadDepartmentsForForm() {
-      try {
-        const depts = await apiFetch(`${API}/departments`);
-        const select = document.getElementById('department');
-        select.innerHTML = '<option value="">— Без отдела —</option>' +
-          depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-      } catch (e) {}
-    }
-
-    window.editUser = function(id) {
-      fetch(`${API}`, { headers: { 'Authorization': `Bearer ${token}` } })
-        .then(r => r.json())
-        .then(users => {
-          const user = users.find(u => u.id == id);
-          if (!user) return;
-          document.getElementById('userId').value = user.id;
-          document.getElementById('username').value = user.username;
-          document.getElementById('email').value = user.email || '';
-          document.getElementById('password').value = '';
-          document.getElementById('role').value = user.role;
-          document.getElementById('department').value = user.department_id || '';
-          document.getElementById('userModalTitle').textContent = 'Редактировать пользователя';
-          document.getElementById('userModalOverlay').classList.remove('hidden');
-        });
-    };
-
-    window.deleteUser = async function(id) {
-      if (!confirm('Удалить пользователя?')) return;
-      try {
-        await apiFetch(`${API}/${id}`, { method: 'DELETE' });
-        loadUsers();
-      } catch (e) { alert(e.message); }
-    };
-
-    document.getElementById('userForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const userId = document.getElementById('userId').value;
-      const payload = {
-        username: document.getElementById('username').value.trim(),
-        email: document.getElementById('email').value.trim() || null,
-        password: document.getElementById('password').value,
-        role: document.getElementById('role').value,
-        department_id: document.getElementById('department').value || null
-      };
-
-      try {
-        if (userId) {
-          if (!payload.password) delete payload.password;
-          await apiFetch(`${API}/${userId}`, { method: 'PUT', body: JSON.stringify(payload) });
-        } else {
-          await apiFetch(API, { method: 'POST', body: JSON.stringify(payload) });
-        }
-        document.getElementById('userModalOverlay').classList.add('hidden');
-        loadUsers();
-      } catch (e) {
-        alert(e.message);
-      }
-    });
-
-    document.getElementById('btnAddUser').addEventListener('click', () => {
-      document.getElementById('userId').value = '';
-      document.getElementById('userForm').reset();
-      document.getElementById('userModalTitle').textContent = 'Добавить пользователя';
-      document.getElementById('userModalOverlay').classList.remove('hidden');
-      loadDepartmentsForForm();
-    });
-
-    document.getElementById('btnCancelUser').addEventListener('click', () => {
-      document.getElementById('userModalOverlay').classList.add('hidden');
-    });
-
-    document.getElementById('btnRefreshUsers').addEventListener('click', loadUsers);
-
-    // ========== ОТДЕЛЫ ==========
-    async function loadDepartments() {
-      try {
-        const depts = await apiFetch(`${API}/departments`);
-        const tbody = document.querySelector('#deptsTable tbody');
-        tbody.innerHTML = depts.map(d => `
-          <tr>
-            <td>${d.id}</td>
-            <td>${d.name}</td>
-            <td>
-              <button class="btn-icon" title="Переименовать" onclick="renameDept(${d.id}, '${d.name}')">✏️</button>
-              <button class="btn-icon" title="Удалить" onclick="deleteDept(${d.id})">🗑️</button>
-            </td>
-          </tr>
-        `).join('');
-      } catch (e) {
-        alert('Ошибка загрузки отделов: ' + e.message);
-      }
-    }
-
-    async function addDept() {
-      const name = document.getElementById('newDeptName').value.trim();
-      if (!name) return alert('Введите название');
-      try {
-        await apiFetch(`${API}/departments`, { method: 'POST', body: JSON.stringify({ name }) });
-        document.getElementById('newDeptName').value = '';
-        loadDepartments();
-        loadDepartmentsForForm();
-      } catch (e) { alert(e.message); }
-    }
-
-    window.renameDept = async function(id, oldName) {
-      const name = prompt('Новое название:', oldName);
-      if (!name || !name.trim()) return;
-      try {
-        await apiFetch(`${API}/departments/${id}`, { method: 'PUT', body: JSON.stringify({ name }) });
-        loadDepartments();
-        loadDepartmentsForForm();
-      } catch (e) { alert(e.message); }
-    };
-
-    window.deleteDept = async function(id) {
-      if (!confirm('Удалить отдел? Это возможно только если нет связанных пользователей и инвентаря.')) return;
-      try {
-        await apiFetch(`${API}/departments/${id}`, { method: 'DELETE' });
-        loadDepartments();
-        loadDepartmentsForForm();
-      } catch (e) { alert(e.message); }
-    };
-
-    document.getElementById('btnAddDept').addEventListener('click', addDept);
-    document.getElementById('newDeptName').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); addDept(); }
-    });
-
-    // Старт
-    loadUsers();
-    loadDepartments();
-  </script>
+  <script src="../js/admin/admin-users.js"></script>
 </body>
 </html>
