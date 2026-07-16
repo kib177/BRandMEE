@@ -43,6 +43,15 @@ router.post('/', authMiddleware, requireRole('admin'), async (req, res) => {
       [username, display_name || null, email || null, hash, role, department_id || null]
     );
     res.json(result.rows[0]);
+logAction({
+    user: req.user,
+    action: 'create_user',
+    entityType: 'user',
+    entityId: result.rows[0].id.toString(),
+    details: { username, role },
+    req
+}).catch(() => {});
+    
   } catch (err) {
     if (err.code === '23505') {
       return res.status(400).json({ error: 'Пользователь с таким именем уже существует' });
@@ -112,6 +121,15 @@ router.put('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
       [userId]
     );
     res.json(updated.rows[0]);
+logAction({
+    user: req.user,
+    action: 'update_user',
+    entityType: 'user',
+    entityId: req.params.id,
+    details: { ...req.body, password: undefined },
+    req
+}).catch(() => {});
+    
   } catch (err) {
     if (err.code === '23505') {
       return res.status(400).json({ error: 'Пользователь с таким именем уже существует' });
