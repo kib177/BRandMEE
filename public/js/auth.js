@@ -19,26 +19,42 @@ function logout() {
 }
 
 async function checkAuth() {
-    if (!token) {
-        if (!window.location.pathname.includes('welcome.html')) {
-            window.location.href = '/welcome.html';
-        }
-        return;
+  const token = localStorage.getItem('token');
+  if (!token) {
+    if (!window.location.pathname.includes('welcome.html')) {
+      window.location.href = '/welcome.html';
     }
-    try {
-        const res = await fetch('/api/auth/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!res.ok) {
-            logout();
-            return;
-        }
-        const data = await res.json();
-        currentUser = data.user;
-        updateAuthUI();
-    } catch (e) {
-        logout();
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      logout();
+      return;
     }
+    const data = await res.json();
+    currentUser = data.user;
+    updateAuthUI();
+
+    // Перенаправление на нужный дашборд в зависимости от роли и текущей страницы
+    const role = currentUser.role;
+    const path = window.location.pathname;
+
+    if (role === 'admin' && !path.includes('dashboard_admin')) {
+      window.location.href = '/dashboard_admin.html';
+    } else if (role === 'moderator' && !path.includes('dashboard_moderator')) {
+      window.location.href = '/dashboard_moderator.html';
+    } else if (role === 'storekeeper' && !path.includes('dashboard_storekeeper')) {
+      window.location.href = '/dashboard_storekeeper.html';
+    } else if (role === 'user' && !path.includes('dashboard_user')) {
+      window.location.href = '/dashboard_user.html';
+    }
+  } catch (e) {
+    logout();
+  }
 }
 
 function showLoginModal(onSuccess) {
