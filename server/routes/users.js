@@ -3,7 +3,6 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const pool = require('../db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
-const { logAction } = require('../log/logger');
 
 // ======== ПОЛЬЗОВАТЕЛИ ========
 
