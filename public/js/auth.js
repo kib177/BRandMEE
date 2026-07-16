@@ -124,7 +124,7 @@ function updateAuthUI() {
     if (authDot && authLabel) {
         if (isLoggedIn) {
             authDot.classList.remove('locked');
-            if (authLabel) authLabel.textContent = `${currentUser.display_name || currentUser.username} (${role})`;
+            if (authLabel) authLabel.textContent = `${currentUser.display_name || currentUser.username}`;
         } else {
             authDot.classList.add('locked');
             authLabel.textContent = 'Не авторизован';
