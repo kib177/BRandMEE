@@ -59,12 +59,6 @@ function bindEvents() {
         filterEquipmentValue = $('#filterEquipment').value;
         applyFilterAndRender();
     };
-    const filterDeptEl = document.getElementById('filterDepartment');
-    if (filterDeptEl) {
-        filterDeptEl.addEventListener('change', () => {
-           filterDepartmentValue = filterDeptEl.value;
-           applyFilterAndRender();
-      });
     }
 
     const filterDeptEl = $('#filterDepartment');
