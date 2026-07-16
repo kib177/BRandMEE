@@ -1,4 +1,8 @@
-/* Бургер-меню – внешний вид */
+/* Бургер-меню в шапке */
+.header-menu {
+  position: relative;
+}
+
 .btn-icon-menu {
   background: none;
   border: none;
@@ -10,14 +14,17 @@
 }
 
 .dropdown-menu {
+  position: fixed;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow);
   z-index: 150;
   min-width: 200px;
+  max-width: calc(100vw - 20px);
   padding: 0.5rem 0;
   margin: 0;
+  /* Позиционирование будет задано в JS */
 }
 
 .dropdown-item {
