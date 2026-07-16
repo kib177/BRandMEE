@@ -151,6 +151,16 @@ router.patch('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
     }
 
     res.json({ ok: true });
+    
+    logAction({
+    user: req.user,
+    action: status === 'approved' ? 'approve_writeoff' : 'reject_writeoff',
+    entityType: 'write_off',
+    entityId: req.params.id,
+    details: { status },
+    req
+      
+}).catch(() => {});
   } catch (err) {
     console.error('Ошибка обработки списания:', err);
     res.status(500).json({ error: 'Ошибка обработки списания' });
