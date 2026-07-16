@@ -3,6 +3,7 @@ const router = express.Router();
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { sendMail } = require('../mailer');
 const pool = require('../db');
+const { logAction } = require('../log/logger');
 
 // Отправка рассылки (только админ)
 router.post('/send', authMiddleware, requireRole('admin'), async (req, res) => {
