@@ -51,4 +51,59 @@ router.get('/me', async (req, res) => {
   }
 });
 
+// Обновление собственного профиля (логин, пароль, email)
+router.put('/update-profile', authMiddleware, async (req, res) => {
+  const { currentPassword, newUsername, newPassword, newEmail } = req.body;
+  if (!currentPassword) {
+    return res.status(400).json({ error: 'Текущий пароль обязателен' });
+  }
+
+  try {
+    const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
+    const user = userRes.rows[0];
+    if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+
+    if (!bcrypt.compareSync(currentPassword, user.password_hash)) {
+      return res.status(401).json({ error: 'Неверный текущий пароль' });
+    }
+
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (newUsername && newUsername !== user.username) {
+      updates.push(`username = $${paramCount++}`);
+      values.push(newUsername);
+    }
+    if (newPassword) {
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(newPassword, salt);
+      updates.push(`password_hash = $${paramCount++}`);
+      values.push(hash);
+    }
+    if (newEmail !== undefined) {
+      updates.push(`email = $${paramCount++}`);
+      values.push(newEmail);
+    }
+
+    if (updates.length === 0) {
+      return res.json({ ok: true, user: { id: user.id, username: user.username, role: user.role, email: user.email, department_id: user.department_id } });
+    }
+
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    values.push(req.user.id);
+
+    await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${paramCount}`, values);
+
+    const updatedUser = await pool.query('SELECT id, username, email, role, department_id FROM users WHERE id = $1', [req.user.id]);
+    res.json({ ok: true, user: updatedUser.rows[0] });
+  } catch (err) {
+    console.error(err);
+    if (err.code === '23505') {
+      return res.status(400).json({ error: 'Логин уже занят' });
+    }
+    res.status(500).json({ error: 'Ошибка обновления профиля' });
+  }
+});
+
 module.exports = router;
