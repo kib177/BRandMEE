@@ -28,6 +28,15 @@ async function startScanner() {
     const readerElement = document.getElementById('reader');
     if (!readerElement) return;
 
+     if (typeof Html5Qrcode === 'undefined') {
+    try {
+      await loadScript('/js/library/html5-qrcode.min.js');
+    } catch (e) {
+      showToast('Сканер временно недоступен', 'error');
+      return;
+    }
+  }
+
     $('#scannerModalOverlay').classList.remove('hidden');
 
     if (html5QrCode) {
