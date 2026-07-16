@@ -142,8 +142,4 @@ function openProfileModal() {
   });
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectMenu);
-} else {
-    injectMenu();
-}
+
