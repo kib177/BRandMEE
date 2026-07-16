@@ -1,9 +1,8 @@
 const $ = (s) => document.querySelector(s);
 const API = '/api/write-offs';
-
+let token = localStorage.getItem('token');
 let currentUser = null;
 
-// Проверка токена и роли
 async function init() {
     if (!token) {
         window.location.href = '/welcome.html';
@@ -31,7 +30,6 @@ function authHeaders() {
     return { 'Authorization': `Bearer ${token}` };
 }
 
-// Загрузка списка списаний
 async function loadRequests(params = {}) {
     const url = new URL(API, window.location.origin);
     Object.entries(params).forEach(([k, v]) => {
@@ -55,7 +53,6 @@ async function loadRequests(params = {}) {
     }
 }
 
-// Рендер таблицы с data-атрибутами (без инлайн-событий)
 function renderTable(requests) {
     const tbody = $('#requestsTable tbody');
     tbody.innerHTML = requests.map(r => `
@@ -82,7 +79,6 @@ function renderTable(requests) {
     tbody.addEventListener('click', onTableClick);
 }
 
-// Обработчик клика по кнопкам ✅/❌ в таблице
 function onTableClick(e) {
     const btn = e.target.closest('.js-resolve');
     if (!btn) return;
@@ -91,7 +87,6 @@ function onTableClick(e) {
     resolve(Number(id), status);
 }
 
-// Изменение статуса
 async function resolve(id, status) {
     const msg = status === 'approved' ? 'подтвердить списание' : 'отклонить';
     if (!confirm(`Вы уверены, что хотите ${msg}?`)) return;
@@ -113,7 +108,6 @@ async function resolve(id, status) {
     }
 }
 
-// Получить текущие фильтры
 function getCurrentFilters() {
     return {
         status: $('#filterStatus').value,
@@ -123,9 +117,10 @@ function getCurrentFilters() {
     };
 }
 
-// Экспорт Excel (без динамической загрузки – библиотека загружена статически)
+// 📥 Экспорт Excel — динамическая загрузка библиотеки
 async function exportExcel() {
     try {
+        await loadScript('/js/library/xlsx.full.min.js');   // загружаем библиотеку
         const filters = getCurrentFilters();
         const allData = await fetchAllForExport(filters);
         const exportData = allData.map(r => ({
@@ -151,7 +146,7 @@ async function exportExcel() {
     }
 }
 
-// Экспорт CSV
+// 📄 Экспорт CSV
 async function exportCSV() {
     try {
         const filters = getCurrentFilters();
@@ -189,7 +184,6 @@ async function fetchAllForExport(filters) {
     return await res.json();
 }
 
-// Загрузка отчёта
 async function loadReport() {
     const year = $('#reportYear').value;
     try {
@@ -219,7 +213,6 @@ async function loadReport() {
         }
         html += '</ul>';
 
-        // Детальная таблица всех записей за год
         html += `<h3>Детализация всех списаний за ${year} год</h3>`;
         if (data.details && data.details.length) {
             html += `<table><thead><tr>
