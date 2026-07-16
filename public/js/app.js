@@ -182,19 +182,3 @@ function updateDate() {
     setInterval(updateDate, 60000);
     updateAuthUI();
 })();
-
-/*if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(reg => {
-    reg.addEventListener('updatefound', () => {
-      const newWorker = reg.installing;
-      newWorker.addEventListener('statechange', () => {
-        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          // Новый воркер готов, просим обновить страницу
-          if (confirm('Доступна новая версия. Обновить?')) {
-            window.location.reload();
-          }
-        }
-      });
-    });
-  });
-}*/
