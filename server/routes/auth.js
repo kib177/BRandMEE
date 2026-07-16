@@ -3,9 +3,10 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const pool = require('../db');
+const { authMiddleware } = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'warehouse_secret_key_change_me';
-const TOKEN_EXPIRES_IN = '7d';
+const TOKEN_EXPIRES_IN = '5d';   // 5 дней
 
 // Логин
 router.post('/login', async (req, res) => {
@@ -23,17 +24,17 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Неверное имя пользователя или пароль' });
     }
 
-    const payload = { id: user.id, username: user.username, role: user.role, department_id: user.department_id };
+    const payload = { id: user.id, username: user.username, role: user.role, department_id: user.department_id, email: user.email };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRES_IN });
 
-    res.json({ token, user: { id: user.id, username: user.username, role: user.role, department_id: user.department_id } });
+    res.json({ token, user: { id: user.id, username: user.username, role: user.role, department_id: user.department_id, email: user.email } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
 
-// Проверка токена
+// Проверка токена (возвращает информацию о текущем пользователе)
 router.get('/me', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -42,7 +43,7 @@ router.get('/me', async (req, res) => {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const result = await pool.query('SELECT id, username, role, department_id FROM users WHERE id = $1', [decoded.id]);
+    const result = await pool.query('SELECT id, username, role, department_id, email FROM users WHERE id = $1', [decoded.id]);
     const user = result.rows[0];
     if (!user) return res.status(401).json({ error: 'Пользователь не найден' });
     res.json({ user });
