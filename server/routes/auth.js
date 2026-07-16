@@ -144,5 +144,12 @@ router.put('/update-profile', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Ошибка обновления профиля' });
   }
 });
-
+router.post('/logout', authMiddleware, async (req, res) => {
+    await logAction({
+        user: req.user,
+        action: 'logout',
+        req
+    }).catch(() => {});
+    res.json({ ok: true });
+});
 module.exports = router;
