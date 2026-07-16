@@ -71,6 +71,20 @@ if (filterDept) {
         console.error('Ошибка загрузки отделов для фильтра', e);
     }
 }
+  const importDept = document.getElementById('importDepartment');
+if (importDept) {
+    try {
+        const deptRes = await fetch('/api/directories/departments');
+        if (deptRes.ok) {
+            const depts = await deptRes.json();
+            importDept.innerHTML = '<option value="">🏢 Отдел импорта (по умолчанию мой)</option>' +
+                depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            // Показываем селект только админу (класс admin-only скроет его для других)
+        }
+    } catch (e) {
+        console.error('Ошибка загрузки отделов для импорта', e);
+    }
+}
 }
 
 // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
