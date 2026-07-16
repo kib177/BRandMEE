@@ -13,6 +13,7 @@ var token = localStorage.getItem('token');   // глобальная перем�
 function logout() {
     token = null;
     currentUser = null;
+    fetch('/api/auth/logout', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }).catch(() => {});
     localStorage.removeItem('token');
     updateAuthUI();
     window.location.href = '/welcome.html';
