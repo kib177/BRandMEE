@@ -18,16 +18,29 @@
 
     /* ----- ШАПКА ----- */
     .header { padding: 0 0.5rem; }
-    .header-inner {
+    /* Внутри @media (max-width: 768px) */
+.header-inner {
+    position: relative;              /* добавляем */
     max-width: 100%;
     margin: 0;
     height: auto;
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;      /* поднимаем кнопку и дату наверх */
+    align-items: flex-start;
     justify-content: space-between;
     gap: 0.4rem;
     padding: 0.4rem 0;
+}
+
+#btnLoginLogout {
+    position: absolute;              /* абсолютное позиционирование */
+    right: 0.5rem;                   /* отступ от правого края */
+    top: 50%;                        /* вертикальное центрирование */
+    transform: translateY(-50%);     /* точное центрирование */
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+    z-index: 10;                     /* поверх остальных элементов */
 }
 .header-logo {
     display: flex;
@@ -54,11 +67,6 @@
     display: flex;
     align-items: center;
     gap: 0.3rem;
-    font-size: 0.7rem;
-    flex-shrink: 0;
-}
-#btnLoginLogout {
-    padding: 0.2rem 0.6rem;
     font-size: 0.7rem;
     flex-shrink: 0;
 }
