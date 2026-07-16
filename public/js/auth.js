@@ -1,7 +1,7 @@
 // auth.js – управление авторизацией, роли, localStorage (сессия 5 дней)
 
 let currentUser = null;
-let token = localStorage.getItem('token');
+var token = localStorage.getItem('token');   // глобальная переменная
 
 // Сразу скрываем элементы, требующие авторизации
 (function hideRestrictedElements() {
