@@ -11,7 +11,7 @@ async function init() {
         });
         if (!res.ok) throw new Error('Unauthorized');
         const data = await res.json();
-        if (data.user.role !== 'admin') {
+        if (data.user.role !== 'admin' && data.user.role !== 'moderator' && data.user.role !== 'storekeeper') {
             alert('Доступ запрещён');
             window.location.href = '/welcome.html';
             return;
