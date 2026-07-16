@@ -1,6 +1,6 @@
 /* Бургер-меню в шапке */
 .header-menu {
-  position: relative;
+  position: relative; /* оставляем для возможного расширения */
 }
 
 .btn-icon-menu {
@@ -14,19 +14,19 @@
 }
 
 .dropdown-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;               /* прижимаем к правому краю родителя */
-  left: auto;             /* сбрасываем левую привязку */
+  position: fixed;          /* фиксируем относительно окна браузера */
+  top: 55px;                /* высота шапки (можно подстроить) */
+  right: 10px;              /* отступ от правого края экрана */
+  left: auto;               /* убираем привязку к левому краю */
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow);
   z-index: 150;
   min-width: 200px;
-  max-width: 90vw;        /* не шире 90% экрана, чтобы не вылезать */
+  max-width: calc(100vw - 20px); /* не шире экрана минус отступы */
   padding: 0.5rem 0;
-  margin-top: 4px;
+  margin-top: 0;            /* больше не нужно, так как не относительно родителя */
 }
 
 .dropdown-item {
