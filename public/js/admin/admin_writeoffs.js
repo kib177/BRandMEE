@@ -1,6 +1,5 @@
 const $ = (s) => document.querySelector(s);
 const API = '/api/write-offs';
-let token = localStorage.getItem('token');
 let currentUser = null;
 
 async function init() {
