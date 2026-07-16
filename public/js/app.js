@@ -117,28 +117,30 @@ if (filterDeptEl) {
     };
 
     // Импорт
-    $('#importFileInput').onchange = async (e) => {
-        if (!currentUser || (currentUser.role !== 'moderator' && currentUser.role !== 'admin')) {
-            showToast('Требуется авторизация', 'error');
-            e.target.value = '';
-            return;
+    $('#importFileInput').onchange = async (e) => {if (e.target.files[0]) {
+    const file = e.target.files[0];
+    const ext = file.name.split('.').pop().toLowerCase();
+    try {
+        if (ext === 'xlsx' || ext === 'xls') {
+            await loadScript('/js/library/xlsx.full.min.js');
         }
-        if (e.target.files[0]) {
-            const success = await handleImport(e.target.files[0]);
-            if (success) {
-                searchQuery = '';
-                filterTypeValue = '';
-                filterEquipmentValue = '';
-                $('#searchInput').value = '';
-                $('#filterType').value = '';
-                $('#filterEquipment').value = '';
-                selectedRowCode = null;
-                await loadData();
-                await loadDirectoriesForForm();
-            }
-            e.target.value = '';
+        const success = await handleImport(file);
+        if (success) {
+            searchQuery = '';
+            filterTypeValue = '';
+            filterEquipmentValue = '';
+            $('#searchInput').value = '';
+            $('#filterType').value = '';
+            $('#filterEquipment').value = '';
+            selectedRowCode = null;
+            await loadData();
+            await loadDirectoriesForForm();
         }
-    };
+    } catch (err) {
+        showToast('Ошибка загрузки библиотеки', 'error');
+    }
+    e.target.value = '';
+}
 
     // Модальные окна
     $('#btnSubmit').onclick = submitForm;
