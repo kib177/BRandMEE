@@ -7,24 +7,28 @@ function isMobileDevice() {
 }
 
 function stopScanner() {
-    const readerElement = document.getElementById('reader');
-    if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().then(() => {
-            html5QrCode.clear();
-            html5QrCode = null;
-            if (readerElement) readerElement.innerHTML = '';
-            $('#scannerModalOverlay').classList.add('hidden');
-        }).catch(err => {
-            console.error('Ошибка остановки сканера', err);
-            html5QrCode = null;
-            if (readerElement) readerElement.innerHTML = '';
-            $('#scannerModalOverlay').classList.add('hidden');
-        });
-    } else {
-        html5QrCode = null;
-        if (readerElement) readerElement.innerHTML = '';
-        $('#scannerModalOverlay').classList.add('hidden');
-    }
+  const scannerOverlay = document.getElementById('scannerModalOverlay');
+  if (scannerOverlay) {
+    scannerOverlay.classList.add('hidden');
+  }
+
+  if (html5QrCode && html5QrCode.isScanning) {
+    html5QrCode.stop().then(() => {
+      html5QrCode.clear();
+      html5QrCode = null;
+    }).catch(err => {
+      console.error('Ошибка остановки сканера:', err);
+      html5QrCode = null;
+    });
+  } else {
+    html5QrCode = null;
+  }
+
+  // Очищаем контейнер
+  const readerElement = document.getElementById('reader');
+  if (readerElement) {
+    readerElement.innerHTML = '';
+  }
 }
 
 async function startScanner() {
