@@ -66,6 +66,7 @@ router.get('/', authMiddleware, resolveDepartment, async (req, res) => {
     query += ' ORDER BY i.updated_at DESC';
     const result = await pool.query(query, params);
     res.json(result.rows);
+    
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка получения данных' });
@@ -173,6 +174,15 @@ router.post('/', authMiddleware, resolveDepartment, async (req, res) => {
     `, [code, departmentId, name, model, type_id || null, equipment_id || null, location, unit, quantity, date]);
 
     res.json({ ok: true, code });
+
+    logAction({
+    user: req.user,
+    action: 'create_item',
+    entityType: 'inventory',
+    entityId: code,
+    details: { name, quantity, departmentId: departmentId },
+    req
+}).catch(() => {});
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка сохранения' });
@@ -223,6 +233,15 @@ router.delete('/:code', authMiddleware, resolveDepartment, async (req, res) => {
     const result = await pool.query('DELETE FROM inventory WHERE code = $1 AND department_id = $2 RETURNING code', [req.params.code, departmentId]);
     if (result.rowCount === 0) return res.status(404).json({ error: 'Не найдено' });
     res.json({ ok: true });
+
+    logAction({
+    user: req.user,
+    action: 'delete_item',
+    entityType: 'inventory',
+    entityId: req.params.code,
+    req
+    }).catch(() => {});
+    
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка удаления' });
