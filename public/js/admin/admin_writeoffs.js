@@ -1,4 +1,3 @@
-const $ = (s) => document.querySelector(s);
 const API = '/api/write-offs';
 
 async function init() {
