@@ -141,5 +141,5 @@ function openProfileModal() {
     }
   });
 }
-
+document.addEventListener('DOMContentLoaded', injectMenu);
 
