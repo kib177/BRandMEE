@@ -2,6 +2,7 @@
 .header-menu {
   position: relative;
 }
+
 .btn-icon-menu {
   background: none;
   border: none;
@@ -11,19 +12,23 @@
   padding: 0.3rem;
   line-height: 1;
 }
+
 .dropdown-menu {
   position: absolute;
-  right: 0;
   top: 100%;
+  right: 0;               /* прижимаем к правому краю родителя */
+  left: auto;             /* сбрасываем левую привязку */
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow);
   z-index: 150;
   min-width: 200px;
+  max-width: 90vw;        /* не шире 90% экрана, чтобы не вылезать */
   padding: 0.5rem 0;
   margin-top: 4px;
 }
+
 .dropdown-item {
   display: block;
   width: 100%;
@@ -35,6 +40,7 @@
   cursor: pointer;
   color: var(--text);
 }
+
 .dropdown-item:hover {
   background: var(--accent-light);
 }
