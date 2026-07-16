@@ -10,7 +10,7 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 router.get('/', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT u.id, u.username, u.email, u.role, u.department_id, d.name AS department_name, u.created_at
+      `SELECT u.id, u.username, u.display_name, u.email, u.role, u.department_id, d.name AS department_name, u.created_at
        FROM users u
        LEFT JOIN departments d ON u.department_id = d.id
        ORDER BY u.username`
@@ -24,7 +24,7 @@ router.get('/', authMiddleware, requireRole('admin'), async (req, res) => {
 
 // Создать пользователя
 router.post('/', authMiddleware, requireRole('admin'), async (req, res) => {
-  const { username, email, password, role, department_id } = req.body;
+  const { username, display_name, email, password, role, department_id } = req.body;
   if (!username || !password || !role) {
     return res.status(400).json({ error: 'username, password, role обязательны' });
   }
@@ -39,8 +39,8 @@ router.post('/', authMiddleware, requireRole('admin'), async (req, res) => {
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(password, salt);
     const result = await pool.query(
-      'INSERT INTO users (username, email, password_hash, role, department_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email, role, department_id',
-      [username, email || null, hash, role, department_id || null]
+      'INSERT INTO users (username, display_name, email, password_hash, role, department_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, username, display_name, email, role, department_id',
+      [username, display_name || null, email || null, hash, role, department_id || null]
     );
     res.json(result.rows[0]);
   } catch (err) {
@@ -55,7 +55,7 @@ router.post('/', authMiddleware, requireRole('admin'), async (req, res) => {
 // Обновить пользователя
 router.put('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
   const userId = req.params.id;
-  const { username, email, role, department_id, password } = req.body;
+  const { username, display_name, email, role, department_id, password } = req.body;
 
   try {
     const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
@@ -75,6 +75,10 @@ router.put('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
     if (username !== undefined && username !== null && username !== '') {
       query += `username = $${paramCount++}, `;
       values.push(username);
+    }
+    if (display_name !== undefined) {
+      query += `display_name = $${paramCount++}, `;
+      values.push(display_name);
     }
     if (email !== undefined) {
       query += `email = $${paramCount++}, `;
@@ -102,7 +106,7 @@ router.put('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
     await pool.query(query, values);
 
     const updated = await pool.query(
-      `SELECT u.id, u.username, u.email, u.role, u.department_id, d.name AS department_name
+      `SELECT u.id, u.username, u.display_name, u.email, u.role, u.department_id, d.name AS department_name
        FROM users u LEFT JOIN departments d ON u.department_id = d.id
        WHERE u.id = $1`,
       [userId]
