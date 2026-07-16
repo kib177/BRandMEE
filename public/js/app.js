@@ -140,7 +140,8 @@ if (filterDeptEl) {
         showToast('Ошибка загрузки библиотеки', 'error');
     }
     e.target.value = '';
-}
+    }
+                                                  };
 
     // Модальные окна
     $('#btnSubmit').onclick = submitForm;
