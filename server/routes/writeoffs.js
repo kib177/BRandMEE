@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { sendMail } = require('../mailer');
+const { logAction } = require('../log/logger');
 
 // Создание заявки (сотрудник)
 router.post('/', async (req, res) => {
