@@ -92,7 +92,14 @@ if (filterDeptEl) {
     });
 
     // Экспорт
-    $('#btnExportExcel').onclick = () => exportExcel(filteredInventory);
+    $('#btnExportExcel').onclick = async () => {
+       try {
+    await loadScript('/js/library/xlsx.full.min.js');
+    exportExcel(filteredInventory);
+  } catch (e) {
+    showToast('Ошибка загрузки Excel', 'error');
+  }
+};
     $('#btnExportCSV').onclick = () => exportCSV(filteredInventory);
 
     // CRUD
