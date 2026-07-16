@@ -16,10 +16,13 @@ function stopScanner() {
             $('#scannerModalOverlay').classList.add('hidden');
         }).catch(err => {
             console.error('Ошибка остановки сканера', err);
+            html5QrCode = null;
+            if (readerElement) readerElement.innerHTML = '';
             $('#scannerModalOverlay').classList.add('hidden');
         });
     } else {
         html5QrCode = null;
+        if (readerElement) readerElement.innerHTML = '';
         $('#scannerModalOverlay').classList.add('hidden');
     }
 }
@@ -28,27 +31,23 @@ async function startScanner() {
     const readerElement = document.getElementById('reader');
     if (!readerElement) return;
 
-     if (typeof Html5Qrcode === 'undefined') {
-    try {
-      await loadScript('/js/library/html5-qrcode.min.js');
-    } catch (e) {
-      showToast('Сканер временно недоступен', 'error');
-      return;
-    }
-  }
-
     $('#scannerModalOverlay').classList.remove('hidden');
+
+    // Динамически загружаем библиотеку при необходимости
+    if (typeof Html5Qrcode === 'undefined') {
+        try {
+            await loadScript('/js/library/html5-qrcode.min.js');
+        } catch (e) {
+            showToast('Сканер временно недоступен', 'error');
+            $('#scannerModalOverlay').classList.add('hidden');
+            return;
+        }
+    }
 
     if (html5QrCode) {
         await html5QrCode.stop();
         html5QrCode.clear();
         readerElement.innerHTML = '';
-    }
-
-    if (typeof Html5Qrcode === 'undefined') {
-        showToast('Сканер временно недоступен', 'error');
-        $('#scannerModalOverlay').classList.add('hidden');
-        return;
     }
 
     html5QrCode = new Html5Qrcode("reader");
@@ -107,11 +106,8 @@ function initScannerButton() {
     const btn = document.getElementById('btnScan');
     if (!btn) return;
 
-    if (typeof Html5Qrcode === 'undefined') {
-        console.warn('Html5Qrcode не загружен, сканер отключён');
-        return;
-    }
-
+    // Проверку на Html5Qrcode убираем, потому что библиотека будет загружена динамически
+    // На мобильных устройствах кнопка сканера видна, на десктопе скрыта.
     if (isMobileDevice()) {
         btn.style.display = 'inline-flex';
         btn.addEventListener('click', () => {
@@ -120,9 +116,7 @@ function initScannerButton() {
             } else {
                 startScanner();
             }
-            
         });
-        document.getElementById('btnCloseScanner')?.addEventListener('click', stopScanner);
     } else {
         btn.style.display = 'none';
     }
