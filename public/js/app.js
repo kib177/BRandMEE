@@ -1,10 +1,9 @@
+// app.js – основная логика главной страницы
 let inventory = [];
 
 async function loadData() {
-    const params = {};
-    if (filterDepartmentValue) params.department_id = filterDepartmentValue;
     try {
-        inventory = await fetchInventory(params);
+        inventory = await fetchInventory();
     } catch {
         inventory = [];
         showToast('Сервер недоступен', 'error');
@@ -21,14 +20,13 @@ function applyFilterAndRender() {
     updateStats(inventory);
 }
 
-// ========== АВТОРИЗАЦИЯ ДЕЙСТВИЙ ==========
 function executeAction(action, data) {
     switch (action) {
         case 'add': openAddModal(); break;
         case 'edit': openEditModal(data); break;
         case 'delete': openConfirmDelete(data); break;
         case 'deleteAll': openConfirmDeleteAll(); break;
-        case 'import': $('#importFileInput').click(); break;
+        case 'import': document.getElementById('importFileInput').click(); break;
     }
 }
 
@@ -37,54 +35,54 @@ function requireAuth(action, data) {
         showLoginModal(() => executeAction(action, data));
         return;
     }
-    if (action !== 'writeoff' && currentUser.role !== 'admin' && currentUser.role !== 'moderator') {
+    if (action !== 'writeoff' && currentUser.role !== 'admin' && currentUser.role !== 'moderator' && currentUser.role !== 'storekeeper') {
         showToast('Недостаточно прав', 'error');
         return;
     }
     executeAction(action, data);
 }
 
-// ========== ОСНОВНЫЕ СОБЫТИЯ ==========
 function bindEvents() {
     // Поиск
-    $('#searchInput').oninput = () => { searchQuery = $('#searchInput').value; applyFilterAndRender(); };
+    document.getElementById('searchInput').oninput = () => {
+        searchQuery = document.getElementById('searchInput').value;
+        applyFilterAndRender();
+    };
 
     // Фильтры
-    $('#filterType').onchange = () => {
-        filterTypeValue = $('#filterType').value;
+    document.getElementById('filterType').onchange = () => {
+        filterTypeValue = document.getElementById('filterType').value;
         applyFilterAndRender();
     };
-    $('#filterEquipment').onchange = () => {
-        filterEquipmentValue = $('#filterEquipment').value;
+    document.getElementById('filterEquipment').onchange = () => {
+        filterEquipmentValue = document.getElementById('filterEquipment').value;
         applyFilterAndRender();
     };
-    
-
-    const filterDeptEl = $('#filterDepartment');
-if (filterDeptEl) {
-    filterDeptEl.addEventListener('change', function() {
-        filterDepartmentValue = this.value;
-        applyFilterAndRender();
-    });
-}
+    const filterDeptEl = document.getElementById('filterDepartment');
+    if (filterDeptEl) {
+        filterDeptEl.addEventListener('change', () => {
+            filterDepartmentValue = filterDeptEl.value;
+            applyFilterAndRender();
+        });
+    }
 
     // Сброс фильтров
-    $('#btnResetFilters').onclick = () => {
-        $('#searchInput').value = '';
+    document.getElementById('btnResetFilters').onclick = () => {
+        document.getElementById('searchInput').value = '';
         searchQuery = '';
         filterTypeValue = '';
         filterEquipmentValue = '';
-        $('#filterType').value = '';
-        $('#filterEquipment').value = '';
-        selectedRowCode = null;
-        applyFilterAndRender();
         filterDepartmentValue = '';
+        document.getElementById('filterType').value = '';
+        document.getElementById('filterEquipment').value = '';
         const filterDept = document.getElementById('filterDepartment');
         if (filterDept) filterDept.value = '';
+        selectedRowCode = null;
+        applyFilterAndRender();
     };
 
     // Сортировка
-    $$('thead th[data-sort]').forEach(th => th.onclick = () => {
+    document.querySelectorAll('thead th[data-sort]').forEach(th => th.onclick = () => {
         const key = th.dataset.sort;
         if (sortConfig.key === key) sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
         else { sortConfig.key = key; sortConfig.direction = 'asc'; }
@@ -92,87 +90,114 @@ if (filterDeptEl) {
     });
 
     // Экспорт
-    $('#btnExportExcel').onclick = async () => {
-       try {
-    await loadScript('/js/library/xlsx.full.min.js');
-    exportExcel(filteredInventory);
-  } catch (e) {
-    showToast('Ошибка загрузки Excel', 'error');
-  }
-};
-    $('#btnExportCSV').onclick = () => exportCSV(filteredInventory);
+    document.getElementById('btnExportExcel').onclick = () => exportExcel(filteredInventory);
+    document.getElementById('btnExportCSV').onclick = () => exportCSV(filteredInventory);
 
     // CRUD
-    $('#btnAdd').onclick = () => requireAuth('add');
-    $('#btnImport').onclick = () => requireAuth('import');
-    $('#btnEdit').onclick = () => {
+    document.getElementById('btnAdd').onclick = () => requireAuth('add');
+    document.getElementById('btnImport').onclick = () => requireAuth('import');
+    document.getElementById('btnEdit').onclick = () => {
         if (selectedRowCode) requireAuth('edit', selectedRowCode);
     };
-    $('#btnDeleteSelected').onclick = () => {
+    document.getElementById('btnDeleteSelected').onclick = () => {
         if (selectedRowCode) requireAuth('delete', selectedRowCode);
     };
-    $('#btnDeleteAll').onclick = () => requireAuth('deleteAll');
-    $('#btnWriteOff').onclick = () => {
+    document.getElementById('btnDeleteAll').onclick = () => requireAuth('deleteAll');
+    document.getElementById('btnWriteOff').onclick = () => {
         if (selectedRowCode) window.location.href = `/writeoff.html?code=${encodeURIComponent(selectedRowCode)}`;
     };
 
-    // Импорт
-    $('#importFileInput').onchange = async (e) => {if (e.target.files[0]) {
-    const file = e.target.files[0];
-    const ext = file.name.split('.').pop().toLowerCase();
-    try {
-        if (ext === 'xlsx' || ext === 'xls') {
-            await loadScript('/js/library/xlsx.full.min.js');
+    // Импорт с выбором отдела
+    document.getElementById('importFileInput').onchange = async (e) => {
+        if (!currentUser || (currentUser.role !== 'moderator' && currentUser.role !== 'admin' && currentUser.role !== 'storekeeper')) {
+            showToast('Требуется авторизация', 'error');
+            e.target.value = '';
+            return;
         }
-        const success = await handleImport(file);
-        if (success) {
-            searchQuery = '';
-            filterTypeValue = '';
-            filterEquipmentValue = '';
-            $('#searchInput').value = '';
-            $('#filterType').value = '';
-            $('#filterEquipment').value = '';
-            selectedRowCode = null;
-            await loadData();
-            await loadDirectoriesForForm();
+        if (e.target.files[0]) {
+            const file = e.target.files[0];
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            // Получаем выбранный отдел (только для админа)
+            let departmentId = null;
+            if (currentUser.role === 'admin') {
+                const deptSelect = document.getElementById('importDepartment');
+                departmentId = deptSelect ? deptSelect.value : '';
+            }
+
+            try {
+                if (ext === 'xlsx' || ext === 'xls') {
+                    await loadScript('/js/library/xlsx.full.min.js');
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+                if (departmentId) {
+                    formData.append('department_id', departmentId);
+                }
+
+                const res = await fetch('/api/inventory/import-' + (ext === 'csv' ? 'csv' : 'excel'), {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Ошибка импорта');
+                }
+
+                const result = await res.json();
+                showToast(`✅ Импортировано: ${result.count}`, 'success');
+                if (result.skippedCount) {
+                    showToast(`Пропущено: ${result.skippedCount}`, 'warning');
+                }
+
+                // Очищаем фильтры и перезагружаем
+                searchQuery = '';
+                filterTypeValue = '';
+                filterEquipmentValue = '';
+                document.getElementById('searchInput').value = '';
+                document.getElementById('filterType').value = '';
+                document.getElementById('filterEquipment').value = '';
+                selectedRowCode = null;
+                await loadData();
+                await loadDirectoriesForForm();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+            e.target.value = '';
         }
-    } catch (err) {
-        showToast('Ошибка загрузки библиотеки', 'error');
-    }
-    e.target.value = '';
-    }
-                                                  };
+    };
 
     // Модальные окна
-    $('#btnSubmit').onclick = submitForm;
-    $('#btnCancel').onclick = () => $('#modalOverlay').classList.add('hidden');
-    $('#btnCloseView').onclick = () => $('#viewModalOverlay').classList.add('hidden');
-    $('#btnConfirmDelete').onclick = executeDelete;
-    $('#btnConfirmCancel').onclick = () => $('#confirmOverlay').classList.add('hidden');
-    $('#btnConfirmDeleteAll').onclick = executeDeleteAll;
-    $('#btnConfirmDeleteAllCancel').onclick = () => $('#confirmDeleteAllOverlay').classList.add('hidden');
+    document.getElementById('btnSubmit').onclick = submitForm;
+    document.getElementById('btnCancel').onclick = () => document.getElementById('modalOverlay').classList.add('hidden');
+    document.getElementById('btnCloseView').onclick = () => document.getElementById('viewModalOverlay').classList.add('hidden');
+    document.getElementById('btnConfirmDelete').onclick = executeDelete;
+    document.getElementById('btnConfirmCancel').onclick = () => document.getElementById('confirmOverlay').classList.add('hidden');
+    document.getElementById('btnConfirmDeleteAll').onclick = executeDeleteAll;
+    document.getElementById('btnConfirmDeleteAllCancel').onclick = () => document.getElementById('confirmDeleteAllOverlay').classList.add('hidden');
 
     // Закрытие модалок и сканера по Escape
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
-            $('#modalOverlay').classList.add('hidden');
-            $('#viewModalOverlay').classList.add('hidden');
-            $('#confirmOverlay').classList.add('hidden');
-            $('#confirmDeleteAllOverlay').classList.add('hidden');
+            document.getElementById('modalOverlay').classList.add('hidden');
+            document.getElementById('viewModalOverlay').classList.add('hidden');
+            document.getElementById('confirmOverlay').classList.add('hidden');
+            document.getElementById('confirmDeleteAllOverlay').classList.add('hidden');
             if (typeof stopScanner === 'function') stopScanner();
         }
     });
 }
 
 function updateDate() {
-    $('#currentDate').textContent = new Date().toLocaleDateString('ru-RU', {
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('ru-RU', {
         weekday:'short', day:'2-digit', month:'long', year:'numeric'
     });
 }
 
-// ========== ИНИЦИАЛИЗАЦИЯ ==========
 (async function init() {
-    await checkAuth();
     await loadDirectoriesForForm();
     bindEvents();
     if (typeof initScannerButton === 'function') initScannerButton();
