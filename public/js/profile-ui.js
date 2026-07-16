@@ -1,0 +1,114 @@
+// profile-ui.js – бургер-меню и модалка профиля
+
+function injectMenu() {
+  if (document.getElementById('menuToggle')) return;
+  const headerInner = document.querySelector('.header-inner');
+  if (!headerInner) return;
+
+  const menuContainer = document.createElement('div');
+  menuContainer.className = 'header-menu';
+  menuContainer.innerHTML = `
+    <button class="btn-icon-menu" id="menuToggle" title="Меню">☰</button>
+    <div class="dropdown-menu hidden" id="dropdownMenu">
+      <button class="dropdown-item" id="menuProfile">👤 Настройки профиля</button>
+    </div>
+  `;
+  headerInner.appendChild(menuContainer);
+
+  document.getElementById('menuToggle').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('dropdownMenu').classList.toggle('hidden');
+  });
+  document.addEventListener('click', () => document.getElementById('dropdownMenu').classList.add('hidden'));
+  document.getElementById('dropdownMenu').addEventListener('click', (e) => e.stopPropagation());
+
+  document.getElementById('menuProfile').addEventListener('click', () => {
+    document.getElementById('dropdownMenu').classList.add('hidden');
+    openProfileModal();
+  });
+}
+
+function openProfileModal() {
+  const old = document.getElementById('profileModalOverlay');
+  if (old) old.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'profileModalOverlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width: 450px; position: relative;">
+      <button class="btn-icon-info" id="closeProfileModal" style="position:absolute; top:10px; right:10px;">✕</button>
+      <h2>Настройки профиля</h2>
+      <form id="profileForm">
+        <div class="form-group">
+          <label>Текущий пароль *</label>
+          <input type="password" id="currentPassword" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Новый логин (оставьте пустым, чтобы не менять)</label>
+          <input type="text" id="newUsername" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Новый пароль (оставьте пустым, чтобы не менять)</label>
+          <input type="password" id="newPassword" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="newEmail" value="${currentUser?.email || ''}">
+        </div>
+        <div class="form-error" id="profileError" style="display:none;"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById('closeProfileModal').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newUsername = document.getElementById('newUsername').value.trim();
+    const newPassword = document.getElementById('newPassword').value;
+    const newEmail = document.getElementById('newEmail').value.trim();
+
+    try {
+      const res = await fetch('/api/auth/update-profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newUsername: newUsername || undefined,
+          newPassword: newPassword || undefined,
+          newEmail: newEmail || undefined
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        document.getElementById('profileError').textContent = data.error || 'Ошибка';
+        document.getElementById('profileError').style.display = 'block';
+        return;
+      }
+      if (data.user) {
+        currentUser = data.user;
+        if (typeof updateAuthUI === 'function') updateAuthUI();
+      }
+      overlay.remove();
+      if (typeof showToast === 'function') showToast('Профиль обновлён', 'success');
+      else alert('Профиль обновлён');
+    } catch (err) {
+      console.error(err);
+    }
+  });
+}
+
+// Автоматически внедряем меню на всех страницах, где есть шапка
+document.addEventListener('DOMContentLoaded', injectMenu);
