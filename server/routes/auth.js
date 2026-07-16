@@ -32,12 +32,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRES_IN });
 
     res.json({ token, user: { id: user.id, username: user.username, role: user.role, department_id: user.department_id, email: user.email, display_name: user.display_name } });
-
-    logAction({
-      user: { id: user.id, username: user.username, role: user.role },
-      action: 'login',
-      req
-    }).catch(() => {});
+    
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка сервера' });
@@ -130,13 +125,5 @@ router.put('/update-profile', authMiddleware, async (req, res) => {
     }
     res.status(500).json({ error: 'Ошибка обновления профиля' });
   }
-});
-router.post('/logout', authMiddleware, async (req, res) => {
-    await logAction({
-        user: req.user,
-        action: 'logout',
-        req
-    }).catch(() => {});
-    res.json({ ok: true });
 });
 module.exports = router;
