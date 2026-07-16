@@ -54,20 +54,6 @@ app.use('/api/mailing', require('./routes/mailing'));
 // Статические файлы (фронтенд)
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// Отдельные дашборды для ролей
-app.get('/dashboard_admin.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'dashboard_admin.html'));
-});
-app.get('/dashboard_moderator.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'dashboard_moderator.html'));
-});
-app.get('/dashboard_storekeeper.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'dashboard_storekeeper.html'));
-});
-app.get('/dashboard_user.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'dashboard_user.html'));
-});
-
 // Для SPA — все остальные запросы на index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'welcome.html'));
