@@ -57,7 +57,8 @@ function renderTable(requests) {
             <td>${r.id}</td>
             <td>${r.item_code}</td>
             <td>${r.item_name}</td>
-            <td>${r.quantity} ${r.unit}</td>
+            <td>${r.quantity}</td>                    <!-- отдельно количество -->
+            <td>${r.unit}</td>                         <!-- отдельно единица измерения -->
             <td>${r.equipment_name || '—'}</td>
             <td>${r.requested_by}</td>
             <td>${new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })}</td>
