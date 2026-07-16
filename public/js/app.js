@@ -59,7 +59,7 @@ function bindEvents() {
         filterEquipmentValue = $('#filterEquipment').value;
         applyFilterAndRender();
     };
-    }
+    
 
     const filterDeptEl = $('#filterDepartment');
 if (filterDeptEl) {
