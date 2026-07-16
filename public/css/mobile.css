@@ -19,7 +19,7 @@
     /* ----- ШАПКА (одна строка, без переносов) ----- */
     .header {
         padding: 0 0.5rem;
-        height: 48px;
+        height: 62px;
     }
 
     .header-inner {
