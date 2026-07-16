@@ -1,4 +1,4 @@
-// auth.js – управление авторизацией, роли, без таймера бездействия (сессия 5 дней)
+// auth.js – управление авторизацией, роли, localStorage (сессия 5 дней)
 
 let currentUser = null;
 let token = localStorage.getItem('token');
@@ -10,7 +10,6 @@ let token = localStorage.getItem('token');
     });
 })();
 
-// Функция выхода
 function logout() {
     token = null;
     currentUser = null;
@@ -19,34 +18,29 @@ function logout() {
     window.location.href = '/welcome.html';
 }
 
-// Проверка токена при старте
 async function checkAuth() {
-  token = localStorage.getItem('token');
-  if (!token) {
-    // Токена нет совсем – точно разлогинен, можно редиректить
-    if (!window.location.pathname.includes('welcome.html')) {
-      window.location.href = '/welcome.html';
+    if (!token) {
+        if (!window.location.pathname.includes('welcome.html')) {
+            window.location.href = '/welcome.html';
+        }
+        return;
     }
-    return;
-  }
-
-  try {
-    const res = await fetch('/api/auth/me', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) {
-      logout();  // logout сам сделает редирект на /welcome.html
-      return;
+    try {
+        const res = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            logout();
+            return;
+        }
+        const data = await res.json();
+        currentUser = data.user;
+        updateAuthUI();
+    } catch (e) {
+        logout();
     }
-    const data = await res.json();
-    currentUser = data.user;
-    updateAuthUI();
-  } catch (e) {
-    logout();
-  }
 }
 
-// Показ модального окна входа (используется на главной, если требуется)
 function showLoginModal(onSuccess) {
     let overlay = document.getElementById('loginOverlay');
     if (!overlay) {
@@ -109,35 +103,32 @@ function showLoginModal(onSuccess) {
     document.getElementById('loginUsername').focus();
 }
 
-// Обновление интерфейса в зависимости от авторизации и роли
 function updateAuthUI() {
     const isLoggedIn = !!currentUser;
     const role = currentUser?.role;
 
-    const adminOnlyElements = document.querySelectorAll('.admin-only');
-    const moderatorElements = document.querySelectorAll('.moderator-only');
-    const authRequiredElements = document.querySelectorAll('.auth-required');
-
-    authRequiredElements.forEach(el => {
+    document.querySelectorAll('.auth-required').forEach(el => {
         el.style.display = isLoggedIn ? '' : 'none';
     });
 
-    moderatorElements.forEach(el => {
+    document.querySelectorAll('.moderator-only').forEach(el => {
         el.style.display = (isLoggedIn && (role === 'moderator' || role === 'admin')) ? '' : 'none';
     });
 
-    adminOnlyElements.forEach(el => {
+    document.querySelectorAll('.admin-only').forEach(el => {
         el.style.display = (isLoggedIn && role === 'admin') ? '' : 'none';
     });
 
     const authDot = document.getElementById('authDot');
     const authLabel = document.getElementById('authLabel');
-    if (isLoggedIn) {
-        if (authDot) authDot.classList.remove('locked');
-        if (authLabel) authLabel.textContent = `${currentUser.username} (${role})`;
-    } else {
-        if (authDot) authDot.classList.add('locked');
-        if (authLabel) authLabel.textContent = 'Не авторизован';
+    if (authDot && authLabel) {
+        if (isLoggedIn) {
+            authDot.classList.remove('locked');
+            authLabel.textContent = `${currentUser.username} (${role})`;
+        } else {
+            authDot.classList.add('locked');
+            authLabel.textContent = 'Не авторизован';
+        }
     }
 
     let loginBtn = document.getElementById('btnLoginLogout');
@@ -147,7 +138,8 @@ function updateAuthUI() {
         loginBtn.className = 'btn btn-sm btn-outline';
         loginBtn.style.color = '#1a3c5e';
         loginBtn.style.borderColor = 'rgba(255,255,255,0.7)';
-        document.querySelector('.header-inner')?.appendChild(loginBtn);
+        const headerInner = document.querySelector('.header-inner');
+        if (headerInner) headerInner.appendChild(loginBtn);
     }
     if (isLoggedIn) {
         loginBtn.textContent = 'Выйти';
@@ -165,9 +157,6 @@ function updateAuthUI() {
 function getToken() {
     return token;
 }
-
-// Внедряем меню после загрузки DOM
-document.addEventListener('DOMContentLoaded', injectMenu);
 
 // Запускаем проверку при загрузке
 checkAuth();
