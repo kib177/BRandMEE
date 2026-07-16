@@ -54,6 +54,16 @@ router.post('/', async (req, res) => {
     }
 
     res.json({ ok: true, id: newId });
+    
+    logAction({
+    user: { id: req.user?.id || null, username: requested_by, role: req.user?.role || 'user' },
+    action: 'create_writeoff',
+    entityType: 'write_off',
+    entityId: result.rows[0].id.toString(),
+    details: { item_code, quantity, equipment_id },
+    req
+}).catch(() => {});
+    
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка создания запроса на списание' });
