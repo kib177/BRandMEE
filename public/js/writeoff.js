@@ -66,7 +66,7 @@ $('#submitWriteOff').addEventListener('click', async () => {
   const item_code = $('#selectedCode').value;
   const quantity = parseFloat($('#quantity').value);
   const equipment_id = $('#equipment').value;
-  const requested_by = $('#requestedBy').value.trim() || 'сотрудник';
+  const requested_by = (typeof currentUser !== 'undefined' && currentUser && currentUser.username) ? currentUser.username : 'сотрудник';
   const comment = $('#comment').value.trim();
 
   if (!item_code || !quantity || quantity <= 0) {
