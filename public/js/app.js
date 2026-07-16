@@ -1,5 +1,4 @@
 let inventory = [];
-let filterDepartmentValue = '';
 
 async function loadData() {
     const params = {};
