@@ -90,8 +90,6 @@ router.put('/update-profile', authMiddleware, async (req, res) => {
     if (updates.length === 0) {
       return res.json({ ok: true, user: { id: user.id, username: user.username, role: user.role, email: user.email, department_id: user.department_id } });
     }
-
-    updates.push(`updated_at = CURRENT_TIMESTAMP`);
     values.push(req.user.id);
 
     await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${paramCount}`, values);
