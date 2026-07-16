@@ -1,6 +1,5 @@
 const $ = (s) => document.querySelector(s);
 const API = '/api/directories';
-const token = localStorage.getItem('token');
 
 function authHeaders() {
   return { 'Authorization': `Bearer ${token}` };
