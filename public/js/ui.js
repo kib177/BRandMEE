@@ -58,6 +58,19 @@ async function loadDirectoriesForForm() {
     allEquipments = [];
     console.error('Ошибка загрузки справочников:', err);
   }
+  const filterDept = document.getElementById('filterDepartment');
+if (filterDept) {
+    try {
+        const deptRes = await fetch('/api/directories/departments');
+        if (deptRes.ok) {
+            const depts = await deptRes.json();
+            filterDept.innerHTML = '<option value="">🏢 Все отделы</option>' +
+                depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        }
+    } catch (e) {
+        console.error('Ошибка загрузки отделов для фильтра', e);
+    }
+}
 }
 
 // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
