@@ -1,54 +1,43 @@
 // profile-ui.js – бургер-меню и модалка профиля
 
 function injectMenu() {
-  if (document.getElementById('menuToggle')) return;
-  const headerInner = document.querySelector('.header-inner');
-  if (!headerInner) return;
-
-  const menuContainer = document.createElement('div');
-  menuContainer.className = 'header-menu';
-  menuContainer.innerHTML = `
-    <button class="btn-icon-menu" id="menuToggle" title="Меню">☰</button>
-    <div class="dropdown-menu hidden" id="dropdownMenu">
-      <button class="dropdown-item" id="menuProfile">👤 Настройки профиля</button>
-    </div>
-  `;
-  headerInner.appendChild(menuContainer);
-
   const toggle = document.getElementById('menuToggle');
-  const dropdown = document.getElementById('dropdownMenu');
+const dropdown = document.getElementById('dropdownMenu');
 
-  toggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isHidden = dropdown.classList.contains('hidden');
-    if (isHidden) {
-      // Рассчитываем позицию перед открытием
-      const rect = toggle.getBoundingClientRect();
-      dropdown.style.position = 'fixed';
-      dropdown.style.top = rect.bottom + 4 + 'px';
-      dropdown.style.left = 'auto';
-      dropdown.style.right = (window.innerWidth - rect.right) + 'px';
-      dropdown.style.maxWidth = (window.innerWidth - 20) + 'px';
-      dropdown.classList.remove('hidden');
+toggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const isHidden = dropdown.classList.contains('hidden');
+  if (isHidden) {
+    const btnRect = toggle.getBoundingClientRect();
+    const menuWidth = dropdown.offsetWidth || 200;
+    const spaceRight = window.innerWidth - btnRect.right;
+    const spaceLeft = btnRect.left;
+
+    // Если места справа достаточно, показываем справа от кнопки
+    if (spaceRight >= menuWidth) {
+      dropdown.style.left = btnRect.right + 'px';
+      dropdown.style.right = 'auto';
     } else {
-      dropdown.classList.add('hidden');
+      // Иначе прижимаем правый край меню к правому краю экрана
+      dropdown.style.left = 'auto';
+      dropdown.style.right = Math.max(window.innerWidth - btnRect.right, 10) + 'px';
     }
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!dropdown.contains(e.target) && e.target !== toggle) {
-      dropdown.classList.add('hidden');
-    }
-  });
-
-  dropdown.addEventListener('click', (e) => e.stopPropagation());
-
-  document.getElementById('menuProfile').addEventListener('click', () => {
+    dropdown.style.top = btnRect.bottom + 4 + 'px';
+    dropdown.style.maxWidth = Math.min(menuWidth, window.innerWidth - 20) + 'px';
+    dropdown.classList.remove('hidden');
+  } else {
     dropdown.classList.add('hidden');
-    openProfileModal();
-  });
-}
+  }
+});
 
+// Закрытие при клике вне меню
+document.addEventListener('click', (e) => {
+  if (!dropdown.contains(e.target) && e.target !== toggle) {
+    dropdown.classList.add('hidden');
+  }
+});
+
+dropdown.addEventListener('click', (e) => e.stopPropagation());
 function openProfileModal() {
   const old = document.getElementById('profileModalOverlay');
   if (old) old.remove();
