@@ -33,7 +33,7 @@ function resolveDepartment(req, res, next) {
   const role = req.user?.role;
   const userDept = req.user?.department_id;
 
-  if (role === 'admin' || role === 'moderator') {
+  if (role === 'admin') {
     // Администратор может фильтровать по желанию через query или body
     req.allowedDepartmentId = req.query.department_id || req.body.department_id || null;
     // Если явно указан, используем его, иначе без ограничения (видит всё)
