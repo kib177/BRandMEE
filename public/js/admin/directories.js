@@ -1,6 +1,6 @@
 const $ = (s) => document.querySelector(s);
 const API = '/api/directories';
-let token = localStorage.getItem('token');
+const token = localStorage.getItem('token');
 
 function authHeaders() {
   return { 'Authorization': `Bearer ${token}` };
@@ -92,8 +92,10 @@ $('#addEquip').addEventListener('click', async () => {
 
 // Делегирование событий для сохранения и удаления
 document.addEventListener('click', async (e) => {
-  if (e.target.classList.contains('save-type')) {
-    const id = e.target.dataset.id;
+  const target = e.target;
+
+  if (target.classList.contains('save-type')) {
+    const id = target.dataset.id;
     const input = document.querySelector(`input.type-edit[data-id="${id}"]`);
     const name = input.value.trim();
     if (!name) return;
@@ -111,9 +113,9 @@ document.addEventListener('click', async (e) => {
     } catch (e) {
       alert('Ошибка: ' + e.message);
     }
-  } else if (e.target.classList.contains('delete-type')) {
+  } else if (target.classList.contains('delete-type')) {
     if (!confirm('Удалить тип?')) return;
-    const id = e.target.dataset.id;
+    const id = target.dataset.id;
     try {
       const res = await fetch(`${API}/types/${id}`, { method: 'DELETE', headers: authHeaders() });
       if (!res.ok) {
@@ -124,8 +126,8 @@ document.addEventListener('click', async (e) => {
     } catch (e) {
       alert('Ошибка: ' + e.message);
     }
-  } else if (e.target.classList.contains('save-equip')) {
-    const id = e.target.dataset.id;
+  } else if (target.classList.contains('save-equip')) {
+    const id = target.dataset.id;
     const input = document.querySelector(`input.equip-edit[data-id="${id}"]`);
     const name = input.value.trim();
     if (!name) return;
@@ -143,9 +145,9 @@ document.addEventListener('click', async (e) => {
     } catch (e) {
       alert('Ошибка: ' + e.message);
     }
-  } else if (e.target.classList.contains('delete-equip')) {
+  } else if (target.classList.contains('delete-equip')) {
     if (!confirm('Удалить оборудование?')) return;
-    const id = e.target.dataset.id;
+    const id = target.dataset.id;
     try {
       const res = await fetch(`${API}/equipment/${id}`, { method: 'DELETE', headers: authHeaders() });
       if (!res.ok) {
@@ -167,10 +169,11 @@ document.querySelectorAll('.accordion-header').forEach(header => {
   });
 });
 
-$('#btnLogout').addEventListener('click', () => {
+$('#btnLogout')?.addEventListener('click', () => {
   localStorage.removeItem('token');
   window.location.href = '/welcome.html';
 });
 
+// Запуск загрузок
 loadTypes();
 loadEquipment();
