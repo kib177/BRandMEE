@@ -46,15 +46,17 @@ router.post('/login', async (req, res) => {
         display_name: user.display_name
       }
     });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Ошибка сервера' });
-  }
-  logAction({
+    
+    logAction({
     user: { id: user.id, username: user.username, role: user.role },
     action: 'login',
     req
 }).catch(() => {});
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+  
 });
 
 // Проверка токена (возвращает информацию о текущем пользователе)
