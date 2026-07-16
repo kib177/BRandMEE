@@ -1,11 +1,10 @@
 // welcome.js – страница входа
 document.addEventListener('DOMContentLoaded', () => {
   // Если токен уже есть — сразу на главную
- if (localStorage.getItem('token')) {            // ← проверяем localStorage
+ if (localStorage.getItem('token')) {
     window.location.href = '/index.html';
     return;
   }
-)};
 
   const form = document.getElementById('loginForm');
   const errorDiv = document.getElementById('loginError');
