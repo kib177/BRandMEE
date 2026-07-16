@@ -57,13 +57,6 @@ router.post('/send', authMiddleware, requireRole('admin'), async (req, res) => {
     }
 
     res.json({ ok: true, sent: toAddresses.length });
-logAction({
-    user: req.user,
-    action: 'send_mailing',
-    entityType: 'mailing',
-    details: { subject, recipientsCount: toAddresses.length },
-    req
-}).catch(() => {});
     
   } catch (err) {
     console.error('Ошибка рассылки:', err);
