@@ -62,13 +62,7 @@
     font-size: 0.7rem;
     flex-shrink: 0;
 }
-    /* Показываем бургер-меню на мобильных */
-.header-menu {
-    display: block !important;   /* перекрываем десктопное display: none */
-    flex-shrink: 0;
-    margin-right: 0.2rem;
-}
-
+  
     /* ----- СТАТИСТИКА ----- */
     .stats-row { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
     .stat-card { padding: 0.5rem 0.7rem; }
