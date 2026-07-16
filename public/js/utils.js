@@ -35,13 +35,21 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.remove(), 2900);
 }
 
+/**
+ * Загружает внешний JavaScript-файл, если он ещё не был загружен.
+ * @param {string} src - путь к скрипту (например, '/js/library/xlsx.full.min.js')
+ * @returns {Promise<void>}
+ */
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) return resolve();
+    // Если скрипт с таким src уже присутствует на странице, сразу завершаем
+    if (document.querySelector(`script[src="${src}"]`)) {
+      return resolve();
+    }
     const script = document.createElement('script');
     script.src = src;
     script.onload = resolve;
-    script.onerror = reject;
+    script.onerror = () => reject(new Error(`Не удалось загрузить скрипт: ${src}`));
     document.head.appendChild(script);
   });
 }
