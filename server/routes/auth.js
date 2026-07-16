@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const pool = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { logAction } = require('../log/logger');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'warehouse_secret_key_change_me';
 const TOKEN_EXPIRES_IN = '5d';   // 5 дней
@@ -49,6 +50,11 @@ router.post('/login', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
+  logAction({
+    user: { id: user.id, username: user.username, role: user.role },
+    action: 'login',
+    req
+}).catch(() => {});
 });
 
 // Проверка токена (возвращает информацию о текущем пользователе)
