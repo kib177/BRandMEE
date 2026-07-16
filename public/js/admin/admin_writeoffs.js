@@ -118,13 +118,13 @@ function getCurrentFilters() {
 
 async function exportExcel() {
     try {
+        await loadScript('/js/library/xlsx.full.min.js');
         const filters = getCurrentFilters();
         const allData = await fetchAllForExport(filters);
         const exportData = allData.map(r => ({
             'ID': r.id,
             'Код': r.item_code,
             'Наименование': r.item_name,
-            'Артикул': r.model || '',
             'Количество': r.quantity,
             'Ед.изм.': r.unit,
             'Оборудование': r.equipment_name || '',
@@ -145,12 +145,13 @@ async function exportExcel() {
 }
 
 async function exportCSV() {
+    // не требует XLSX
     try {
         const filters = getCurrentFilters();
         const allData = await fetchAllForExport(filters);
         const headers = ['ID', 'Код', 'Наименование', 'Количество', 'Ед.изм.', 'Оборудование', 'Запросил', 'Дата запроса', 'Статус', 'Дата решения', 'Комментарий'];
         const rows = allData.map(r => [
-            r.id, r.item_code, r.item_name, r.model || '', r.quantity, r.unit,
+            r.id, r.item_code, r.item_name, r.quantity, r.unit,
             r.equipment_name || '', r.requested_by,
             new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }),
             r.status,
