@@ -1,10 +1,21 @@
 // welcome.js – страница входа
 document.addEventListener('DOMContentLoaded', () => {
   // Если токен уже есть — сразу на главную
-  if (localStorage.getItem('token')) {            // ← проверяем localStorage
-    window.location.href = '/index.html';
-    return;
-  }
+ if (localStorage.getItem('token')) {
+  fetch('/api/auth/me', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+    .then(r => r.json())
+    .then(data => {
+      if (data.user) {
+        const role = data.user.role;
+        if (role === 'admin') window.location.href = '/dashboard_admin.html';
+        else if (role === 'moderator') window.location.href = '/dashboard_moderator.html';
+        else if (role === 'storekeeper') window.location.href = '/dashboard_storekeeper.html';
+        else window.location.href = '/dashboard_user.html';
+      }
+    });
+  return;
+}
+}
 
   const form = document.getElementById('loginForm');
   const errorDiv = document.getElementById('loginError');
@@ -30,7 +41,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Сохраняем токен в localStorage и переходим на главную
       localStorage.setItem('token', data.token);   // ← сохраняем в localStorage
-      window.location.href = '/index.html';
+      const role = data.user.role;
+      if (role === 'admin') {
+  window.location.href = '/dashboard_admin.html';
+} else if (role === 'moderator') {
+  window.location.href = '/dashboard_moderator.html';
+} else if (role === 'storekeeper') {
+  window.location.href = '/dashboard_storekeeper.html';
+} else {
+  window.location.href = '/dashboard_user.html';
+}
     } catch (err) {
       errorDiv.style.display = 'block';
       errorDiv.textContent = 'Ошибка сети';
