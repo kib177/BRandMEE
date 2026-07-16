@@ -24,10 +24,27 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Неверное имя пользователя или пароль' });
     }
 
-    const payload = { id: user.id, username: user.username, role: user.role, department_id: user.department_id, email: user.email };
+    const payload = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      department_id: user.department_id,
+      email: user.email,
+      display_name: user.display_name
+    };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRES_IN });
 
-    res.json({ token, user: { id: user.id, username: user.username, role: user.role, department_id: user.department_id, email: user.email } });
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        department_id: user.department_id,
+        email: user.email,
+        display_name: user.display_name
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка сервера' });
@@ -43,7 +60,10 @@ router.get('/me', async (req, res) => {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const result = await pool.query('SELECT id, username, role, department_id, email FROM users WHERE id = $1', [decoded.id]);
+    const result = await pool.query(
+      'SELECT id, username, display_name, role, department_id, email FROM users WHERE id = $1',
+      [decoded.id]
+    );
     const user = result.rows[0];
     if (!user) return res.status(401).json({ error: 'Пользователь не найден' });
     res.json({ user });
@@ -52,7 +72,7 @@ router.get('/me', async (req, res) => {
   }
 });
 
-// Обновление собственного профиля (логин, пароль, email)
+// Обновление собственного профиля (логин, пароль, email) – обычный пользователь
 router.put('/update-profile', authMiddleware, async (req, res) => {
   const { currentPassword, newUsername, newPassword, newEmail } = req.body;
   if (!currentPassword) {
@@ -86,15 +106,29 @@ router.put('/update-profile', authMiddleware, async (req, res) => {
       updates.push(`email = $${paramCount++}`);
       values.push(newEmail);
     }
+    // display_name не обновляем – обычный пользователь не может менять имя
 
     if (updates.length === 0) {
-      return res.json({ ok: true, user: { id: user.id, username: user.username, role: user.role, email: user.email, department_id: user.department_id } });
+      return res.json({
+        ok: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          email: user.email,
+          department_id: user.department_id,
+          display_name: user.display_name
+        }
+      });
     }
-    values.push(req.user.id);
 
+    values.push(req.user.id);
     await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${paramCount}`, values);
 
-    const updatedUser = await pool.query('SELECT id, username, email, role, department_id FROM users WHERE id = $1', [req.user.id]);
+    const updatedUser = await pool.query(
+      'SELECT id, username, display_name, email, role, department_id FROM users WHERE id = $1',
+      [req.user.id]
+    );
     res.json({ ok: true, user: updatedUser.rows[0] });
   } catch (err) {
     console.error(err);
