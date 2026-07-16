@@ -1,4 +1,5 @@
 let inventory = [];
+let filterDepartmentValue = '';
 
 async function loadData() {
     const params = {};
@@ -54,14 +55,17 @@ function bindEvents() {
         filterTypeValue = $('#filterType').value;
         applyFilterAndRender();
     };
-    /*$('filterDepartment').onchange = () => {
-       filterDepartmentValue = $('filterDepartment').value;
-       applyFilterAndRender();
-    };*/
     $('#filterEquipment').onchange = () => {
         filterEquipmentValue = $('#filterEquipment').value;
         applyFilterAndRender();
     };
+    const filterDeptEl = document.getElementById('filterDepartment');
+    if (filterDeptEl) {
+        filterDeptEl.addEventListener('change', () => {
+           filterDepartmentValue = filterDeptEl.value;
+           applyFilterAndRender();
+      });
+    }
 
     const filterDeptEl = $('#filterDepartment');
 if (filterDeptEl) {
@@ -81,6 +85,9 @@ if (filterDeptEl) {
         $('#filterEquipment').value = '';
         selectedRowCode = null;
         applyFilterAndRender();
+        filterDepartmentValue = '';
+        const filterDept = document.getElementById('filterDepartment');
+        if (filterDept) filterDept.value = '';
     };
 
     // Сортировка
