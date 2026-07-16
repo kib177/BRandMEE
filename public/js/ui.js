@@ -12,25 +12,6 @@ async function loadDirectoriesForForm() {
       fetch('/api/directories/equipment')
     ]);
 
-    const filterDept = $('#filterDepartment');
-if (filterDept) {
-    try {
-        const res = await fetch('/api/directories/departments');
-        if (res.ok) {
-            const depts = await res.json();
-            filterDept.innerHTML = '<option value="">🏢 Все отделы</option>' +
-                depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-        }
-    } catch (e) {
-        console.error('Ошибка загрузки отделов для фильтра', e);
-    }
-}
-
-    // Проверка кэша для типов
-    if (typesRes.ok && typesRes.headers.get('X-Cache') === 'HIT') {
-      showToast('Справочники загружены из кэша', 'warning');
-    }
-
     if (typesRes.ok) {
       const data = await typesRes.json();
       allTypes = Array.isArray(data) ? data : [];
@@ -46,26 +27,26 @@ if (filterDept) {
     }
 
     // Заполняем форму добавления/редактирования
-    const typeSelect = $('#formType');
+    const typeSelect = document.getElementById('formType');
     if (typeSelect) {
       typeSelect.innerHTML = '<option value="">— Выберите —</option>' +
         allTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
     }
-    const equipSelect = $('#formEquipment');
+    const equipSelect = document.getElementById('formEquipment');
     if (equipSelect) {
       equipSelect.innerHTML = '<option value="">— Без оборудования —</option>' +
         allEquipments.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
     }
 
     // Фильтры на главной странице
-    const filterType = $('#filterType');
+    const filterType = document.getElementById('filterType');
     if (filterType) {
       const currentVal = filterType.value;
       filterType.innerHTML = '<option value="">🔧 Все типы</option>' +
         allTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
       filterType.value = currentVal || '';
     }
-    const filterEquip = $('#filterEquipment');
+    const filterEquip = document.getElementById('filterEquipment');
     if (filterEquip) {
       const currentVal = filterEquip.value;
       filterEquip.innerHTML = '<option value="">🏭 Всё оборудование</option>' +
@@ -76,22 +57,6 @@ if (filterDept) {
     allTypes = [];
     allEquipments = [];
     console.error('Ошибка загрузки справочников:', err);
-  }
-}
-
-async function loadDepartmentsForFilter() {
-  if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) return;
-  try {
-    const res = await fetch('/api/users/departments', {
-      headers: { 'Authorization': `Bearer ${getToken()}` }
-    });
-    if (!res.ok) return;
-    const depts = await res.json();
-    const select = document.getElementById('filterDepartment');
-    select.innerHTML = '<option value="">🏢 Все отделы</option>' +
-      depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-  } catch (e) {
-    console.error(e);
   }
 }
 
@@ -108,12 +73,12 @@ function getEquipmentName(equipId) {
 
 // ========== ТАБЛИЦА ==========
 function renderTable(data) {
-    const tbody = $('#tableBody');
+    const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
     if (data.length === 0) {
-        $('#emptyState').classList.remove('hidden');
+        document.getElementById('emptyState').classList.remove('hidden');
     } else {
-        $('#emptyState').classList.add('hidden');
+        document.getElementById('emptyState').classList.add('hidden');
     }
     data.forEach(item => {
         const tr = document.createElement('tr');
@@ -139,10 +104,10 @@ function renderTable(data) {
         tbody.appendChild(tr);
     });
 
-    $$('.row-selector').forEach(cb => {
+    document.querySelectorAll('.row-selector').forEach(cb => {
         cb.addEventListener('change', function(e) {
             if (this.checked) {
-                $$('.row-selector').forEach(other => {
+                document.querySelectorAll('.row-selector').forEach(other => {
                     if (other !== this) other.checked = false;
                 });
                 selectedRowCode = this.dataset.code;
@@ -159,20 +124,18 @@ function renderTable(data) {
     updateActionButtons();
 
   // Клик по коду позиции открывает карточку
-$$('.code-link').forEach(el => {
+document.querySelectorAll('.code-link').forEach(el => {
     el.addEventListener('click', (e) => {
-        // Не срабатывать, если кликнули по чекбоксу (он в другой ячейке, но на всякий случай)
         if (e.target.tagName === 'INPUT') return;
         showItemDetails(el.dataset.code);
     });
 });
 }
 
-
 function updateActionButtons() {
     const hasSelection = selectedRowCode !== null;
     ['btnEdit', 'btnWriteOff', 'btnDeleteSelected'].forEach(id => {
-        const btn = $('#' + id);
+        const btn = document.getElementById(id);
         if (btn) {
             btn.disabled = !hasSelection;
             if (hasSelection) {
@@ -186,7 +149,6 @@ function updateActionButtons() {
 
 function updateStats(inventory) {
     const total = inventory.length;
-    //const totalQty = inventory.reduce((s, i) => s + i.quantity, 0);
     const low = inventory.filter(i => i.quantity <= 2).length;
     let last = '—';
     if (inventory.length) {
@@ -195,25 +157,22 @@ function updateStats(inventory) {
         last = d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
-    // Штучные позиции
     const pcsItems = inventory.filter(i => i.unit === 'ШТ');
     const totalPcs = pcsItems.length;
     const totalPcsQty = pcsItems.reduce((s, i) => s + i.quantity, 0);
 
-    // Метровые позиции
     const mItems = inventory.filter(i => i.unit === 'М');
     const totalM = mItems.length;
     const totalMQty = mItems.reduce((s, i) => s + i.quantity, 0);
 
-    $('#statTotal').textContent = total;
-    //$('#statQty').textContent = formatQty(totalQty);
-    $('#statLow').textContent = low;
-    $('#statLastDate').textContent = last;
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statLow').textContent = low;
+    document.getElementById('statLastDate').textContent = last;
 
-    $('#statTotalPcs').textContent = totalPcs;
-    $('#statQtyPcs').textContent = formatQty(totalPcsQty);
-    $('#statTotalM').textContent = totalM;
-    $('#statQtyM').textContent = formatQty(totalMQty);
+    document.getElementById('statTotalPcs').textContent = totalPcs;
+    document.getElementById('statQtyPcs').textContent = formatQty(totalPcsQty);
+    document.getElementById('statTotalM').textContent = totalM;
+    document.getElementById('statQtyM').textContent = formatQty(totalMQty);
 }
 
 function initStatsAccordion() {
