@@ -2,35 +2,32 @@
 
 // ========== МОДАЛКА ДОБАВЛЕНИЯ / РЕДАКТИРОВАНИЯ ==========
 function openAddModal() {
-    loadDepartmentsForForm();
     $('#formMode').value = 'add';
     $('#formOriginalCode').value = '';
     $('#modalTitle').textContent = 'Добавить позицию';
 
     ['formCode','formName','formModel','formLocation'].forEach(id => {
-        const el = $('#' + id);
+        const el = document.getElementById(id);
         if (el) el.value = '';
     });
 
-    const typeSel = $('#formType');
+    const typeSel = document.getElementById('formType');
     if (typeSel) typeSel.value = '';
-    const equipSel = $('#formEquipment');
+    const equipSel = document.getElementById('formEquipment');
     if (equipSel) equipSel.value = '';
-    const unitSel = $('#formUnit');
+    const unitSel = document.getElementById('formUnit');
     if (unitSel) unitSel.value = 'ШТ';
-    const qtyEl = $('#formQty');
+    const qtyEl = document.getElementById('formQty');
     if (qtyEl) qtyEl.value = '1,00';
-    const dateEl = $('#formDate');
+    const dateEl = document.getElementById('formDate');
     if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
-    const codeEl = $('#formCode');
+    const codeEl = document.getElementById('formCode');
     if (codeEl) codeEl.readOnly = false;
 
     $('#modalOverlay').classList.remove('hidden');
 }
 
 function openEditModal(code) {
-    loadDepartmentsForForm();
-    select.value = item.department_id;
     const item = inventory.find(i => i.code === code);
     if (!item) return;
 
@@ -39,12 +36,12 @@ function openEditModal(code) {
     $('#modalTitle').textContent = 'Редактировать';
 
     const setVal = (id, val) => {
-        const el = $('#' + id);
+        const el = document.getElementById(id);
         if (el) el.value = val;
     };
 
     setVal('formCode', item.code);
-    $('#formCode').readOnly = true;
+    document.getElementById('formCode').readOnly = true;
     setVal('formName', item.name);
     setVal('formModel', item.model);
     setSelectWithFallback('formType', item.type_id, item.type_name);
@@ -61,20 +58,19 @@ function openEditModal(code) {
 async function submitForm(e) {
     e.preventDefault();
     const mode = $('#formMode').value;
-    const getVal = (sel) => { const el = $(sel); return el ? el.value : ''; };
+    const getVal = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
 
     const item = {
-        code: getVal('#formCode').trim(),
-        name: getVal('#formName').trim(),
-        model: getVal('#formModel').trim(),
-        type_id: getVal('#formType') || null,
-        equipment_id: getVal('#formEquipment') || null,
-        location: getVal('#formLocation').trim(),
-        unit: getVal('#formUnit') || 'ШТ',
-        quantity: parseFloat((getVal('#formQty') || '0').replace(',', '.')),
-        date: getVal('#formDate').split('-').reverse().join('.')
+        code: getVal('formCode').trim(),
+        name: getVal('formName').trim(),
+        model: getVal('formModel').trim(),
+        type_id: getVal('formType') || null,
+        equipment_id: getVal('formEquipment') || null,
+        location: getVal('formLocation').trim(),
+        unit: getVal('formUnit') || 'ШТ',
+        quantity: parseFloat((getVal('formQty') || '0').replace(',', '.')),
+        date: getVal('formDate').split('-').reverse().join('.')
     };
-    
 
     await saveItem(item);
     $('#modalOverlay').classList.add('hidden');
@@ -94,7 +90,7 @@ function showItemDetails(code) {
     $('#viewModalContent').innerHTML = `
         <p><strong>Код:</strong> ${escapeHtml(item.code)}</p>
         <p><strong>Наименование:</strong> ${escapeHtml(item.name)}</p>
-        <p><strong>Артикул:</strong> ${escapeHtml(item.model || '—')}</p>
+        <p><strong>Модель:</strong> ${escapeHtml(item.model || '—')}</p>
         <p><strong>Тип:</strong> ${escapeHtml(typeName)}</p>
         <p><strong>Оборудование:</strong> ${escapeHtml(equipName)}</p>
         <p><strong>Расположение:</strong> ${escapeHtml(item.location || '—')}</p>
@@ -103,13 +99,13 @@ function showItemDetails(code) {
         <p><strong>Дата:</strong> ${escapeHtml(item.date)}</p>
     `;
 
-    const btnInfo = $('#btnPartInfo');
-if (btnInfo) {
-    btnInfo.style.display = 'block';   // показываем иконку
-    btnInfo.onclick = () => fetchPartInfo(item.model, item.name);
-}
+    const btnInfo = document.getElementById('btnPartInfo');
+    if (btnInfo) {
+        btnInfo.style.display = 'inline-flex';
+        btnInfo.onclick = () => fetchPartInfo(item.model, item.name);
+    }
 
-    const btnWriteOff = $('#btnWriteOffFromView');
+    const btnWriteOff = document.getElementById('btnWriteOffFromView');
     if (btnWriteOff) {
         btnWriteOff.style.display = 'inline-flex';
         btnWriteOff.onclick = () => {
@@ -118,13 +114,6 @@ if (btnInfo) {
     }
 
     $('#viewModalOverlay').classList.remove('hidden');
-}
-
-// Функция запроса информации о детали
-function fetchPartInfo(model, name) {
-    const searchTerm = (model && model.trim()) ? model.trim() : name;
-    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}+datasheet`;
-    window.open(googleUrl, '_blank');
 }
 
 // ========== МОДАЛКИ ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ ==========
@@ -157,32 +146,15 @@ async function executeDeleteAll() {
     showToast('Всё удалено');
 }
 
-
 function setSelectWithFallback(selectId, valueId, valueName) {
-    const select = $('#' + selectId);
-    if (!select) return;
-    // Сначала пробуем установить как есть
-    select.value = valueId || '';
-    // Если значение не выбралось (нет такого option), добавляем
-    if (valueId && select.value !== String(valueId)) {
+    const selectEl = document.getElementById(selectId);
+    if (!selectEl) return;
+    selectEl.value = valueId || '';
+    if (valueId && selectEl.value !== String(valueId)) {
         const option = document.createElement('option');
         option.value = valueId;
         option.textContent = valueName || `ID ${valueId}`;
-        select.appendChild(option);
-        select.value = valueId;
+        selectEl.appendChild(option);
+        selectEl.value = valueId;
     }
-}
-
-async function loadDepartmentsForForm() {
-  if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) {
-    document.getElementById('deptGroup').classList.add('hidden');
-    return;
-  }
-  document.getElementById('deptGroup').classList.remove('hidden');
-  const res = await fetch('/api/users/departments', {
-    headers: { 'Authorization': `Bearer ${getToken()}` }
-  });
-  const depts = await res.json();
-  const select = document.getElementById('formDepartment');
-  select.innerHTML = depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
 }
