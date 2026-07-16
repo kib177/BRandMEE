@@ -1,6 +1,5 @@
 // admin-users.js – управление пользователями и отделами (без inline-скриптов)
 document.addEventListener('DOMContentLoaded', () => {
-  const token = localStorage.getItem('token');
   if (!token) {
     window.location.href = '/welcome.html';
     return;
