@@ -5,6 +5,7 @@ const { authMiddleware } = require('../middleware/auth');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const XLSX = require('xlsx');
+const { logAction } = require('../log/logger');
 
 // ---------- Вспомогательные функции ----------
 async function getOrCreateTypeId(typeName) {
