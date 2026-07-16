@@ -1,9 +1,12 @@
 const $ = (s) => document.querySelector(s);
 const API = '/api/write-offs';
+let token = localStorage.getItem('token');
+let currentUser = null;
 
+// Проверка токена и роли
 async function init() {
     if (!token) {
-        window.location.href = '/';
+        window.location.href = '/welcome.html';
         return;
     }
     try {
@@ -14,13 +17,13 @@ async function init() {
         const data = await res.json();
         if (data.user.role !== 'admin') {
             alert('Доступ запрещён');
-            window.location.href = '/';
+            window.location.href = '/welcome.html';
             return;
         }
         currentUser = data.user;
         loadRequests({ status: 'pending' });
     } catch (e) {
-        window.location.href = '/';
+        window.location.href = '/welcome.html';
     }
 }
 
@@ -28,6 +31,7 @@ function authHeaders() {
     return { 'Authorization': `Bearer ${token}` };
 }
 
+// Загрузка списка списаний
 async function loadRequests(params = {}) {
     const url = new URL(API, window.location.origin);
     Object.entries(params).forEach(([k, v]) => {
@@ -51,6 +55,7 @@ async function loadRequests(params = {}) {
     }
 }
 
+// Рендер таблицы с data-атрибутами (без инлайн-событий)
 function renderTable(requests) {
     const tbody = $('#requestsTable tbody');
     tbody.innerHTML = requests.map(r => `
@@ -58,7 +63,6 @@ function renderTable(requests) {
             <td>${r.id}</td>
             <td>${r.item_code}</td>
             <td>${r.item_name}</td>
-            <td>${r.model || '—'}</td>
             <td>${r.quantity} ${r.unit}</td>
             <td>${r.equipment_name || '—'}</td>
             <td>${r.requested_by}</td>
@@ -78,6 +82,7 @@ function renderTable(requests) {
     tbody.addEventListener('click', onTableClick);
 }
 
+// Обработчик клика по кнопкам ✅/❌ в таблице
 function onTableClick(e) {
     const btn = e.target.closest('.js-resolve');
     if (!btn) return;
@@ -86,6 +91,7 @@ function onTableClick(e) {
     resolve(Number(id), status);
 }
 
+// Изменение статуса
 async function resolve(id, status) {
     const msg = status === 'approved' ? 'подтвердить списание' : 'отклонить';
     if (!confirm(`Вы уверены, что хотите ${msg}?`)) return;
@@ -107,6 +113,7 @@ async function resolve(id, status) {
     }
 }
 
+// Получить текущие фильтры
 function getCurrentFilters() {
     return {
         status: $('#filterStatus').value,
@@ -116,9 +123,9 @@ function getCurrentFilters() {
     };
 }
 
+// Экспорт Excel (без динамической загрузки – библиотека загружена статически)
 async function exportExcel() {
     try {
-        await loadScript('/js/library/xlsx.full.min.js');
         const filters = getCurrentFilters();
         const allData = await fetchAllForExport(filters);
         const exportData = allData.map(r => ({
@@ -144,8 +151,8 @@ async function exportExcel() {
     }
 }
 
+// Экспорт CSV
 async function exportCSV() {
-    // не требует XLSX
     try {
         const filters = getCurrentFilters();
         const allData = await fetchAllForExport(filters);
@@ -182,6 +189,7 @@ async function fetchAllForExport(filters) {
     return await res.json();
 }
 
+// Загрузка отчёта
 async function loadReport() {
     const year = $('#reportYear').value;
     try {
@@ -189,7 +197,6 @@ async function loadReport() {
         if (!res.ok) throw new Error('Ошибка загрузки отчёта');
         const data = await res.json();
 
-        // Сводка по месяцам и оборудованию
         let html = `<h3>${year} год — сводка</h3>`;
         html += '<table><tr><th>Месяц</th><th>Списано единиц</th><th>Заявок</th></tr>';
         const months = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
@@ -220,7 +227,6 @@ async function loadReport() {
                 <th>Артикул</th><th>Кол-во</th><th>Ед.</th><th>Оборудование</th><th>Запросил</th>
                 <th>Статус</th><th>Дата решения</th><th>Комментарий</th>
             </tr></thead><tbody>`;
-            
             data.details.forEach(r => {
                 const reqDate = new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' });
                 const resDate = r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '—';
@@ -268,7 +274,7 @@ function bindUIEvents() {
     $('#loadReport').addEventListener('click', loadReport);
     $('#btnLogout').addEventListener('click', () => {
         localStorage.removeItem('token');
-        window.location.href = '/';
+        window.location.href = '/welcome.html';
     });
 }
 
