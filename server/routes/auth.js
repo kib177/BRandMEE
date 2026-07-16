@@ -14,7 +14,14 @@ router.post('/login', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Имя пользователя и пароль обязательны' });
+    
+    logAction({
+    user: { id: user.id, username: user.username, role: user.role },
+    action: 'Failed login ' + username +' '+ password,
+    req
+}).catch(() => {});
   }
+  
   try {
     const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
     const user = result.rows[0];
@@ -45,14 +52,14 @@ router.post('/login', async (req, res) => {
         email: user.email,
         display_name: user.display_name
       }
-    });
-    
-    logAction({
+    }
+            logAction({
     user: { id: user.id, username: user.username, role: user.role },
     action: 'login',
     req
 }).catch(() => {});
-  } catch (err) {
+            );
+   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
