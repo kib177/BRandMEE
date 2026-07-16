@@ -108,20 +108,20 @@ function updateAuthUI() {
     const isLoggedIn = !!currentUser;
     const role = currentUser?.role;
 
-    document.querySelectorAll('.storekeeper-only').forEach(el => {
-    el.style.display = (isLoggedIn && (role === 'storekeeper' )) ? '' : 'none';
-    });
-
     document.querySelectorAll('.auth-required').forEach(el => {
         el.style.display = isLoggedIn ? '' : 'none';
     });
 
     document.querySelectorAll('.moderator-only').forEach(el => {
-        el.style.display = (isLoggedIn && (role === 'moderator' )) ? '' : 'none';
+        el.style.display = (isLoggedIn && (role === 'moderator' || role === 'admin')) ? '' : 'none';
     });
 
     document.querySelectorAll('.admin-only').forEach(el => {
         el.style.display = (isLoggedIn && role === 'admin') ? '' : 'none';
+    });
+
+    document.querySelectorAll('.storekeeper-only').forEach(el => {
+    el.style.display = (isLoggedIn && (role === 'storekeeper' || role === 'moderator' || role === 'admin')) ? '' : 'none';
     });
 
     const authDot = document.getElementById('authDot');
