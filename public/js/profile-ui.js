@@ -142,5 +142,8 @@ function openProfileModal() {
   });
 }
 
-// Внедряем меню при загрузке страницы
-document.addEventListener('DOMContentLoaded', injectMenu);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectMenu);
+} else {
+    injectMenu();
+}
