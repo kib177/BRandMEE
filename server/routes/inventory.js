@@ -246,16 +246,79 @@ router.delete('/', authMiddleware, async (req, res) => {
 });
 
 // ---------- ИМПОРТ CSV ----------
-router.post('/import-csv', authMiddleware, upload.single('file'), async (req, res) => {
-  // (используем req.user.department_id)
-  // ... остальной код импорта, назначающий department_id из req.user ...
-  res.status(501).json({ error: 'Импорт временно недоступен' });
+router.post('/import-csv', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
+
+    // Определяем отдел
+    let departmentId;
+    if (req.user.role === 'admin') {
+      departmentId = req.body.department_id || req.user.department_id || 1;
+    } else {
+      departmentId = req.user.department_id || 1;
+    }
+
+    // ... (остальной код парсинга CSV без изменений, только в конце используем departmentId)
+    // Вставляем в БД с этим departmentId
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const item of items) {
+        await client.query(`
+          INSERT INTO inventory (code, department_id, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, TO_DATE($10, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
+          ON CONFLICT (code, department_id) DO UPDATE SET ...`, [item.code, departmentId, ...]);
+      }
+      await client.query('COMMIT');
+      res.json({ ok: true, count: items.length, skippedCount: skipped.length });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка импорта CSV' });
+  }
 });
 
 // ---------- ИМПОРТ EXCEL ----------
-router.post('/import-excel', authMiddleware, upload.single('file'), async (req, res) => {
-  // аналогично
-  res.status(501).json({ error: 'Импорт временно недоступен' });
+router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
+
+    // Определяем отдел
+    let departmentId;
+    if (req.user.role === 'admin') {
+      departmentId = req.body.department_id || req.user.department_id || 1;
+    } else {
+      departmentId = req.user.department_id || 1;
+    }
+
+    // ... (остальной код парсинга Excel без изменений, только в конце используем departmentId)
+    // Вставляем в БД с этим departmentId
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const item of items) {
+        await client.query(`
+          INSERT INTO inventory (code, department_id, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, TO_DATE($10, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
+          ON CONFLICT (code, department_id) DO UPDATE SET ...`, [item.code, departmentId, ...]);
+      }
+      await client.query('COMMIT');
+      res.json({ ok: true, count: items.length, skippedCount: skipped.length });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка импорта Excel' });
+  }
 });
 
 module.exports = router;
