@@ -120,4 +120,8 @@ function initScannerButton() {
     } else {
         btn.style.display = 'none';
     }
+    const closeBtn = document.getElementById('btnCloseScanner');
+if (closeBtn) {
+  closeBtn.addEventListener('click', stopScanner);
+}
 }
