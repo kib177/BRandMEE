@@ -54,10 +54,10 @@ function bindEvents() {
         filterTypeValue = $('#filterType').value;
         applyFilterAndRender();
     };
-    $('filterDepartment').onchange = () => {
+    /*$('filterDepartment').onchange = () => {
        filterDepartmentValue = $('filterDepartment').value;
        applyFilterAndRender();
-    };
+    };*/
     $('#filterEquipment').onchange = () => {
         filterEquipmentValue = $('#filterEquipment').value;
         applyFilterAndRender();
