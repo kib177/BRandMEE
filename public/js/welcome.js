@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/index.html';
     return;
   }
-}
+)};
 
   const form = document.getElementById('loginForm');
   const errorDiv = document.getElementById('loginError');
