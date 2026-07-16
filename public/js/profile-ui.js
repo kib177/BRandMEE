@@ -15,15 +15,36 @@ function injectMenu() {
   `;
   headerInner.appendChild(menuContainer);
 
-  document.getElementById('menuToggle').addEventListener('click', (e) => {
+  const toggle = document.getElementById('menuToggle');
+  const dropdown = document.getElementById('dropdownMenu');
+
+  toggle.addEventListener('click', (e) => {
     e.stopPropagation();
-    document.getElementById('dropdownMenu').classList.toggle('hidden');
+    const isHidden = dropdown.classList.contains('hidden');
+    if (isHidden) {
+      // Рассчитываем позицию перед открытием
+      const rect = toggle.getBoundingClientRect();
+      dropdown.style.position = 'fixed';
+      dropdown.style.top = rect.bottom + 4 + 'px';
+      dropdown.style.left = 'auto';
+      dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+      dropdown.style.maxWidth = (window.innerWidth - 20) + 'px';
+      dropdown.classList.remove('hidden');
+    } else {
+      dropdown.classList.add('hidden');
+    }
   });
-  document.addEventListener('click', () => document.getElementById('dropdownMenu').classList.add('hidden'));
-  document.getElementById('dropdownMenu').addEventListener('click', (e) => e.stopPropagation());
+
+  document.addEventListener('click', (e) => {
+    if (!dropdown.contains(e.target) && e.target !== toggle) {
+      dropdown.classList.add('hidden');
+    }
+  });
+
+  dropdown.addEventListener('click', (e) => e.stopPropagation());
 
   document.getElementById('menuProfile').addEventListener('click', () => {
-    document.getElementById('dropdownMenu').classList.add('hidden');
+    dropdown.classList.add('hidden');
     openProfileModal();
   });
 }
