@@ -3,7 +3,6 @@ const router = express.Router();
 const pool = require('../db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { sendMail } = require('../mailer');
-const { logAction } = require('../log/logger');
 
 // Создание заявки (сотрудник)
 router.post('/', async (req, res) => {
@@ -55,15 +54,6 @@ router.post('/', async (req, res) => {
     }
 
     res.json({ ok: true, id: newId });
-    
-    logAction({
-    user: { id: req.user?.id || null, username: requested_by, role: req.user?.role || 'user' },
-    action: 'create_writeoff',
-    entityType: 'write_off',
-    entityId: result.rows[0].id.toString(),
-    details: { item_code, quantity, equipment_id },
-    req
-}).catch(() => {});
     
   } catch (err) {
     console.error(err);
@@ -153,15 +143,6 @@ router.patch('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
 
     res.json({ ok: true });
     
-    logAction({
-    user: req.user,
-    action: status === 'approved' ? 'approve_writeoff' : 'reject_writeoff',
-    entityType: 'write_off',
-    entityId: req.params.id,
-    details: { status },
-    req
-      
-}).catch(() => {});
   } catch (err) {
     console.error('Ошибка обработки списания:', err);
     res.status(500).json({ error: 'Ошибка обработки списания' });
