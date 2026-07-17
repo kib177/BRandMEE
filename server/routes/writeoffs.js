@@ -62,7 +62,7 @@ router.post('/', async (req, res) => {
 });
 
 // Получение списка (админ)
-router.get('/', authMiddleware, requireRole('admin'), async (req, res) => {
+router.get('/', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
   try {
     let query = `
       SELECT wo.*, eq.name AS equipment_name, i.model AS model
