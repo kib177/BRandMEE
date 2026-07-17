@@ -20,12 +20,20 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: `Недостаточно на складе. Доступно: ${item.quantity} ${item.unit}` });
     }
 
+    // Определяем, кто запрашивает списание
+    let requesterName = 'сотрудник';
+    if (req.user) {
+      requesterName = req.user.display_name || req.user.username || 'сотрудник';
+    } else if (requested_by) {
+      requesterName = requested_by;
+    }
+
     // Вставляем заявку (department_id пока 1)
     const result = await pool.query(`
       INSERT INTO write_offs (item_code, department_id, item_name, equipment_id, quantity, unit, requested_by, comment)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id
-    `, [item_code, 1, item.name, equipment_id || null, quantity, item.unit, requested_by || 'сотрудник', comment || '']);
+    `, [item_code, 1, item.name, equipment_id || null, quantity, item.unit, requesterName, comment || '']);
 
     const newId = result.rows[0].id;
 
@@ -41,7 +49,7 @@ router.post('/', async (req, res) => {
           <tr><td><b>Наименование</b></td><td>${item.name}</td></tr>
           <tr><td><b>Количество</b></td><td>${quantity} ${item.unit}</td></tr>
           <tr><td><b>Оборудование</b></td><td>${equipmentName}</td></tr>
-          <tr><td><b>Запросил</b></td><td>${requested_by || 'сотрудник'}</td></tr>
+          <tr><td><b>Запросил</b></td><td>${requesterName}</td></tr>
           <tr><td><b>Комментарий</b></td><td>${comment || '—'}</td></tr>
         </table>
         <p>Перейти в <a href="${process.env.APP_URL || 'https://brandmee.site'}/admin-writeoffs.html">админ-панель</a></p>
