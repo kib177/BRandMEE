@@ -1,4 +1,7 @@
+const $ = (s) => document.querySelector(s);
 const API = '/api/write-offs';
+var token = localStorage.getItem('token');
+var currentUser = null;
 
 async function loadDepartmentsForFilter() {
     try {
@@ -76,7 +79,7 @@ function renderTable(requests) {
             <td>${r.id}</td>
             <td>${r.item_code}</td>
             <td>${r.item_name}</td>
-            <td>${r.model || '—'}</td>                 <!-- артикул -->
+            <td>${r.model || '—'}</td>
             <td>${r.quantity}</td>
             <td>${r.unit}</td>
             <td>${r.equipment_name || '—'}</td>
@@ -134,11 +137,9 @@ function getCurrentFilters() {
         equipment: $('#filterEquip').value
     };
 
-    // Для не-админов всегда отправляем свой department_id
     if (currentUser && currentUser.role !== 'admin') {
         filters.department_id = currentUser.department_id;
     } else {
-        // Админ может выбирать через выпадающий список
         const deptSelect = $('#filterDepartment');
         filters.department_id = deptSelect ? deptSelect.value : '';
     }
@@ -146,10 +147,9 @@ function getCurrentFilters() {
     return filters;
 }
 
-// 📥 Экспорт Excel — динамическая загрузка библиотеки
 async function exportExcel() {
     try {
-        await loadScript('/js/library/xlsx.full.min.js');   // загружаем библиотеку
+        await loadScript('/js/library/xlsx.full.min.js');
         const filters = getCurrentFilters();
         const allData = await fetchAllForExport(filters);
         const exportData = allData.map(r => ({
@@ -175,7 +175,6 @@ async function exportExcel() {
     }
 }
 
-// 📄 Экспорт CSV
 async function exportCSV() {
     try {
         const filters = getCurrentFilters();
