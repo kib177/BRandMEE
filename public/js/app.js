@@ -58,6 +58,8 @@ function bindEvents() {
         filterEquipmentValue = document.getElementById('filterEquipment').value;
         applyFilterAndRender();
     };
+
+    // Фильтр по отделу (только для админа)
     const filterDeptEl = document.getElementById('filterDepartment');
     if (filterDeptEl) {
         filterDeptEl.addEventListener('change', () => {
@@ -170,7 +172,6 @@ function bindEvents() {
         }
     };
 
-    // Модальные окна
     document.getElementById('btnSubmit').onclick = submitForm;
     document.getElementById('btnCancel').onclick = () => document.getElementById('modalOverlay').classList.add('hidden');
     document.getElementById('btnCloseView').onclick = () => document.getElementById('viewModalOverlay').classList.add('hidden');
