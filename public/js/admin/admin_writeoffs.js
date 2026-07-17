@@ -308,13 +308,5 @@ function bindUIEvents() {
     }
 }
 
-    const deptFilter = $('#filterDepartment');
-if (deptFilter) {
-    deptFilter.addEventListener('change', () => {
-        loadRequests(getCurrentFilters());
-    });
-}
-}
-
 init();
 bindUIEvents();
