@@ -80,7 +80,7 @@ function renderTable(requests) {
             <td>${r.quantity}</td>
             <td>${r.unit}</td>
             <td>${r.equipment_name || '—'}</td>
-            <td>${r.requested_by}</td>
+            <td>${r.requester_display_name || r.requested_by}</td>
             <td>${new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })}</td>
             <td class="status" style="color:${r.status==='approved'?'green':r.status==='rejected'?'red':'orange'}">${r.status}</td>
             <td title="${r.comment || ''}">${r.comment ? r.comment.substring(0, 30) + (r.comment.length > 30 ? '…' : '') : '—'}</td>
