@@ -44,10 +44,11 @@ function requireAuth(action, data) {
 
 function bindEvents() {
     // Поиск
-    document.getElementById('searchInput').oninput = () => {
-        searchQuery = document.getElementById('searchInput').value;
-        applyFilterAndRender();
-    };
+    const searchInput = document.getElementById('searchInput');
+searchInput.oninput = debounce(() => {
+    searchQuery = searchInput.value;
+    applyFilterAndRender();
+}, 250); // задержка 250 мс
 
     // Фильтры
     document.getElementById('filterType').onchange = () => {
