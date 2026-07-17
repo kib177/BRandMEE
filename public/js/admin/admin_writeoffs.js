@@ -298,6 +298,13 @@ function bindUIEvents() {
         localStorage.removeItem('token');
         window.location.href = '/welcome.html';
     });
+
+    const deptFilter = $('#filterDepartment');
+if (deptFilter) {
+    deptFilter.addEventListener('change', () => {
+        loadRequests(getCurrentFilters());
+    });
+}
 }
 
 init();
