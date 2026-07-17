@@ -279,26 +279,34 @@ function showToast(message, type = 'success') {
 }
 
 function bindUIEvents() {
-    const applyFilter = $('#applyFilter');
-    if (applyFilter) applyFilter.addEventListener('click', () => loadRequests(getCurrentFilters()));
+    const applyFilterBtn = $('#applyFilter');
+    if (applyFilterBtn) applyFilterBtn.addEventListener('click', () => loadRequests(getCurrentFilters()));
 
-    const filterStatus = $('#filterStatus');
-    if (filterStatus) filterStatus.addEventListener('change', () => loadRequests(getCurrentFilters()));
+    const filterStatusEl = $('#filterStatus');
+    if (filterStatusEl) filterStatusEl.addEventListener('change', () => loadRequests(getCurrentFilters()));
 
-    const exportExcel = $('#exportExcel');
-    if (exportExcel) exportExcel.addEventListener('click', exportExcel);
+    const exportExcelBtn = $('#exportExcel');
+    if (exportExcelBtn) exportExcelBtn.addEventListener('click', exportExcel);
 
-    const exportCSV = $('#exportCSV');
-    if (exportCSV) exportCSV.addEventListener('click', exportCSV);
+    const exportCSVBtn = $('#exportCSV');
+    if (exportCSVBtn) exportCSVBtn.addEventListener('click', exportCSV);
 
-    const loadReport = $('#loadReport');
-    if (loadReport) loadReport.addEventListener('click', loadReport);
+    const loadReportBtn = $('#loadReport');
+    if (loadReportBtn) loadReportBtn.addEventListener('click', loadReport);
 
     const btnLogout = $('#btnLogout');
     if (btnLogout) btnLogout.addEventListener('click', () => {
         localStorage.removeItem('token');
         window.location.href = '/welcome.html';
     });
+
+    const deptFilter = $('#filterDepartment');
+    if (deptFilter) {
+        deptFilter.addEventListener('change', () => {
+            loadRequests(getCurrentFilters());
+        });
+    }
+}
 
     const deptFilter = $('#filterDepartment');
 if (deptFilter) {
