@@ -216,22 +216,25 @@ router.get('/report', authMiddleware, requireRole('admin', 'moderator', 'storeke
 
     // Details
     let detailsQuery = `
-      SELECT wo.id, wo.item_code, wo.item_name, wo.quantity, wo.unit,
-             eq.name AS equipment_name, i.model AS model,
-             wo.requested_by, wo.requested_at, wo.status, wo.resolved_at, wo.comment
-      FROM write_offs wo
-      LEFT JOIN equipment eq ON wo.equipment_id = eq.id
-      LEFT JOIN inventory i ON wo.item_code = i.code AND wo.department_id = i.department_id
-      WHERE EXTRACT(YEAR FROM wo.requested_at) = $1
-    `;
-    if (deptParam) {
-      detailsQuery += deptCondition;
-    }
-    detailsQuery += ' ORDER BY wo.requested_at DESC';
-    const detailsParams = [year];
-    if (deptParam) detailsParams.push(deptParam);
-    const details = await pool.query(detailsQuery, detailsParams);
-
+  SELECT wo.id, wo.item_code, wo.item_name, wo.quantity, wo.unit,
+         eq.name AS equipment_name, i.model AS model,
+         wo.requested_by,
+         u.display_name AS requester_display_name,
+         wo.requested_at, wo.status, wo.resolved_at, wo.comment
+  FROM write_offs wo
+  LEFT JOIN equipment eq ON wo.equipment_id = eq.id
+  LEFT JOIN inventory i ON wo.item_code = i.code AND wo.department_id = i.department_id
+  LEFT JOIN users u ON wo.requested_by = u.username OR wo.requested_by = u.display_name
+  WHERE EXTRACT(YEAR FROM wo.requested_at) = $1
+`;
+if (deptParam) {
+  detailsQuery += deptCondition;
+}
+detailsQuery += ' ORDER BY wo.requested_at DESC';
+const detailsParams = [year];
+if (deptParam) detailsParams.push(deptParam);
+const details = await pool.query(detailsQuery, detailsParams);
+    
     res.json({ year, monthly: monthly.rows, byEquipment: byEquipment.rows, details: details.rows });
   } catch (err) {
     console.error(err);
