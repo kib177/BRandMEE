@@ -23,15 +23,22 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: `Недостаточно на складе. Доступно: ${item.quantity} ${item.unit}` });
     }
 
-    // ✅ Используем department_id из найденной позиции, а не 1
+    // Определяем, кто запросил: имя пользователя или то, что пришло в форме
+    let requesterName = 'сотрудник';
+    if (req.user) {
+      requesterName = req.user.display_name || req.user.username || 'сотрудник';
+    } else if (requested_by) {
+      requesterName = requested_by;
+    }
+
+    // Вставляем заявку с правильным department_id и именем
     const result = await pool.query(`
       INSERT INTO write_offs (item_code, department_id, item_name, equipment_id, quantity, unit, requested_by, comment)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id
-    `, [item_code, item.department_id, item.name, equipment_id || null, quantity, item.unit, requested_by || 'сотрудник', comment || '']);
+    `, [item_code, item.department_id, item.name, equipment_id || null, quantity, item.unit, requesterName, comment || '']);
 
     const newId = result.rows[0].id;
-
 
     // Отправляем уведомления (асинхронно)
     const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -57,7 +64,7 @@ router.post('/', async (req, res) => {
       }).catch(err => console.error('Ошибка отправки уведомления:', err));
     }
 
-     res.json({ ok: true, id: newId });
+    res.json({ ok: true, id: newId });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка создания запроса на списание' });
