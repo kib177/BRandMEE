@@ -5,12 +5,12 @@
  */
 
 require('dotenv').config();
-const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const cron = require('node-cron');
 const { sendMail } = require('./mailer');
 const db = require('./db');
+const express = require('express');
 const compression = require('compression');
 const app = express();
 
