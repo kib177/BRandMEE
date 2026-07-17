@@ -127,13 +127,23 @@ async function resolve(id, status) {
 }
 
 function getCurrentFilters() {
-    return {
+    const filters = {
         status: $('#filterStatus').value,
         from: $('#filterFrom').value,
         to: $('#filterTo').value,
-        equipment: $('#filterEquip').value,
-        department_id: $('#filterDepartment') ? $('#filterDepartment').value : ''
+        equipment: $('#filterEquip').value
     };
+
+    // Для не-админов всегда отправляем свой department_id
+    if (currentUser && currentUser.role !== 'admin') {
+        filters.department_id = currentUser.department_id;
+    } else {
+        // Админ может выбирать через выпадающий список
+        const deptSelect = $('#filterDepartment');
+        filters.department_id = deptSelect ? deptSelect.value : '';
+    }
+
+    return filters;
 }
 
 // 📥 Экспорт Excel — динамическая загрузка библиотеки
