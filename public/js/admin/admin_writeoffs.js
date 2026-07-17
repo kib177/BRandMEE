@@ -159,7 +159,7 @@ async function exportExcel() {
             'Количество': r.quantity,
             'Ед.изм.': r.unit,
             'Оборудование': r.equipment_name || '',
-            'Запросил': r.requested_by,
+            'Запросил': r.requester_display_name || r.requested_by},
             'Дата запроса': new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }),
             'Статус': r.status,
             'Дата решения': r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '',
@@ -183,7 +183,7 @@ async function exportCSV() {
         const headers = ['ID', 'Код', 'Наименование', 'Количество', 'Ед.изм.', 'Оборудование', 'Запросил', 'Дата запроса', 'Статус', 'Дата решения', 'Комментарий'];
         const rows = allData.map(r => [
             r.id, r.item_code, r.item_name, r.quantity, r.unit,
-            r.equipment_name || '', r.requested_by,
+            r.equipment_name || '', r.requester_display_name || r.requested_by},
             new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }),
             r.status,
             r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '',
@@ -221,7 +221,7 @@ async function loadReport() {
         const data = await res.json();
 
         let html = `<h3>${year} год — сводка</h3>`;
-        html += '<table><tr><th>Месяц</th><th>Списано единиц</th><th>Заявок</th></tr>';
+        html += '<div style="overflow-x: auto;"><table><tr><th>Месяц</th><th>Списано единиц</th><th>Заявок</th></tr>';
         const months = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
         if (data.monthly && data.monthly.length) {
             data.monthly.forEach(m => {
@@ -230,7 +230,7 @@ async function loadReport() {
         } else {
             html += '<tr><td colspan="3">Нет данных</td></tr>';
         }
-        html += '</table>';
+        html += '</table></div>';
 
         html += '<h4>По оборудованию</h4><ul>';
         if (data.byEquipment && data.byEquipment.length) {
@@ -243,12 +243,12 @@ async function loadReport() {
         html += '</ul>';
 
         html += `<h3>Детализация всех списаний за ${year} год</h3>`;
+        html += '<div style="overflow-x: auto;"><table><thead><tr>';
+        html += '<th>ID</th><th>Дата/время запроса</th><th>Код</th><th>Наименование</th>';
+        html += '<th>Артикул</th><th>Кол-во</th><th>Ед.</th><th>Оборудование</th><th>Запросил</th>';
+        html += '<th>Статус</th><th>Дата решения</th><th>Комментарий</th>';
+        html += '</tr></thead><tbody>';
         if (data.details && data.details.length) {
-            html += `<table><thead><tr>
-                <th>ID</th><th>Дата/время запроса</th><th>Код</th><th>Наименование</th>
-                <th>Артикул</th><th>Кол-во</th><th>Ед.</th><th>Оборудование</th><th>Запросил</th>
-                <th>Статус</th><th>Дата решения</th><th>Комментарий</th>
-            </tr></thead><tbody>`;
             data.details.forEach(r => {
                 const reqDate = new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' });
                 const resDate = r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '—';
@@ -261,15 +261,15 @@ async function loadReport() {
                     <td>${r.quantity}</td>
                     <td>${r.unit}</td>
                     <td>${r.equipment_name || '—'}</td>
-                    <td>${r.requested_by}</td>
+                    <td>${r.requester_display_name || r.requested_by}</td>
                     <td style="color:${r.status==='approved'?'green':r.status==='rejected'?'red':'orange'}">${r.status}</td>
                     <td>${resDate}</td>
                     <td>${r.comment || '—'}</td>
                 </tr>`;
             });
-            html += '</tbody></table>';
+            html += '</tbody></table></div>';
         } else {
-            html += '<p>Нет записей за этот год.</p>';
+            html += '</tbody></table></div><p>Нет записей за этот год.</p>';
         }
 
         $('#reportArea').innerHTML = html;
