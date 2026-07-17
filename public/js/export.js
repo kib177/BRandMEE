@@ -1,4 +1,13 @@
-function exportExcel(data) {
+// export.js – экспорт данных в Excel и CSV
+async function exportExcel(data) {
+    // Загружаем библиотеку XLSX, если её ещё нет
+    try {
+        await loadScript('/js/library/xlsx.full.min.js');
+    } catch (e) {
+        showToast('Ошибка загрузки библиотеки Excel', 'error');
+        return;
+    }
+
     const exportData = data.map(item => ({
         'Код': item.code,
         'Наименование': item.name,
@@ -42,5 +51,3 @@ function exportCSV(data) {
     a.click();
     showToast('Экспорт в CSV выполнен');
 }
-
-
