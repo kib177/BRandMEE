@@ -11,8 +11,10 @@ const path = require('path');
 const cron = require('node-cron');
 const { sendMail } = require('./mailer');
 const db = require('./db');
-
+const compression = require('compression');
 const app = express();
+
+app.use(compression());
 
 // CSP middleware
 app.use((req, res, next) => {
