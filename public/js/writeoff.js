@@ -113,4 +113,13 @@ const preselectedCode = urlParams.get('code');
   } else {
     $('#message').textContent = 'Позиция не указана. Вернитесь на склад и выберите позицию для списания.';
   }
+
+  // Подставляем имя текущего пользователя (если он авторизован)
+  if (typeof currentUser !== 'undefined' && currentUser) {
+    const requesterField = document.getElementById('requestedBy');
+    if (requesterField) {
+      requesterField.value = currentUser.display_name || currentUser.username;
+      requesterField.readOnly = true;   // чтобы не изменяли
+    }
+  }
 })();
