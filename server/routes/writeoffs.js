@@ -61,7 +61,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Получение списка
+// Получение списка (админ, модератор, кладовщик) – фильтрация по отделу
 router.get('/', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
   try {
     let query = `
@@ -86,7 +86,7 @@ router.get('/', authMiddleware, requireRole('admin', 'moderator', 'storekeeper')
       params.push(req.query.department_id);
     }
 
-    // Остальные фильтры (status, from, to, equipment) остаются как раньше
+    // Остальные фильтры
     if (req.query.status) {
       query += ` AND wo.status = $${paramIndex++}`;
       params.push(req.query.status);
@@ -113,7 +113,7 @@ router.get('/', authMiddleware, requireRole('admin', 'moderator', 'storekeeper')
   }
 });
 
-// Изменение статуса (админ)
+// Изменение статуса (админ, модератор, кладовщик)
 router.patch('/:id', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
   try {
     const { status } = req.body;
@@ -162,31 +162,52 @@ router.patch('/:id', authMiddleware, requireRole('admin', 'moderator', 'storekee
   }
 });
 
-// Отчёт
+// Отчёт – теперь с фильтром по отделу
 router.get('/report', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
   try {
     const year = req.query.year || new Date().getFullYear();
-    // Здесь SQL-запросы с параметрами; для краткости используем pg
-    const monthly = await pool.query(`
+
+    // Базовое условие по отделу
+    let deptCondition = '';
+    let deptParam = null;
+    if (req.user.role !== 'admin') {
+      deptCondition = ' AND wo.department_id = $2';
+      deptParam = req.user.department_id;
+    }
+
+    // Monthly
+    let monthlyQuery = `
       SELECT EXTRACT(MONTH FROM requested_at) as month,
              SUM(quantity) as total_quantity,
              COUNT(*) as count_requests
-      FROM write_offs
+      FROM write_offs wo
       WHERE status = 'approved' AND EXTRACT(YEAR FROM requested_at) = $1
-      GROUP BY month
-      ORDER BY month
-    `, [year]);
+    `;
+    if (deptParam) {
+      monthlyQuery += deptCondition;
+    }
+    monthlyQuery += ' GROUP BY month ORDER BY month';
+    const monthlyParams = [year];
+    if (deptParam) monthlyParams.push(deptParam);
+    const monthly = await pool.query(monthlyQuery, monthlyParams);
 
-    const byEquipment = await pool.query(`
+    // ByEquipment
+    let equipQuery = `
       SELECT eq.name AS equipment, SUM(wo.quantity) AS total_quantity, COUNT(*) AS count_requests
       FROM write_offs wo
       LEFT JOIN equipment eq ON wo.equipment_id = eq.id
       WHERE wo.status = 'approved' AND EXTRACT(YEAR FROM wo.requested_at) = $1
-      GROUP BY eq.name
-      ORDER BY total_quantity DESC
-    `, [year]);
+    `;
+    if (deptParam) {
+      equipQuery += deptCondition;
+    }
+    equipQuery += ' GROUP BY eq.name ORDER BY total_quantity DESC';
+    const equipParams = [year];
+    if (deptParam) equipParams.push(deptParam);
+    const byEquipment = await pool.query(equipQuery, equipParams);
 
-    const details = await pool.query(`
+    // Details
+    let detailsQuery = `
       SELECT wo.id, wo.item_code, wo.item_name, wo.quantity, wo.unit,
              eq.name AS equipment_name, i.model AS model,
              wo.requested_by, wo.requested_at, wo.status, wo.resolved_at, wo.comment
@@ -194,8 +215,14 @@ router.get('/report', authMiddleware, requireRole('admin', 'moderator', 'storeke
       LEFT JOIN equipment eq ON wo.equipment_id = eq.id
       LEFT JOIN inventory i ON wo.item_code = i.code AND wo.department_id = i.department_id
       WHERE EXTRACT(YEAR FROM wo.requested_at) = $1
-      ORDER BY wo.requested_at DESC
-    `, [year]);
+    `;
+    if (deptParam) {
+      detailsQuery += deptCondition;
+    }
+    detailsQuery += ' ORDER BY wo.requested_at DESC';
+    const detailsParams = [year];
+    if (deptParam) detailsParams.push(deptParam);
+    const details = await pool.query(detailsQuery, detailsParams);
 
     res.json({ year, monthly: monthly.rows, byEquipment: byEquipment.rows, details: details.rows });
   } catch (err) {
