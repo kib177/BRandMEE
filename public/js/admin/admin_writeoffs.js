@@ -131,7 +131,8 @@ function getCurrentFilters() {
         status: $('#filterStatus').value,
         from: $('#filterFrom').value,
         to: $('#filterTo').value,
-        equipment: $('#filterEquip').value
+        equipment: $('#filterEquip').value,
+        department_id: $('#filterDepartment') ? $('#filterDepartment').value : ''
     };
 }
 
