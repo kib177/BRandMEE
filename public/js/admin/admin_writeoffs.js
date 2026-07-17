@@ -1,5 +1,23 @@
 const API = '/api/write-offs';
 
+async function loadDepartmentsForFilter() {
+    try {
+        const res = await fetch('/api/directories/departments', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const depts = await res.json();
+            const select = $('#filterDepartment');
+            if (select) {
+                select.innerHTML = '<option value="">🏢 Все отделы</option>' +
+                    depts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            }
+        }
+    } catch (e) {
+        console.error('Ошибка загрузки отделов для фильтра', e);
+    }
+}
+
 async function init() {
     if (!token) {
         window.location.href = '/welcome.html';
