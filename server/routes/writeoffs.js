@@ -61,19 +61,32 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Получение списка (админ)
+// Получение списка
 router.get('/', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
   try {
     let query = `
-      SELECT wo.*, eq.name AS equipment_name, i.model AS model
+      SELECT wo.*, eq.name AS equipment_name, i.model AS model,
+             u.display_name AS requester_display_name
       FROM write_offs wo
       LEFT JOIN equipment eq ON wo.equipment_id = eq.id
       LEFT JOIN inventory i ON wo.item_code = i.code AND wo.department_id = i.department_id
+      LEFT JOIN users u ON wo.requested_by = u.username OR wo.requested_by = u.display_name
       WHERE 1=1
     `;
     const params = [];
     let paramIndex = 1;
 
+    // Если пользователь не админ, показываем только его отдел
+    if (req.user.role !== 'admin') {
+      query += ` AND wo.department_id = $${paramIndex++}`;
+      params.push(req.user.department_id);
+    } else if (req.query.department_id) {
+      // Админ может фильтровать по department_id
+      query += ` AND wo.department_id = $${paramIndex++}`;
+      params.push(req.query.department_id);
+    }
+
+    // Остальные фильтры (status, from, to, equipment) остаются как раньше
     if (req.query.status) {
       query += ` AND wo.status = $${paramIndex++}`;
       params.push(req.query.status);
@@ -90,8 +103,8 @@ router.get('/', authMiddleware, requireRole('admin', 'moderator', 'storekeeper')
       query += ` AND wo.requested_at <= $${paramIndex++}`;
       params.push(req.query.to + ' 23:59:59');
     }
-    query += ' ORDER BY wo.requested_at DESC';
 
+    query += ' ORDER BY wo.requested_at DESC';
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
@@ -101,7 +114,7 @@ router.get('/', authMiddleware, requireRole('admin', 'moderator', 'storekeeper')
 });
 
 // Изменение статуса (админ)
-router.patch('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
+router.patch('/:id', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
   try {
     const { status } = req.body;
     if (!['approved', 'rejected'].includes(status)) {
@@ -150,7 +163,7 @@ router.patch('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
 });
 
 // Отчёт
-router.get('/report', authMiddleware, requireRole('admin'), async (req, res) => {
+router.get('/report', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
   try {
     const year = req.query.year || new Date().getFullYear();
     // Здесь SQL-запросы с параметрами; для краткости используем pg
