@@ -36,6 +36,7 @@ async function init() {
         }
         currentUser = data.user;
         loadRequests({ status: 'pending' });
+        loadDepartmentsForFilter(); 
     } catch (e) {
         window.location.href = '/welcome.html';
     }
