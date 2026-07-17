@@ -259,12 +259,23 @@ function showToast(message, type = 'success') {
 }
 
 function bindUIEvents() {
-    $('#applyFilter').addEventListener('click', () => loadRequests(getCurrentFilters()));
-    $('#filterStatus').addEventListener('change', () => loadRequests(getCurrentFilters()));
-    $('#exportExcel').addEventListener('click', exportExcel);
-    $('#exportCSV').addEventListener('click', exportCSV);
-    $('#loadReport').addEventListener('click', loadReport);
-    $('#btnLogout').addEventListener('click', () => {
+    const applyFilter = $('#applyFilter');
+    if (applyFilter) applyFilter.addEventListener('click', () => loadRequests(getCurrentFilters()));
+
+    const filterStatus = $('#filterStatus');
+    if (filterStatus) filterStatus.addEventListener('change', () => loadRequests(getCurrentFilters()));
+
+    const exportExcel = $('#exportExcel');
+    if (exportExcel) exportExcel.addEventListener('click', exportExcel);
+
+    const exportCSV = $('#exportCSV');
+    if (exportCSV) exportCSV.addEventListener('click', exportCSV);
+
+    const loadReport = $('#loadReport');
+    if (loadReport) loadReport.addEventListener('click', loadReport);
+
+    const btnLogout = $('#btnLogout');
+    if (btnLogout) btnLogout.addEventListener('click', () => {
         localStorage.removeItem('token');
         window.location.href = '/welcome.html';
     });
