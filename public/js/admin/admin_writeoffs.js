@@ -159,7 +159,7 @@ async function exportExcel() {
             'Количество': r.quantity,
             'Ед.изм.': r.unit,
             'Оборудование': r.equipment_name || '',
-            'Запросил': r.requester_display_name || r.requested_by},
+            'Запросил': r.requester_display_name || r.requested_by,
             'Дата запроса': new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }),
             'Статус': r.status,
             'Дата решения': r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '',
@@ -183,7 +183,7 @@ async function exportCSV() {
         const headers = ['ID', 'Код', 'Наименование', 'Количество', 'Ед.изм.', 'Оборудование', 'Запросил', 'Дата запроса', 'Статус', 'Дата решения', 'Комментарий'];
         const rows = allData.map(r => [
             r.id, r.item_code, r.item_name, r.quantity, r.unit,
-            r.equipment_name || '', r.requester_display_name || r.requested_by},
+            r.equipment_name || '', r.requester_display_name || r.requested_by,
             new Date(r.requested_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }),
             r.status,
             r.resolved_at ? new Date(r.resolved_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '',
