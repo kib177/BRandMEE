@@ -476,7 +476,7 @@ router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', '
 
       const model    = modelIndex >= 0 ? String(row[modelIndex] || '').trim() : '';
       const typeName = typeIndex >= 0 ? String(row[typeIndex] || '').trim() : 'Прочее';
-      const rawEquip = equipIndex >= 0 ? (cols[equipIndex] || '').trim() : '';
+      
 const rawEquip = equipIndex >= 0 ? String(row[equipIndex] || '').trim() : '';
 const equipNames = rawEquip ? rawEquip.split(';').map(s => s.trim()).filter(Boolean) : [];
 const equipmentIds = [];
