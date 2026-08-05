@@ -244,4 +244,15 @@ const details = await pool.query(detailsQuery, detailsParams);
   }
 });
 
+router.delete('/:id', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
+  try {
+    const result = await pool.query('DELETE FROM write_offs WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Заявка не найдена' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка удаления заявки' });
+  }
+});
+
 module.exports = router;
