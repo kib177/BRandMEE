@@ -88,7 +88,9 @@ function renderTable(requests) {
                 ${r.status === 'pending' ? `
                     <button class="btn btn-success btn-sm js-resolve" data-id="${r.id}" data-status="approved">✅</button>
                     <button class="btn btn-danger btn-sm js-resolve" data-id="${r.id}" data-status="rejected">❌</button>
+                    button class="btn btn-outline btn-sm js-delete-request" data-id="${r.id}" title="Удалить заявку">🗑️</button>
                 ` : '<span style="font-size:0.8rem;">—</span>'}
+                
             </td>
         </tr>
     `).join('');
