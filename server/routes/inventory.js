@@ -67,7 +67,12 @@ router.get('/', authMiddleware, resolveDepartment, async (req, res) => {
              i.location, i.unit, i.quantity,
              TO_CHAR(i.date, 'DD.MM.YYYY') AS date,
              i.created_at, i.updated_at,
-             pt.name AS type_name, eq.name AS equipment_name, d.name AS department_name
+             pt.name AS type_name, 
+             (SELECT STRING_AGG(e2.name, '; ' ORDER BY e2.name) 
+             FROM inventory_equipment ie 
+             JOIN equipment e2 ON ie.equipment_id = e2.id 
+             WHERE ie.inventory_code = i.code AND ie.department_id = i.department_id) AS equipment_name, 
+             d.name AS department_name
       FROM inventory i
       LEFT JOIN part_types pt ON i.type_id = pt.id
       LEFT JOIN equipment eq ON i.equipment_id = eq.id
