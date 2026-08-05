@@ -318,5 +318,24 @@ function bindUIEvents() {
     }
 }
 
+async function deleteRequest(id) {
+  if (!confirm('Удалить заявку безвозвратно?')) return;
+  try {
+    const res = await fetch(`${API}/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      alert(err.error || 'Ошибка удаления');
+    } else {
+      loadRequests(getCurrentFilters());
+      showToast('Заявка удалена', 'success');
+    }
+  } catch (e) {
+    alert('Ошибка сети');
+  }
+}
+
 init();
 bindUIEvents();
