@@ -55,7 +55,10 @@ document.getElementById('cleanupTypes')?.addEventListener('click', async () => {
       method: 'DELETE',
       headers: authHeaders()
     });
-    if (!res.ok) throw new Error('Ошибка');
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: 'Неизвестная ошибка' }));
+      throw new Error(data.error || 'Ошибка сервера');
+    }
     loadTypes();
     if (typeof loadDirectoriesForForm === 'function') loadDirectoriesForForm();
     alert('Неиспользуемые типы удалены');
@@ -72,7 +75,10 @@ document.getElementById('cleanupEquip')?.addEventListener('click', async () => {
       method: 'DELETE',
       headers: authHeaders()
     });
-    if (!res.ok) throw new Error('Ошибка');
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: 'Неизвестная ошибка' }));
+      throw new Error(data.error || 'Ошибка сервера');
+    }
     loadEquipment();
     if (typeof loadDirectoriesForForm === 'function') loadDirectoriesForForm();
     alert('Неиспользуемое оборудование удалено');
@@ -80,6 +86,7 @@ document.getElementById('cleanupEquip')?.addEventListener('click', async () => {
     alert('Ошибка: ' + e.message);
   }
 });
+
 
 // Добавление типа
 $('#addType').addEventListener('click', async () => {
