@@ -174,7 +174,7 @@ router.get('/:code', async (req, res) => {
     const { code } = req.params;
 
     let result = await pool.query(`
-      SELECT i.code, i.department_id, i.name, i.model, i.type_id, i.equipment_id,
+      SELECT i.code, i.department_id, i.name, i.model, i.type_id,
              i.location, i.unit, i.quantity,
              TO_CHAR(i.date, 'DD.MM.YYYY') AS date,
              i.created_at, i.updated_at,
@@ -194,7 +194,7 @@ router.get('/:code', async (req, res) => {
       return res.status(404).json({ error: 'Позиция с таким кодом не найдена' });
     }
 
-    // Получаем список привязанных оборудований
+    // Получаем список привязанных оборудований для редактирования
     const equipQuery = await pool.query(
       'SELECT equipment_id FROM inventory_equipment WHERE inventory_code = $1 AND department_id = $2',
       [code, result.rows[0].department_id]
