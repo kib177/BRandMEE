@@ -2,6 +2,10 @@ const pool = require('../db');
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, requireRole } = require('../middleware/auth');
+router.use((req, res, next) => {
+  console.log('[DIRECTORIES]', req.method, req.path);
+  next();
+});
 
 // Получение типов
 router.get('/types', async (req, res) => {
