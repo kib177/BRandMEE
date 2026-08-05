@@ -22,7 +22,6 @@ async function getOrCreateTypeId(typeName) {
 
 // Сохранение связей many-to-many для позиции
 async function saveEquipmentLinks(client, code, departmentId, equipmentIds) {
-  // Удаляем старые связи
   await client.query('DELETE FROM inventory_equipment WHERE inventory_code = $1 AND department_id = $2', [code, departmentId]);
   if (equipmentIds && equipmentIds.length > 0) {
     const values = equipmentIds.map((_, i) => `($1, $2, $${i + 3})`).join(', ');
@@ -50,10 +49,8 @@ function resolveDepartment(req, res, next) {
   const userDept = req.user?.department_id;
 
   if (role === 'admin') {
-    // Администратор может фильтровать по желанию через query или body
     req.allowedDepartmentId = req.query.department_id || req.body.department_id || null;
   } else {
-    // Обычный пользователь – только свой отдел
     req.allowedDepartmentId = userDept;
   }
   next();
@@ -69,13 +66,12 @@ router.get('/', authMiddleware, resolveDepartment, async (req, res) => {
              i.created_at, i.updated_at,
              pt.name AS type_name, 
              (SELECT STRING_AGG(e2.name, '; ' ORDER BY e2.name) 
-             FROM inventory_equipment ie 
-             JOIN equipment e2 ON ie.equipment_id = e2.id 
-             WHERE ie.inventory_code = i.code AND ie.department_id = i.department_id) AS equipment_name, 
+              FROM inventory_equipment ie 
+              JOIN equipment e2 ON ie.equipment_id = e2.id 
+              WHERE ie.inventory_code = i.code AND ie.department_id = i.department_id) AS equipment_name, 
              d.name AS department_name
       FROM inventory i
       LEFT JOIN part_types pt ON i.type_id = pt.id
-      LEFT JOIN equipment eq ON i.equipment_id = eq.id
       JOIN departments d ON i.department_id = d.id
       WHERE 1=1
     `;
@@ -168,7 +164,7 @@ router.get('/export-excel', authMiddleware, resolveDepartment, async (req, res) 
   }
 });
 
-// ---------- GET /:code (одна позиция) – ОТКРЫТ ----------
+// ---------- GET /:code (одна позиция) ----------
 router.get('/:code', async (req, res) => {
   try {
     const { code } = req.params;
@@ -194,7 +190,6 @@ router.get('/:code', async (req, res) => {
       return res.status(404).json({ error: 'Позиция с таким кодом не найдена' });
     }
 
-    // Получаем список привязанных оборудований для редактирования
     const equipQuery = await pool.query(
       'SELECT equipment_id FROM inventory_equipment WHERE inventory_code = $1 AND department_id = $2',
       [code, result.rows[0].department_id]
@@ -223,15 +218,14 @@ router.post('/', authMiddleware, resolveDepartment, async (req, res) => {
 
     await pool.query(`
       INSERT INTO inventory (code, department_id, name, model, type_id, location, unit, quantity, date, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TO_DATE($10, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TO_DATE($9, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
       ON CONFLICT (code, department_id) DO UPDATE SET
         name = EXCLUDED.name, model = EXCLUDED.model, type_id = EXCLUDED.type_id,
-        equipment_id = EXCLUDED.equipment_id, location = EXCLUDED.location,
+        location = EXCLUDED.location,
         unit = EXCLUDED.unit, quantity = EXCLUDED.quantity, date = EXCLUDED.date,
         updated_at = CURRENT_TIMESTAMP
-    `, [code, departmentId, name, model, type_id || null, equipment_ids?.[0] || null, location, unit, quantity, date]);
-    
-    // Сохраняем связи many-to-many
+    `, [code, departmentId, name, model, type_id || null, location, unit, quantity, date]);
+
     if (equipment_ids && Array.isArray(equipment_ids)) {
       const client = await pool.connect();
       try {
@@ -240,6 +234,7 @@ router.post('/', authMiddleware, resolveDepartment, async (req, res) => {
         client.release();
       }
     }
+
     res.json({ ok: true, code });
   } catch (err) {
     console.error(err);
@@ -261,14 +256,14 @@ router.post('/bulk', authMiddleware, resolveDepartment, async (req, res) => {
       await client.query('BEGIN');
       for (const item of items) {
         await client.query(`
-          INSERT INTO inventory (code, department_id, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, TO_DATE($10, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
+          INSERT INTO inventory (code, department_id, name, model, type_id, location, unit, quantity, date, updated_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8, TO_DATE($9, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
           ON CONFLICT (code, department_id) DO UPDATE SET
             name = EXCLUDED.name, model = EXCLUDED.model, type_id = EXCLUDED.type_id,
-            equipment_id = EXCLUDED.equipment_id, location = EXCLUDED.location,
+            location = EXCLUDED.location,
             unit = EXCLUDED.unit, quantity = EXCLUDED.quantity, date = EXCLUDED.date,
             updated_at = CURRENT_TIMESTAMP
-        `, [item.code, departmentId, item.name, item.model, item.type_id || null, item.equipment_ids?.[0] || null, item.location, item.unit, item.quantity, item.date]);
+        `, [item.code, departmentId, item.name, item.model, item.type_id || null, item.location, item.unit, item.quantity, item.date]);
 
         if (item.equipment_ids && item.equipment_ids.length > 0) {
           await saveEquipmentLinks(client, item.code, departmentId, item.equipment_ids);
@@ -440,14 +435,14 @@ router.post('/import-csv', authMiddleware, requireRole('admin', 'moderator', 'st
       await client.query('BEGIN');
       for (const item of items) {
         await client.query(`
-          INSERT INTO inventory (code, department_id, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, TO_DATE($10, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
+          INSERT INTO inventory (code, department_id, name, model, type_id, location, unit, quantity, date, updated_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8, TO_DATE($9, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
           ON CONFLICT (code, department_id) DO UPDATE SET
             name = EXCLUDED.name, model = EXCLUDED.model, type_id = EXCLUDED.type_id,
-            equipment_id = EXCLUDED.equipment_id, location = EXCLUDED.location,
+            location = EXCLUDED.location,
             unit = EXCLUDED.unit, quantity = EXCLUDED.quantity, date = EXCLUDED.date,
             updated_at = CURRENT_TIMESTAMP
-        `, [item.code, departmentId, item.name, item.model, item.type_id || null, item.equipment_ids?.[0] || null, item.location, item.unit, item.quantity, item.date]);
+        `, [item.code, departmentId, item.name, item.model, item.type_id || null, item.location, item.unit, item.quantity, item.date]);
 
         if (item.equipment_ids && item.equipment_ids.length > 0) {
           await saveEquipmentLinks(client, item.code, departmentId, item.equipment_ids);
@@ -584,14 +579,14 @@ router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', '
       await client.query('BEGIN');
       for (const item of items) {
         await client.query(`
-          INSERT INTO inventory (code, department_id, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, TO_DATE($10, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
+          INSERT INTO inventory (code, department_id, name, model, type_id, location, unit, quantity, date, updated_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8, TO_DATE($9, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
           ON CONFLICT (code, department_id) DO UPDATE SET
             name = EXCLUDED.name, model = EXCLUDED.model, type_id = EXCLUDED.type_id,
-            equipment_id = EXCLUDED.equipment_id, location = EXCLUDED.location,
+            location = EXCLUDED.location,
             unit = EXCLUDED.unit, quantity = EXCLUDED.quantity, date = EXCLUDED.date,
             updated_at = CURRENT_TIMESTAMP
-        `, [item.code, departmentId, item.name, item.model, item.type_id || null, item.equipment_ids?.[0] || null, item.location, item.unit, item.quantity, item.date]);
+        `, [item.code, departmentId, item.name, item.model, item.type_id || null, item.location, item.unit, item.quantity, item.date]);
 
         if (item.equipment_ids && item.equipment_ids.length > 0) {
           await saveEquipmentLinks(client, item.code, departmentId, item.equipment_ids);
