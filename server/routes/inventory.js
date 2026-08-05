@@ -87,6 +87,16 @@ router.get('/', authMiddleware, resolveDepartment, async (req, res) => {
       params.push(req.allowedDepartmentId);
     }
 
+    if (req.query.equipment) {
+      query += ` AND EXISTS (
+        SELECT 1 FROM inventory_equipment ie 
+        JOIN equipment e2 ON ie.equipment_id = e2.id 
+        WHERE ie.inventory_code = i.code AND ie.department_id = i.department_id 
+        AND e2.name ILIKE $${paramIndex++}
+      )`;
+      params.push(`%${req.query.equipment}%`);
+    }
+
     query += ' ORDER BY i.updated_at DESC';
     const result = await pool.query(query, params);
     res.json(result.rows);
@@ -102,10 +112,13 @@ router.get('/export-excel', authMiddleware, resolveDepartment, async (req, res) 
     let query = `
       SELECT i.code, i.name, i.model, i.location, i.unit, i.quantity,
              TO_CHAR(i.date, 'DD.MM.YYYY') AS date,
-             pt.name AS type_name, eq.name AS equipment_name
+             pt.name AS type_name,
+             (SELECT STRING_AGG(e2.name, '; ' ORDER BY e2.name) 
+              FROM inventory_equipment ie 
+              JOIN equipment e2 ON ie.equipment_id = e2.id 
+              WHERE ie.inventory_code = i.code AND ie.department_id = i.department_id) AS equipment_name
       FROM inventory i
       LEFT JOIN part_types pt ON i.type_id = pt.id
-      LEFT JOIN equipment eq ON i.equipment_id = eq.id
       WHERE 1=1
     `;
     const params = [];
@@ -114,6 +127,16 @@ router.get('/export-excel', authMiddleware, resolveDepartment, async (req, res) 
     if (req.allowedDepartmentId) {
       query += ` AND i.department_id = $${paramIndex++}`;
       params.push(req.allowedDepartmentId);
+    }
+
+    if (req.query.equipment) {
+      query += ` AND EXISTS (
+        SELECT 1 FROM inventory_equipment ie 
+        JOIN equipment e2 ON ie.equipment_id = e2.id 
+        WHERE ie.inventory_code = i.code AND ie.department_id = i.department_id 
+        AND e2.name ILIKE $${paramIndex++}
+      )`;
+      params.push(`%${req.query.equipment}%`);
     }
 
     query += ' ORDER BY i.updated_at DESC';
@@ -155,10 +178,13 @@ router.get('/:code', async (req, res) => {
              i.location, i.unit, i.quantity,
              TO_CHAR(i.date, 'DD.MM.YYYY') AS date,
              i.created_at, i.updated_at,
-             pt.name AS type_name, eq.name AS equipment_name
+             pt.name AS type_name,
+             (SELECT STRING_AGG(e2.name, '; ' ORDER BY e2.name) 
+              FROM inventory_equipment ie 
+              JOIN equipment e2 ON ie.equipment_id = e2.id 
+              WHERE ie.inventory_code = i.code AND ie.department_id = i.department_id) AS equipment_name
       FROM inventory i
       LEFT JOIN part_types pt ON i.type_id = pt.id
-      LEFT JOIN equipment eq ON i.equipment_id = eq.id
       WHERE i.code = $1
       ORDER BY i.department_id
       LIMIT 1
@@ -167,6 +193,13 @@ router.get('/:code', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Позиция с таким кодом не найдена' });
     }
+
+    // Получаем список привязанных оборудований
+    const equipQuery = await pool.query(
+      'SELECT equipment_id FROM inventory_equipment WHERE inventory_code = $1 AND department_id = $2',
+      [code, result.rows[0].department_id]
+    );
+    result.rows[0].equipment_ids = equipQuery.rows.map(r => r.equipment_id);
 
     res.json(result.rows[0]);
   } catch (err) {
@@ -178,7 +211,7 @@ router.get('/:code', async (req, res) => {
 // ---------- POST / (добавление/обновление) ----------
 router.post('/', authMiddleware, resolveDepartment, async (req, res) => {
   try {
-    const { code, name, model, type_id, equipment_id, location, unit, quantity, date } = req.body;
+    const { code, name, model, type_id, equipment_ids, location, unit, quantity, date } = req.body;
     if (!code || !name || !date) {
       return res.status(400).json({ error: 'code, name, date обязательны' });
     }
@@ -196,8 +229,17 @@ router.post('/', authMiddleware, resolveDepartment, async (req, res) => {
         equipment_id = EXCLUDED.equipment_id, location = EXCLUDED.location,
         unit = EXCLUDED.unit, quantity = EXCLUDED.quantity, date = EXCLUDED.date,
         updated_at = CURRENT_TIMESTAMP
-    `, [code, departmentId, name, model, type_id || null, equipment_id || null, location, unit, quantity, date]);
-
+    `, [code, departmentId, name, model, type_id || null, equipment_ids?.[0] || null, location, unit, quantity, date]);
+    
+    // Сохраняем связи many-to-many
+    if (equipment_ids && Array.isArray(equipment_ids)) {
+      const client = await pool.connect();
+      try {
+        await saveEquipmentLinks(client, code, departmentId, equipment_ids);
+      } finally {
+        client.release();
+      }
+    }
     res.json({ ok: true, code });
   } catch (err) {
     console.error(err);
@@ -226,7 +268,11 @@ router.post('/bulk', authMiddleware, resolveDepartment, async (req, res) => {
             equipment_id = EXCLUDED.equipment_id, location = EXCLUDED.location,
             unit = EXCLUDED.unit, quantity = EXCLUDED.quantity, date = EXCLUDED.date,
             updated_at = CURRENT_TIMESTAMP
-        `, [item.code, departmentId, item.name, item.model, item.type_id || null, item.equipment_id || null, item.location, item.unit, item.quantity, item.date]);
+        `, [item.code, departmentId, item.name, item.model, item.type_id || null, item.equipment_ids?.[0] || null, item.location, item.unit, item.quantity, item.date]);
+
+        if (item.equipment_ids && item.equipment_ids.length > 0) {
+          await saveEquipmentLinks(client, item.code, departmentId, item.equipment_ids);
+        }
       }
       await client.query('COMMIT');
       res.json({ ok: true, count: items.length });
@@ -273,7 +319,6 @@ router.post('/import-csv', authMiddleware, requireRole('admin', 'moderator', 'st
   try {
     if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
 
-    // Определяем отдел
     let departmentId;
     if (req.user.role === 'admin') {
       departmentId = req.body.department_id || req.user.department_id || 1;
@@ -345,14 +390,12 @@ router.post('/import-csv', authMiddleware, requireRole('admin', 'moderator', 'st
       const model    = modelIndex >= 0 ? (cols[modelIndex] || '').trim() : '';
       const typeName = typeIndex >= 0 ? (cols[typeIndex] || '').trim() : 'Прочее';
       const rawEquip = equipIndex >= 0 ? (cols[equipIndex] || '').trim() : '';
-const equipNames = rawEquip ? rawEquip.split(';').map(s => s.trim()).filter(Boolean) : [];
-// Создаём или находим каждое оборудование
-const equipmentIds = [];
-for (const name of equipNames) {
-  const id = await getOrCreateEquipmentId(name);
-  equipmentIds.push(id);
-}
-const equipmentId = equipmentIds.length > 0 ? equipmentIds[0] : null;
+      const equipNames = rawEquip ? rawEquip.split(';').map(s => s.trim()).filter(Boolean) : [];
+      const equipmentIds = [];
+      for (const name of equipNames) {
+        const id = await getOrCreateEquipmentId(name);
+        equipmentIds.push(id);
+      }
       const location = locIndex >= 0 ? (cols[locIndex] || '').trim() : '';
       const unit     = (cols[unitIndex] || '').trim();
       const qtyRaw   = (cols[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
@@ -380,7 +423,7 @@ const equipmentId = equipmentIds.length > 0 ? equipmentIds[0] : null;
       items.push({
         code, name, model,
         type_id: typeId,
-        equipment_id: equipmentId,
+        equipment_ids: equipmentIds,
         location,
         unit,
         quantity,
@@ -404,7 +447,11 @@ const equipmentId = equipmentIds.length > 0 ? equipmentIds[0] : null;
             equipment_id = EXCLUDED.equipment_id, location = EXCLUDED.location,
             unit = EXCLUDED.unit, quantity = EXCLUDED.quantity, date = EXCLUDED.date,
             updated_at = CURRENT_TIMESTAMP
-        `, [item.code, departmentId, item.name, item.model, item.type_id, item.equipment_id, item.location, item.unit, item.quantity, item.date]);
+        `, [item.code, departmentId, item.name, item.model, item.type_id || null, item.equipment_ids?.[0] || null, item.location, item.unit, item.quantity, item.date]);
+
+        if (item.equipment_ids && item.equipment_ids.length > 0) {
+          await saveEquipmentLinks(client, item.code, departmentId, item.equipment_ids);
+        }
       }
       await client.query('COMMIT');
       res.json({ ok: true, count: items.length, skippedCount: skipped.length });
@@ -425,7 +472,6 @@ router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', '
   try {
     if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
 
-    // Определяем отдел
     let departmentId;
     if (req.user.role === 'admin') {
       departmentId = req.body.department_id || req.user.department_id || 1;
@@ -488,48 +534,46 @@ router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', '
     };
 
     for (let i = 1; i < rawData.length; i++) {
-  const row = rawData[i];
-  const code = String(row[codeIndex] || '').trim();
-  const name = String(row[nameIndex] || '').trim();
-  if (!code || !name) { skipped.push({ row: i+1, reason: 'Пустой код или наименование' }); continue; }
+      const row = rawData[i];
+      const code = String(row[codeIndex] || '').trim();
+      const name = String(row[nameIndex] || '').trim();
+      if (!code || !name) { skipped.push({ row: i+1, reason: 'Пустой код или наименование' }); continue; }
 
-  const model    = modelIndex >= 0 ? String(row[modelIndex] || '').trim() : '';
-  const typeName = typeIndex >= 0 ? String(row[typeIndex] || '').trim() : 'Прочее';
+      const model    = modelIndex >= 0 ? String(row[modelIndex] || '').trim() : '';
+      const typeName = typeIndex >= 0 ? String(row[typeIndex] || '').trim() : 'Прочее';
 
-  // Оборудование – разбиваем по ";" и берём первое
-  const rawEquip = equipIndex >= 0 ? String(row[equipIndex] || '').trim() : '';
-  const equipNames = rawEquip ? rawEquip.split(';').map(s => s.trim()).filter(Boolean) : [];
-  // Создаём или находим каждое оборудование (чтобы они попали в справочник)
-  let equipmentId = null;
-  for (const eqName of equipNames) {
-    const id = await getOrCreateEquipmentId(eqName);
-    if (equipmentId === null) equipmentId = id;   // для запчасти используем первое из списка
-  }
+      const rawEquip = equipIndex >= 0 ? String(row[equipIndex] || '').trim() : '';
+      const equipNames = rawEquip ? rawEquip.split(';').map(s => s.trim()).filter(Boolean) : [];
+      const equipmentIds = [];
+      for (const eqName of equipNames) {
+        const id = await getOrCreateEquipmentId(eqName);
+        equipmentIds.push(id);
+      }
 
-  const location = locIndex >= 0 ? String(row[locIndex] || '').trim() : '';
-  const unit     = String(row[unitIndex] || '').trim();
-  const qtyRaw   = String(row[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
-  const dateRaw  = String(row[dateIndex] || '').trim();
+      const location = locIndex >= 0 ? String(row[locIndex] || '').trim() : '';
+      const unit     = String(row[unitIndex] || '').trim();
+      const qtyRaw   = String(row[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
+      const dateRaw  = String(row[dateIndex] || '').trim();
 
-  if (!unit || !qtyRaw || !dateRaw) { skipped.push({ row: i+1, reason: 'Пустые обязательные поля' }); continue; }
-  const quantity = parseFloat(qtyRaw);
-  if (isNaN(quantity) || quantity < 0) { skipped.push({ row: i+1, reason: `Некорректное количество: ${qtyRaw}` }); continue; }
+      if (!unit || !qtyRaw || !dateRaw) { skipped.push({ row: i+1, reason: 'Пустые обязательные поля' }); continue; }
+      const quantity = parseFloat(qtyRaw);
+      if (isNaN(quantity) || quantity < 0) { skipped.push({ row: i+1, reason: `Некорректное количество: ${qtyRaw}` }); continue; }
 
-  const formattedDate = parseDate(dateRaw);
-  if (!formattedDate) { skipped.push({ row: i+1, reason: `Некорректная дата: ${dateRaw}` }); continue; }
+      const formattedDate = parseDate(dateRaw);
+      if (!formattedDate) { skipped.push({ row: i+1, reason: `Некорректная дата: ${dateRaw}` }); continue; }
 
-  const typeId = await getOrCreateTypeId(typeName || 'Прочее');
+      const typeId = await getOrCreateTypeId(typeName || 'Прочее');
 
-  items.push({
-    code, name, model,
-    type_id: typeId,
-    equipment_id: equipmentId,
-    location,
-    unit,
-    quantity,
-    date: formattedDate
-  });
-}
+      items.push({
+        code, name, model,
+        type_id: typeId,
+        equipment_ids: equipmentIds,
+        location,
+        unit,
+        quantity,
+        date: formattedDate
+      });
+    }
 
     if (items.length === 0) {
       return res.status(400).json({ error: 'Не удалось извлечь корректные записи', skipped });
@@ -547,7 +591,11 @@ router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', '
             equipment_id = EXCLUDED.equipment_id, location = EXCLUDED.location,
             unit = EXCLUDED.unit, quantity = EXCLUDED.quantity, date = EXCLUDED.date,
             updated_at = CURRENT_TIMESTAMP
-        `, [item.code, departmentId, item.name, item.model, item.type_id, item.equipment_id, item.location, item.unit, item.quantity, item.date]);
+        `, [item.code, departmentId, item.name, item.model, item.type_id || null, item.equipment_ids?.[0] || null, item.location, item.unit, item.quantity, item.date]);
+
+        if (item.equipment_ids && item.equipment_ids.length > 0) {
+          await saveEquipmentLinks(client, item.code, departmentId, item.equipment_ids);
+        }
       }
       await client.query('COMMIT');
       res.json({ ok: true, count: items.length, skippedCount: skipped.length });
