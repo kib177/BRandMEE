@@ -54,6 +54,39 @@ router.put('/types/:id', authMiddleware, requireRole('admin', 'moderator'), asyn
   }
 });
 
+// Очистка неиспользуемых типов
+router.delete('/types/cleanup', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
+  try {
+    await pool.query(`
+      DELETE FROM part_types
+      WHERE id NOT IN (SELECT DISTINCT type_id FROM inventory WHERE type_id IS NOT NULL)
+    `);
+    res.json({ ok: true });
+  } catch (err) {
+  console.error('Ошибка очистки типов:');
+  console.error(err);
+  res.status(500).json({ error: 'Ошибка очистки типов', details: err.message });
+}
+});
+
+// Очистка неиспользуемого оборудования
+router.delete('/equipment/cleanup', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
+  try {
+    await pool.query(`
+      DELETE FROM equipment
+      WHERE id NOT IN (
+        SELECT DISTINCT equipment_id FROM inventory WHERE equipment_id IS NOT NULL
+        UNION
+        SELECT DISTINCT equipment_id FROM write_offs WHERE equipment_id IS NOT NULL
+      )
+    `);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка очистки оборудования' });
+  }
+});
+
 // Удаление типа
 router.delete('/types/:id', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
   try {
@@ -115,37 +148,6 @@ router.delete('/equipment/:id', authMiddleware, requireRole('admin', 'moderator'
   }
 });
 
-// Очистка неиспользуемых типов
-router.delete('/types/cleanup', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
-  try {
-    await pool.query(`
-      DELETE FROM part_types
-      WHERE id NOT IN (SELECT DISTINCT type_id FROM inventory WHERE type_id IS NOT NULL)
-    `);
-    res.json({ ok: true });
-  } catch (err) {
-  console.error('Ошибка очистки типов:');
-  console.error(err);
-  res.status(500).json({ error: 'Ошибка очистки типов', details: err.message });
-}
-});
 
-// Очистка неиспользуемого оборудования
-router.delete('/equipment/cleanup', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
-  try {
-    await pool.query(`
-      DELETE FROM equipment
-      WHERE id NOT IN (
-        SELECT DISTINCT equipment_id FROM inventory WHERE equipment_id IS NOT NULL
-        UNION
-        SELECT DISTINCT equipment_id FROM write_offs WHERE equipment_id IS NOT NULL
-      )
-    `);
-    res.json({ ok: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Ошибка очистки оборудования' });
-  }
-});
 
 module.exports = router;
