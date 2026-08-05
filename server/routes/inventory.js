@@ -325,7 +325,15 @@ router.post('/import-csv', authMiddleware, requireRole('admin', 'moderator', 'st
 
       const model    = modelIndex >= 0 ? (cols[modelIndex] || '').trim() : '';
       const typeName = typeIndex >= 0 ? (cols[typeIndex] || '').trim() : 'Прочее';
-      const equipName = equipIndex >= 0 ? (cols[equipIndex] || '').trim() : '';
+      const rawEquip = equipIndex >= 0 ? (cols[equipIndex] || '').trim() : '';
+const equipNames = rawEquip ? rawEquip.split(';').map(s => s.trim()).filter(Boolean) : [];
+// Создаём или находим каждое оборудование
+const equipmentIds = [];
+for (const name of equipNames) {
+  const id = await getOrCreateEquipmentId(name);
+  equipmentIds.push(id);
+}
+const equipmentId = equipmentIds.length > 0 ? equipmentIds[0] : null;
       const location = locIndex >= 0 ? (cols[locIndex] || '').trim() : '';
       const unit     = (cols[unitIndex] || '').trim();
       const qtyRaw   = (cols[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
@@ -349,8 +357,7 @@ router.post('/import-csv', authMiddleware, requireRole('admin', 'moderator', 'st
       }
 
       const typeId = await getOrCreateTypeId(typeName || 'Прочее');
-      const equipmentId = await getOrCreateEquipmentId(equipName);
-
+   
       items.push({
         code, name, model,
         type_id: typeId,
@@ -469,7 +476,16 @@ router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', '
 
       const model    = modelIndex >= 0 ? String(row[modelIndex] || '').trim() : '';
       const typeName = typeIndex >= 0 ? String(row[typeIndex] || '').trim() : 'Прочее';
-      const equipName = equipIndex >= 0 ? String(row[equipIndex] || '').trim() : '';
+      const rawEquip = equipIndex >= 0 ? (cols[equipIndex] || '').trim() : '';
+const rawEquip = equipIndex >= 0 ? String(row[equipIndex] || '').trim() : '';
+const equipNames = rawEquip ? rawEquip.split(';').map(s => s.trim()).filter(Boolean) : [];
+const equipmentIds = [];
+for (const name of equipNames) {
+  const id = await getOrCreateEquipmentId(name);
+  equipmentIds.push(id);
+}
+const equipmentId = equipmentIds.length > 0 ? equipmentIds[0] : null;
+      
       const location = locIndex >= 0 ? String(row[locIndex] || '').trim() : '';
       const unit     = String(row[unitIndex] || '').trim();
       const qtyRaw   = String(row[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
@@ -483,7 +499,7 @@ router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', '
       if (!formattedDate) { skipped.push({ row: i+1, reason: `Некорректная дата: ${dateRaw}` }); continue; }
 
       const typeId = await getOrCreateTypeId(typeName || 'Прочее');
-      const equipmentId = await getOrCreateEquipmentId(equipName);
+      
 
       items.push({
         code, name, model,
