@@ -63,7 +63,7 @@ function resolveDepartment(req, res, next) {
 router.get('/', authMiddleware, resolveDepartment, async (req, res) => {
   try {
     let query = `
-      SELECT i.code, i.department_id, i.name, i.model, i.type_id, i.equipment_id,
+      SELECT i.code, i.department_id, i.name, i.model, i.type_id,
              i.location, i.unit, i.quantity,
              TO_CHAR(i.date, 'DD.MM.YYYY') AS date,
              i.created_at, i.updated_at,
