@@ -47,6 +47,40 @@ async function loadEquipment() {
   }
 }
 
+// Очистка неиспользуемых типов
+document.getElementById('cleanupTypes')?.addEventListener('click', async () => {
+  if (!confirm('Удалить все типы, которые не привязаны ни к одной запчасти?')) return;
+  try {
+    const res = await fetch('/api/directories/types/cleanup', {
+      method: 'DELETE',
+      headers: authHeaders()
+    });
+    if (!res.ok) throw new Error('Ошибка');
+    loadTypes();
+    if (typeof loadDirectoriesForForm === 'function') loadDirectoriesForForm();
+    alert('Неиспользуемые типы удалены');
+  } catch (e) {
+    alert('Ошибка: ' + e.message);
+  }
+});
+
+// Очистка неиспользуемого оборудования
+document.getElementById('cleanupEquip')?.addEventListener('click', async () => {
+  if (!confirm('Удалить всё оборудование, которое не привязано к запчастям или списаниям?')) return;
+  try {
+    const res = await fetch('/api/directories/equipment/cleanup', {
+      method: 'DELETE',
+      headers: authHeaders()
+    });
+    if (!res.ok) throw new Error('Ошибка');
+    loadEquipment();
+    if (typeof loadDirectoriesForForm === 'function') loadDirectoriesForForm();
+    alert('Неиспользуемое оборудование удалено');
+  } catch (e) {
+    alert('Ошибка: ' + e.message);
+  }
+});
+
 // Добавление типа
 $('#addType').addEventListener('click', async () => {
   const name = $('#newTypeName').value.trim();
