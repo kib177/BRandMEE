@@ -222,7 +222,7 @@ router.post('/', authMiddleware, resolveDepartment, async (req, res) => {
     }
 
     await pool.query(`
-      INSERT INTO inventory (code, department_id, name, model, type_id, equipment_id, location, unit, quantity, date, updated_at)
+      INSERT INTO inventory (code, department_id, name, model, type_id, location, unit, quantity, date, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TO_DATE($10, 'DD.MM.YYYY'), CURRENT_TIMESTAMP)
       ON CONFLICT (code, department_id) DO UPDATE SET
         name = EXCLUDED.name, model = EXCLUDED.model, type_id = EXCLUDED.type_id,
