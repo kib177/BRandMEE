@@ -120,6 +120,7 @@
 <button class="btn btn-outline" id="btnWriteOff" disabled>📤 Списать</button>
 <button class="btn btn-danger auth-required storekeeper-only" id="btnDeleteSelected" disabled>🗑️ Удалить</button>
 <button class="btn btn-danger auth-required moderator-only" id="btnDeleteAll">🗑️ Удалить всё</button>
+            
 <!-- Ссылка на админ-панель списаний только для админов -->
 <a href="../admin/admin_writeoffs.html" class="btn btn-outline storekeeper-only" style="text-decoration:none;" id="adminWriteOffLink">👑 Списания</a>
             <input type="file" id="importFileInput" accept=".csv,.xlsx,.xls" class="import-hidden">
@@ -185,11 +186,9 @@
                 </div>
                  <div class="form-row">
                     <div class="form-group">
-                        <label for="formEquipment">Оборудование</label>
-                           <select id="formEquipment">
-                               <option value="">— Без оборудования —</option>
-                           </select>
-                     </div>
+  <label for="formEquipments">Оборудование</label>
+  <select id="formEquipments" multiple style="height: auto;"></select>
+</div>
                  </div>
                 <div class="form-group admin-only moderator-only" id="deptGroup">
     <label for="formDepartment">Отдел</label>
