@@ -32,7 +32,7 @@ async function loadDirectoriesForForm() {
       typeSelect.innerHTML = '<option value="">— Выберите —</option>' +
         allTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
     }
-    const equipSelect = document.getElementById('formEquipment');
+    const equipSelect = document.getElementById('formEquipments');
     if (equipSelect) {
       equipSelect.innerHTML = '<option value="">— Без оборудования —</option>' +
         allEquipments.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
