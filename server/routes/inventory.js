@@ -20,6 +20,20 @@ async function getOrCreateTypeId(typeName) {
   return res.rows[0].id;
 }
 
+// Сохранение связей many-to-many для позиции
+async function saveEquipmentLinks(client, code, departmentId, equipmentIds) {
+  // Удаляем старые связи
+  await client.query('DELETE FROM inventory_equipment WHERE inventory_code = $1 AND department_id = $2', [code, departmentId]);
+  if (equipmentIds && equipmentIds.length > 0) {
+    const values = equipmentIds.map((_, i) => `($1, $2, $${i + 3})`).join(', ');
+    await client.query(`
+      INSERT INTO inventory_equipment (inventory_code, department_id, equipment_id)
+      VALUES ${values}
+      ON CONFLICT DO NOTHING
+    `, [code, departmentId, ...equipmentIds]);
+  }
+}
+
 async function getOrCreateEquipmentId(equipName) {
   if (!equipName || !equipName.trim()) return null;
   const name = equipName.trim();
