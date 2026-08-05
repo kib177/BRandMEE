@@ -2,6 +2,8 @@ const pool = require('../db');
 const express = require('express');
 const router = express.Router();
 const { authMiddleware, requireRole } = require('../middleware/auth');
+
+//просмотр запросов pm2 logs server --lines 0
 router.use((req, res, next) => {
   console.log('[DIRECTORIES]', req.method, req.path);
   next();
