@@ -85,13 +85,12 @@ function renderTable(requests) {
             <td class="status" style="color:${r.status==='approved'?'green':r.status==='rejected'?'red':'orange'}">${r.status}</td>
             <td title="${r.comment || ''}">${r.comment ? r.comment.substring(0, 30) + (r.comment.length > 30 ? '…' : '') : '—'}</td>
             <td>
-                ${r.status === 'pending' ? `
-                    <button class="btn btn-success btn-sm js-resolve" data-id="${r.id}" data-status="approved">✅</button>
-                    <button class="btn btn-danger btn-sm js-resolve" data-id="${r.id}" data-status="rejected">❌</button>
-                    
-                ` : '<span style="font-size:0.8rem;">—</span>'}
-                button class="btn btn-outline btn-sm js-delete-request" data-id="${r.id}" title="Удалить заявку">🗑️</button>
-            </td>
+  ${r.status === 'pending' ? `
+    <button class="btn btn-success btn-sm js-resolve" data-id="${r.id}" data-status="approved">✅</button>
+    <button class="btn btn-danger btn-sm js-resolve" data-id="${r.id}" data-status="rejected">❌</button>
+  ` : ''}
+  <button class="btn btn-outline btn-sm js-delete-request" data-id="${r.id}" title="Удалить заявку">🗑️</button>
+</td>
         </tr>
     `).join('');
 
