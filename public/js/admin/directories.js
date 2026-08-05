@@ -53,11 +53,19 @@ document.getElementById('cleanupTypes')?.addEventListener('click', async () => {
   try {
     const res = await fetch('/api/directories/types/cleanup', {
       method: 'DELETE',
-      headers: authHeaders()
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
     });
     if (!res.ok) {
-      const data = await res.json().catch(() => ({ error: 'Неизвестная ошибка' }));
-      throw new Error(data.error || 'Ошибка сервера');
+      const text = await res.text();
+      let message = text;
+      try {
+        const json = JSON.parse(text);
+        message = json.error || text;
+      } catch {}
+      throw new Error(message);
     }
     loadTypes();
     if (typeof loadDirectoriesForForm === 'function') loadDirectoriesForForm();
@@ -73,11 +81,19 @@ document.getElementById('cleanupEquip')?.addEventListener('click', async () => {
   try {
     const res = await fetch('/api/directories/equipment/cleanup', {
       method: 'DELETE',
-      headers: authHeaders()
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
     });
     if (!res.ok) {
-      const data = await res.json().catch(() => ({ error: 'Неизвестная ошибка' }));
-      throw new Error(data.error || 'Ошибка сервера');
+      const text = await res.text();
+      let message = text;
+      try {
+        const json = JSON.parse(text);
+        message = json.error || text;
+      } catch {}
+      throw new Error(message);
     }
     loadEquipment();
     if (typeof loadDirectoriesForForm === 'function') loadDirectoriesForForm();
@@ -86,7 +102,6 @@ document.getElementById('cleanupEquip')?.addEventListener('click', async () => {
     alert('Ошибка: ' + e.message);
   }
 });
-
 
 // Добавление типа
 $('#addType').addEventListener('click', async () => {
