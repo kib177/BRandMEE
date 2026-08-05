@@ -469,48 +469,48 @@ router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', '
     };
 
     for (let i = 1; i < rawData.length; i++) {
-      const row = rawData[i];
-      const code = String(row[codeIndex] || '').trim();
-      const name = String(row[nameIndex] || '').trim();
-      if (!code || !name) { skipped.push({ row: i+1, reason: 'Пустой код или наименование' }); continue; }
+  const row = rawData[i];
+  const code = String(row[codeIndex] || '').trim();
+  const name = String(row[nameIndex] || '').trim();
+  if (!code || !name) { skipped.push({ row: i+1, reason: 'Пустой код или наименование' }); continue; }
 
-      const model    = modelIndex >= 0 ? String(row[modelIndex] || '').trim() : '';
-      const typeName = typeIndex >= 0 ? String(row[typeIndex] || '').trim() : 'Прочее';
-      
-const rawEquip = equipIndex >= 0 ? String(row[equipIndex] || '').trim() : '';
-const equipNames = rawEquip ? rawEquip.split(';').map(s => s.trim()).filter(Boolean) : [];
-const equipmentIds = [];
-for (const name of equipNames) {
-  const id = await getOrCreateEquipmentId(name);
-  equipmentIds.push(id);
+  const model    = modelIndex >= 0 ? String(row[modelIndex] || '').trim() : '';
+  const typeName = typeIndex >= 0 ? String(row[typeIndex] || '').trim() : 'Прочее';
+
+  // Оборудование – разбиваем по ";" и берём первое
+  const rawEquip = equipIndex >= 0 ? String(row[equipIndex] || '').trim() : '';
+  const equipNames = rawEquip ? rawEquip.split(';').map(s => s.trim()).filter(Boolean) : [];
+  // Создаём или находим каждое оборудование (чтобы они попали в справочник)
+  let equipmentId = null;
+  for (const eqName of equipNames) {
+    const id = await getOrCreateEquipmentId(eqName);
+    if (equipmentId === null) equipmentId = id;   // для запчасти используем первое из списка
+  }
+
+  const location = locIndex >= 0 ? String(row[locIndex] || '').trim() : '';
+  const unit     = String(row[unitIndex] || '').trim();
+  const qtyRaw   = String(row[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
+  const dateRaw  = String(row[dateIndex] || '').trim();
+
+  if (!unit || !qtyRaw || !dateRaw) { skipped.push({ row: i+1, reason: 'Пустые обязательные поля' }); continue; }
+  const quantity = parseFloat(qtyRaw);
+  if (isNaN(quantity) || quantity < 0) { skipped.push({ row: i+1, reason: `Некорректное количество: ${qtyRaw}` }); continue; }
+
+  const formattedDate = parseDate(dateRaw);
+  if (!formattedDate) { skipped.push({ row: i+1, reason: `Некорректная дата: ${dateRaw}` }); continue; }
+
+  const typeId = await getOrCreateTypeId(typeName || 'Прочее');
+
+  items.push({
+    code, name, model,
+    type_id: typeId,
+    equipment_id: equipmentId,
+    location,
+    unit,
+    quantity,
+    date: formattedDate
+  });
 }
-const equipmentId = equipmentIds.length > 0 ? equipmentIds[0] : null;
-      
-      const location = locIndex >= 0 ? String(row[locIndex] || '').trim() : '';
-      const unit     = String(row[unitIndex] || '').trim();
-      const qtyRaw   = String(row[qtyIndex] || '').replace(',', '.').replace(/\s/g, '');
-      const dateRaw  = String(row[dateIndex] || '').trim();
-
-      if (!unit || !qtyRaw || !dateRaw) { skipped.push({ row: i+1, reason: 'Пустые обязательные поля' }); continue; }
-      const quantity = parseFloat(qtyRaw);
-      if (isNaN(quantity) || quantity < 0) { skipped.push({ row: i+1, reason: `Некорректное количество: ${qtyRaw}` }); continue; }
-
-      const formattedDate = parseDate(dateRaw);
-      if (!formattedDate) { skipped.push({ row: i+1, reason: `Некорректная дата: ${dateRaw}` }); continue; }
-
-      const typeId = await getOrCreateTypeId(typeName || 'Прочее');
-      
-
-      items.push({
-        code, name, model,
-        type_id: typeId,
-        equipment_id: equipmentId,
-        location,
-        unit,
-        quantity,
-        date: formattedDate
-      });
-    }
 
     if (items.length === 0) {
       return res.status(400).json({ error: 'Не удалось извлечь корректные записи', skipped });
