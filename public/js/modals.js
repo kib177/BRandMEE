@@ -13,8 +13,13 @@ function openAddModal() {
 
     const typeSel = document.getElementById('formType');
     if (typeSel) typeSel.value = '';
-    const equipSel = document.getElementById('formEquipment');
-    if (equipSel) equipSel.value = '';
+
+    // Очищаем мультиселект
+    const equipSel = document.getElementById('formEquipments');
+    if (equipSel) {
+        for (const opt of equipSel.options) opt.selected = false;
+    }
+
     const unitSel = document.getElementById('formUnit');
     if (unitSel) unitSel.value = 'ШТ';
     const qtyEl = document.getElementById('formQty');
@@ -27,9 +32,19 @@ function openAddModal() {
     $('#modalOverlay').classList.remove('hidden');
 }
 
-function openEditModal(code) {
+async function openEditModal(code) {
     const item = inventory.find(i => i.code === code);
     if (!item) return;
+
+    // Получаем полные данные с сервера, чтобы узнать привязанные оборудования
+    let equipmentIds = [];
+    try {
+        const res = await fetch(`/api/inventory/${encodeURIComponent(code)}`);
+        if (res.ok) {
+            const fullItem = await res.json();
+            equipmentIds = fullItem.equipment_ids || [];
+        }
+    } catch (e) {}
 
     $('#formMode').value = 'edit';
     $('#formOriginalCode').value = item.code;
@@ -45,7 +60,15 @@ function openEditModal(code) {
     setVal('formName', item.name);
     setVal('formModel', item.model);
     setSelectWithFallback('formType', item.type_id, item.type_name);
-    setSelectWithFallback('formEquipment', item.equipment_id, item.equipment_name);
+
+    // Устанавливаем выбранные оборудования в мультиселект
+    const equipSelect = document.getElementById('formEquipments');
+    if (equipSelect) {
+        for (const opt of equipSelect.options) {
+            opt.selected = equipmentIds.includes(parseInt(opt.value));
+        }
+    }
+
     setVal('formLocation', item.location || '');
     setVal('formUnit', item.unit);
     setVal('formQty', item.quantity.toString().replace('.', ','));
@@ -60,12 +83,17 @@ async function submitForm(e) {
     const mode = $('#formMode').value;
     const getVal = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
 
+    const equipSelect = document.getElementById('formEquipments');
+    const selectedEquipmentIds = equipSelect
+        ? Array.from(equipSelect.selectedOptions).map(opt => parseInt(opt.value))
+        : [];
+
     const item = {
         code: getVal('formCode').trim(),
         name: getVal('formName').trim(),
         model: getVal('formModel').trim(),
         type_id: getVal('formType') || null,
-        equipment_id: getVal('formEquipment') || null,
+        equipment_ids: selectedEquipmentIds,          // ← передаём массив
         location: getVal('formLocation').trim(),
         unit: getVal('formUnit') || 'ШТ',
         quantity: parseFloat((getVal('formQty') || '0').replace(',', '.')),
@@ -84,7 +112,8 @@ function showItemDetails(code) {
     if (!item) return;
 
     const typeName = item.type_name || getTypeName(item.type_id);
-    const equipName = item.equipment_name || getEquipmentName(item.equipment_id);
+    // equipment_name теперь содержит несколько названий через ";"
+    const equipName = item.equipment_name || '—';
 
     $('#viewModalTitle').textContent = `Позиция ${item.code}`;
     $('#viewModalContent').innerHTML = `
