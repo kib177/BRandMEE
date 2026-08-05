@@ -97,6 +97,9 @@ function renderTable(requests) {
 
     tbody.removeEventListener('click', onTableClick);
     tbody.addEventListener('click', onTableClick);
+    document.querySelectorAll('.js-delete-request').forEach(btn => {
+    btn.addEventListener('click', () => deleteRequest(btn.dataset.id));
+});
 }
 
 function onTableClick(e) {
