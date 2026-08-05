@@ -124,9 +124,10 @@ router.delete('/types/cleanup', authMiddleware, requireRole('admin', 'moderator'
     `);
     res.json({ ok: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Ошибка очистки типов' });
-  }
+  console.error('Ошибка очистки типов:');
+  console.error(err);
+  res.status(500).json({ error: 'Ошибка очистки типов', details: err.message });
+}
 });
 
 // Очистка неиспользуемого оборудования
