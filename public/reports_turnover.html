@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Оборотная ведомость</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3c5e">
+  <style>
+    .report-page { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
+    .filters { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+    .table-turnover { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .table-turnover th, .table-turnover td { padding: 0.4rem; border-bottom: 1px solid var(--border); text-align: left; }
+    .table-turnover th { background: #f7f9fb; font-weight: 600; white-space: nowrap; }
+    .positive { color: green; }
+    .negative { color: red; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <a href="/index.html" style="color:#fff; text-decoration:none;">📦 Склад</a>
+        <span style="margin-left:2rem;">→ Оборотная ведомость</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="report-page">
+    <div class="filters">
+      <label>С: <input type="date" id="dateFrom"></label>
+      <label>По: <input type="date" id="dateTo"></label>
+      <button class="btn btn-primary btn-sm" id="btnLoad">Загрузить</button>
+      <button class="btn btn-outline btn-sm" id="btnExport">📄 Экспорт CSV</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table-turnover" id="turnoverTable">
+        <thead>
+          <tr>
+            <th>Код</th><th>Наименование</th><th>Ед.</th>
+            <th>Остаток на начало</th><th>Приход</th><th>Расход</th><th>Остаток на конец</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="/js/utils.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/welcome.html';
+
+    let turnoverData = [];
+
+    document.getElementById('btnLoad').addEventListener('click', async () => {
+      const from = document.getElementById('dateFrom').value;
+      const to = document.getElementById('dateTo').value;
+      if (!from || !to) return alert('Выберите период');
+
+      const res = await fetch(`/api/reports/turnover?from=${from}&to=${to}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) return alert('Ошибка загрузки');
+      const data = await res.json();
+      turnoverData = data;
+
+      const tbody = document.querySelector('#turnoverTable tbody');
+      tbody.innerHTML = data.map(item => {
+        const beginning = item.current_stock + item.writeoff - item.restock;
+        return `<tr>
+          <td>${item.code}</td>
+          <td>${item.name}</td>
+          <td>${item.unit}</td>
+          <td>${beginning}</td>
+          <td class="positive">${item.restock}</td>
+          <td class="negative">${item.writeoff}</td>
+          <td>${item.current_stock}</td>
+        </tr>`;
+      }).join('');
+    });
+
+    document.getElementById('btnExport').addEventListener('click', () => {
+      if (turnoverData.length === 0) return alert('Нет данных');
+      const from = document.getElementById('dateFrom').value;
+      const to = document.getElementById('dateTo').value;
+
+      let csv = 'Код;Наименование;Ед.;Остаток на начало;Приход;Расход;Остаток на конец\n';
+      turnoverData.forEach(item => {
+        const beginning = item.current_stock + item.writeoff - item.restock;
+        csv += `${item.code};${item.name};${item.unit};${beginning};${item.restock};${item.writeoff};${item.current_stock}\n`;
+      });
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `oborot_${from}_${to}.csv`;
+      a.click();
+    });
+
+    // Даты по умолчанию: последний месяц
+    const now = new Date();
+    document.getElementById('dateTo').valueAsDate = now;
+    const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    document.getElementById('dateFrom').valueAsDate = monthAgo;
+  </script>
+</body>
+</html>
