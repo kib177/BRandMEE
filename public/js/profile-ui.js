@@ -13,7 +13,6 @@ function injectMenu() {
     <div class="dropdown-menu hidden" id="dropdownMenu">
      <button class="dropdown-item" id="menuProfile">👤 Настройки профиля</button>
      <a href="/reports_writeoffs.html" class="dropdown-item" id="menuReportsWriteoffs" style="display:none;">📊 Отчёт по списаниям</a>
-     <a href="/reports_turnover.html" class="dropdown-item" id="menuReportsTurnover" style="display:none;">📈 Оборотная ведомость</a>
 </div>
   `;
   headerInner.appendChild(menuContainer);
