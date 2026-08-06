@@ -60,46 +60,4 @@ router.get('/writeoffs-extended', authMiddleware, requireRole('admin', 'moderato
   }
 });
 
-// ---------- ОБОРОТНАЯ ВЕДОМОСТЬ ----------
-router.get('/turnover', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
-  try {
-    const { from, to } = req.query;
-    if (!from || !to) {
-      return res.status(400).json({ error: 'Укажите from и to в формате YYYY-MM-DD' });
-    }
-
-    let deptCondition = '';
-    let deptParams = [];
-    if (req.user.role !== 'admin') {
-      deptCondition = ' AND i.department_id = $3';
-      deptParams.push(req.user.department_id);
-    }
-
-    const query = `
-      SELECT i.code, i.name, i.unit,
-             COALESCE(
-               (SELECT SUM(quantity) FROM write_offs wo 
-                WHERE wo.item_code = i.code AND wo.status = 'approved' 
-                AND wo.requested_at >= $1 AND wo.requested_at <= ($2::date + interval '1 day')
-               ), 0) AS writeoff,
-             COALESCE(
-               (SELECT SUM(quantity) FROM inventory i2 
-                WHERE i2.code = i.code AND i2.department_id = i.department_id 
-                AND TO_DATE(i2.date, 'DD.MM.YYYY') >= $1::date AND TO_DATE(i2.date, 'DD.MM.YYYY') <= $2::date
-               ), 0) AS restock,
-             i.quantity AS current_stock
-      FROM inventory i
-      WHERE 1=1 ${deptCondition}
-      ORDER BY i.code
-    `;
-    const params = [from, to, ...deptParams];
-    const result = await pool.query(query, params);
-
-    res.json(result.rows);
-  } catch (err) {
-    console.error('Ошибка оборотной ведомости:', err);
-    res.status(500).json({ error: 'Ошибка получения оборотной ведомости' });
-  }
-});
-
 module.exports = router;
