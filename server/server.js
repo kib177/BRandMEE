@@ -51,6 +51,7 @@ app.use('/api/directories', require('./routes/directories'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/mailing', require('./routes/mailing'));
 app.use('/api/reports', require('./routes/reports'));
+app.use('/api/labels', require('./routes/labels'));
 
 // Статические файлы (фронтенд)
 app.use(express.static(path.join(__dirname, '..', 'public')));
