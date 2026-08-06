@@ -12,9 +12,9 @@ async function exportExcel(data) {
         'Код': item.code,
         'Наименование': item.name,
         'Модель': item.model,
-        'Тип': item.type,
-        'Оборудование': item.equipment,
-        'Расположение': item.location,
+        'Тип': item.type_name || '',               // ← изменили
+        'Оборудование': item.equipment_name || '',  // ← изменили
+        'Расположение': item.location || '',
         'Ед.изм.': item.unit,
         'Количество': item.quantity,
         'Дата': item.date
@@ -34,8 +34,8 @@ function exportCSV(data) {
         i.code,
         i.name,
         i.model,
-        i.type,
-        i.equipment,
+        i.type_name || '',          // ← изменили
+        i.equipment_name || '',     // ← изменили
         i.location || '',
         i.unit,
         i.quantity.toString().replace('.', ','),
