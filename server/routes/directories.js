@@ -75,13 +75,13 @@ router.delete('/types/cleanup', authMiddleware, requireRole('admin', 'moderator'
 router.delete('/equipment/cleanup', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
   try {
     await pool.query(`
-      DELETE FROM equipment
-      WHERE id NOT IN (
-        SELECT DISTINCT equipment_id FROM inventory WHERE equipment_id IS NOT NULL
-        UNION
-        SELECT DISTINCT equipment_id FROM write_offs WHERE equipment_id IS NOT NULL
-      )
-    `);
+  DELETE FROM equipment
+  WHERE id NOT IN (
+    SELECT DISTINCT equipment_id FROM inventory_equipment WHERE equipment_id IS NOT NULL
+    UNION
+    SELECT DISTINCT equipment_id FROM write_offs WHERE equipment_id IS NOT NULL
+  )
+`);
     res.json({ ok: true });
   } catch (err) {
     console.error(err);
