@@ -1,10 +1,6 @@
 // reports_turnover.js – оборотная ведомость
 (function() {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/welcome.html';
-    return;
-  }
+  // Авторизацию уже проверил auth.js
 
   let turnoverData = [];
 
