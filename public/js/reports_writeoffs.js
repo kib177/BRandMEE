@@ -1,10 +1,6 @@
 // reports_writeoffs.js – расширенный отчёт по списаниям
 (function() {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/welcome.html';
-    return;
-  }
+  // Авторизацию уже проверил auth.js, здесь token доступен глобально
 
   let chartMonthly, chartTopItems, chartEquipment;
 
@@ -18,7 +14,7 @@
 
     try {
       const res = await fetch(`/api/reports/writeoffs-extended?from=${from}&to=${to}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` }  // ← глобальная переменная
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
