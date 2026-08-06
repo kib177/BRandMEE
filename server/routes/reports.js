@@ -11,15 +11,13 @@ router.get('/writeoffs-extended', authMiddleware, requireRole('admin', 'moderato
       return res.status(400).json({ error: 'Укажите from и to в формате YYYY-MM-DD' });
     }
 
-    // Ограничение по отделу для не-админов
     let deptCondition = '';
     let deptParams = [];
     if (req.user.role !== 'admin') {
       deptCondition = ' AND wo.department_id = $3';
-      deptParams = [req.user.department_id];
+      deptParams.push(req.user.department_id);
     }
 
-    // 1. По месяцам (количество и сумма заявок)
     const monthly = await pool.query(`
       SELECT TO_CHAR(requested_at, 'YYYY-MM') AS month,
              COUNT(*) AS count,
@@ -31,7 +29,6 @@ router.get('/writeoffs-extended', authMiddleware, requireRole('admin', 'moderato
       ORDER BY month
     `, [from, to, ...deptParams]);
 
-    // 2. Топ позиций (по убыванию количества)
     const topItems = await pool.query(`
       SELECT item_code, item_name, SUM(quantity) AS total_qty, COUNT(*) AS count
       FROM write_offs wo
@@ -42,7 +39,6 @@ router.get('/writeoffs-extended', authMiddleware, requireRole('admin', 'moderato
       LIMIT 20
     `, [from, to, ...deptParams]);
 
-    // 3. По оборудованию
     const byEquipment = await pool.query(`
       SELECT eq.name AS equipment, SUM(wo.quantity) AS total_qty, COUNT(*) AS count
       FROM write_offs wo
@@ -76,32 +72,23 @@ router.get('/turnover', authMiddleware, requireRole('admin', 'moderator', 'store
     let deptParams = [];
     if (req.user.role !== 'admin') {
       deptCondition = ' AND i.department_id = $3';
-      deptParams = [req.user.department_id];
+      deptParams.push(req.user.department_id);
     }
 
-    // Все позиции с остатком на начало периода, приходом и расходом за период
     const query = `
-      WITH period_writeoffs AS (
-        SELECT item_code, SUM(quantity) AS total_writeoff
-        FROM write_offs
-        WHERE status = 'approved' AND requested_at >= $1 AND requested_at <= ($2::date + interval '1 day')
-        GROUP BY item_code
-      ),
-      period_restocks AS (
-        -- Приход = все позиции, у которых дата в inventory попадает в период (упрощённо)
-        SELECT code, SUM(quantity) AS total_restock
-        FROM inventory i
-        WHERE date >= $1::text AND date <= $2::text
-        ${deptCondition}
-        GROUP BY code
-      )
       SELECT i.code, i.name, i.unit,
-             COALESCE(pr.total_restock, 0) AS restock,
-             COALESCE(pw.total_writeoff, 0) AS writeoff,
+             COALESCE(
+               (SELECT SUM(quantity) FROM write_offs wo 
+                WHERE wo.item_code = i.code AND wo.status = 'approved' 
+                AND wo.requested_at >= $1 AND wo.requested_at <= ($2::date + interval '1 day')
+               ), 0) AS writeoff,
+             COALESCE(
+               (SELECT SUM(quantity) FROM inventory i2 
+                WHERE i2.code = i.code AND i2.department_id = i.department_id 
+                AND i2.date >= $1::text AND i2.date <= $2::text
+               ), 0) AS restock,
              i.quantity AS current_stock
       FROM inventory i
-      LEFT JOIN period_writeoffs pw ON i.code = pw.item_code
-      LEFT JOIN period_restocks pr ON i.code = pr.code
       WHERE 1=1 ${deptCondition}
       ORDER BY i.code
     `;
@@ -110,7 +97,7 @@ router.get('/turnover', authMiddleware, requireRole('admin', 'moderator', 'store
 
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
+    console.error('Ошибка оборотной ведомости:', err);
     res.status(500).json({ error: 'Ошибка получения оборотной ведомости' });
   }
 });
