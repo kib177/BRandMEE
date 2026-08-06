@@ -108,10 +108,11 @@ function updateAuthUI() {
     const isLoggedIn = !!currentUser;
     const role = currentUser?.role;
 
-    const isReportViewer = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'storekeeper');
-    document.getElementById('menuReportsWriteoffs').style.display = isReportViewer ? 'block' : 'none';
-    document.getElementById('menuReportsTurnover').style.display = isReportViewer ? 'block' : 'none';
+    const writeoffsLink = document.getElementById('menuReportsWriteoffs');
+if (writeoffsLink) writeoffsLink.style.display = (currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'storekeeper')) ? 'block' : 'none';
 
+const turnoverLink = document.getElementById('menuReportsTurnover');
+if (turnoverLink) turnoverLink.style.display = (currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'storekeeper')) ? 'block' : 'none';
     document.querySelectorAll('.auth-required').forEach(el => {
         el.style.display = isLoggedIn ? '' : 'none';
     });
