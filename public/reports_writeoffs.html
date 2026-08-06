@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Расширенный отчёт по списаниям</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3c5e">
+  <script src="/js/library/chart.min.js"></script>
+  <style>
+    .report-page { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 1.5rem; margin-bottom: 1.5rem; }
+    .filters { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+    .chart-container { position: relative; width: 100%; max-height: 400px; margin-bottom: 1rem; }
+    canvas { max-height: 400px; }
+    .table-compact { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .table-compact th, .table-compact td { padding: 0.4rem; border-bottom: 1px solid var(--border); text-align: left; }
+    .table-compact th { background: #f7f9fb; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <a href="/index.html" style="color:#fff; text-decoration:none;">📦 Склад</a>
+        <span style="margin-left:2rem;">→ Расширенный отчёт по списаниям</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="report-page">
+    <div class="filters">
+      <label>С: <input type="date" id="dateFrom"></label>
+      <label>По: <input type="date" id="dateTo"></label>
+      <button class="btn btn-primary btn-sm" id="btnLoad">Загрузить</button>
+    </div>
+
+    <div class="card">
+      <h2>Списания по месяцам</h2>
+      <div class="chart-container"><canvas id="chartMonthly"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>Топ-20 списываемых позиций</h2>
+      <div class="chart-container"><canvas id="chartTopItems"></canvas></div>
+      <div class="table-wrapper">
+        <table class="table-compact" id="topItemsTable">
+          <thead><tr><th>Код</th><th>Название</th><th>Кол-во</th><th>Заявок</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>По оборудованию</h2>
+      <div class="chart-container"><canvas id="chartEquipment"></canvas></div>
+      <div class="table-wrapper">
+        <table class="table-compact" id="equipmentTable">
+          <thead><tr><th>Оборудование</th><th>Кол-во</th><th>Заявок</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/utils.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/welcome.html';
+
+    let chartMonthly, chartTopItems, chartEquipment;
+
+    document.getElementById('btnLoad').addEventListener('click', async () => {
+      const from = document.getElementById('dateFrom').value;
+      const to = document.getElementById('dateTo').value;
+      if (!from || !to) return alert('Выберите период');
+
+      const res = await fetch(`/api/reports/writeoffs-extended?from=${from}&to=${to}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) return alert('Ошибка загрузки');
+      const data = await res.json();
+
+      // Месячный график
+      const months = data.monthly.map(m => m.month);
+      const counts = data.monthly.map(m => parseInt(m.count));
+      const qtys = data.monthly.map(m => parseFloat(m.total_qty));
+
+      if (chartMonthly) chartMonthly.destroy();
+      chartMonthly = new Chart(document.getElementById('chartMonthly'), {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [
+            { label: 'Количество заявок', data: counts, yAxisID: 'y' },
+            { label: 'Списано единиц', data: qtys, yAxisID: 'y1' }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { type: 'linear', position: 'left', title: { display: true, text: 'Заявок' } },
+            y1: { type: 'linear', position: 'right', title: { display: true, text: 'Единиц' }, grid: { drawOnChartArea: false } }
+          }
+        }
+      });
+
+      // Топ позиций (горизонтальная полоса)
+      const topLabels = data.topItems.map(i => i.item_name.substring(0, 20));
+      const topQtys = data.topItems.map(i => parseFloat(i.total_qty));
+      if (chartTopItems) chartTopItems.destroy();
+      chartTopItems = new Chart(document.getElementById('chartTopItems'), {
+        type: 'bar',
+        data: {
+          labels: topLabels,
+          datasets: [{ label: 'Списано', data: topQtys }]
+        },
+        options: { indexAxis: 'y', responsive: true }
+      });
+
+      // Таблица топ позиций
+      const tbodyItems = document.querySelector('#topItemsTable tbody');
+      tbodyItems.innerHTML = data.topItems.map(i => `<tr><td>${i.item_code}</td><td>${i.item_name}</td><td>${i.total_qty}</td><td>${i.count}</td></tr>`).join('');
+
+      // График по оборудованию (pie)
+      if (data.byEquipment.length > 0) {
+        const equipLabels = data.byEquipment.map(e => e.equipment || 'Без оборудования');
+        const equipQtys = data.byEquipment.map(e => parseFloat(e.total_qty));
+        if (chartEquipment) chartEquipment.destroy();
+        chartEquipment = new Chart(document.getElementById('chartEquipment'), {
+          type: 'pie',
+          data: {
+            labels: equipLabels,
+            datasets: [{ data: equipQtys }]
+          },
+          options: { responsive: true }
+        });
+      }
+
+      // Таблица оборудования
+      const tbodyEquip = document.querySelector('#equipmentTable tbody');
+      tbodyEquip.innerHTML = data.byEquipment.map(e => `<tr><td>${e.equipment || 'Без оборудования'}</td><td>${e.total_qty}</td><td>${e.count}</td></tr>`).join('');
+    });
+
+    // Установить даты по умолчанию (последние 6 месяцев)
+    const now = new Date();
+    document.getElementById('dateTo').valueAsDate = now;
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+    document.getElementById('dateFrom').valueAsDate = sixMonthsAgo;
+  </script>
+</body>
+</html>
