@@ -85,7 +85,7 @@ router.get('/turnover', authMiddleware, requireRole('admin', 'moderator', 'store
              COALESCE(
                (SELECT SUM(quantity) FROM inventory i2 
                 WHERE i2.code = i.code AND i2.department_id = i.department_id 
-                AND i2.date >= $1::text AND i2.date <= $2::text
+                AND TO_DATE(i2.date, 'DD.MM.YYYY') >= $1::date AND TO_DATE(i2.date, 'DD.MM.YYYY') <= $2::date
                ), 0) AS restock,
              i.quantity AS current_stock
       FROM inventory i
