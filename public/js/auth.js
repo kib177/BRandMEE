@@ -111,12 +111,6 @@ function updateAuthUI() {
     const writeoffsLink = document.getElementById('menuReportsWriteoffs');
 if (writeoffsLink) writeoffsLink.style.display = (currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'storekeeper')) ? 'block' : 'none';
 
-const turnoverLink = document.getElementById('menuReportsTurnover');
-if (turnoverLink) turnoverLink.style.display = (currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'storekeeper')) ? 'block' : 'none';
-    document.querySelectorAll('.auth-required').forEach(el => {
-        el.style.display = isLoggedIn ? '' : 'none';
-    });
-
     document.querySelectorAll('.moderator-only').forEach(el => {
         el.style.display = (isLoggedIn && (role === 'moderator' || role === 'admin')) ? '' : 'none';
     });
