@@ -50,7 +50,7 @@ async function loadDirectoriesForForm() {
     if (filterEquip) {
       const currentVal = filterEquip.value;
       filterEquip.innerHTML = '<option value="">🏭 Всё оборудование</option>' +
-        allEquipments.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+        allEquipments.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
       filterEquip.value = currentVal || '';
     }
   } catch (err) {
