@@ -138,7 +138,7 @@ router.put('/equipment/:id', authMiddleware, requireRole('admin', 'moderator'), 
 
 router.delete('/equipment/:id', authMiddleware, requireRole('admin', 'moderator'), async (req, res) => {
   try {
-    const usedInv = await pool.query('SELECT COUNT(*) as cnt FROM inventory WHERE equipment_id = $1', [req.params.id]);
+    const usedInv = await pool.query('SELECT COUNT(*) as cnt FROM inventory_equipment WHERE equipment_id = $1', [req.params.id]);
     const usedWO = await pool.query('SELECT COUNT(*) as cnt FROM write_offs WHERE equipment_id = $1', [req.params.id]);
     if (usedInv.rows[0].cnt > 0 || usedWO.rows[0].cnt > 0) {
       return res.status(400).json({ error: 'Оборудование используется, удаление невозможно' });
@@ -146,6 +146,7 @@ router.delete('/equipment/:id', authMiddleware, requireRole('admin', 'moderator'
     await pool.query('DELETE FROM equipment WHERE id = $1', [req.params.id]);
     res.json({ ok: true });
   } catch (err) {
+    console.error('Ошибка удаления оборудования:', err);
     res.status(500).json({ error: 'Ошибка удаления оборудования' });
   }
 });
