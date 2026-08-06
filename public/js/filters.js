@@ -16,7 +16,11 @@ function applyFilters(inventory) {
         );
     }
     if (filterTypeValue) result = result.filter(i => i.type_id == filterTypeValue);
-    if (filterEquipmentValue) result = result.filter(i => i.equipment_id == filterEquipmentValue);
+    
+    if (filterEquipmentValue) {
+    const searchValue = filterEquipmentValue.toLowerCase();
+    result = result.filter(i => (i.equipment_name || '').toLowerCase().includes(searchValue));
+    }
     if (filterDepartmentValue) result = result.filter(i => i.department_id == filterDepartmentValue);
 
     if (sortConfig.key) {
