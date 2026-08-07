@@ -1,13 +1,12 @@
-// labels.js – генератор наклеек с поиском
+// labels.js – генератор наклеек с поиском по артикулу, коду и названию
 (function() {
   if (typeof token === 'undefined' || !token) {
     window.location.href = '/welcome.html';
     return;
   }
 
-  let allItems = []; // сохраним оригинальный список для фильтрации
+  let allItems = [];
 
-  // Загрузка списка позиций
   fetch('/api/labels/items', { headers: { 'Authorization': `Bearer ${token}` } })
     .then(r => r.json())
     .then(items => {
@@ -25,21 +24,26 @@
       container.innerHTML = '<div class="no-results">Ничего не найдено</div>';
       return;
     }
-    container.innerHTML = items.map(i => `<label><input type="checkbox" value="${i.code}"> ${i.code} – ${i.name}</label>`).join('');
+    container.innerHTML = items.map(i => {
+      const label = i.model ? `${i.code} – ${i.name} [${i.model}]` : `${i.code} – ${i.name}`;
+      return `<label><input type="checkbox" value="${i.code}"> ${label}</label>`;
+    }).join('');
   }
 
-  // Поиск с фильтрацией
   document.getElementById('searchItems').addEventListener('input', (e) => {
     const query = e.target.value.toLowerCase().trim();
     if (!query) {
       renderItems(allItems);
       return;
     }
-    const filtered = allItems.filter(i => i.code.toLowerCase().includes(query) || i.name.toLowerCase().includes(query));
+    const filtered = allItems.filter(i =>
+      i.code.toLowerCase().includes(query) ||
+      i.name.toLowerCase().includes(query) ||
+      (i.model && i.model.toLowerCase().includes(query))
+    );
     renderItems(filtered);
   });
 
-  // Кнопки работают только с видимыми чекбоксами
   document.getElementById('btnSelectAll').addEventListener('click', () => {
     document.querySelectorAll('#itemList input[type="checkbox"]').forEach(cb => cb.checked = true);
   });
