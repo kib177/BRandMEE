@@ -100,8 +100,7 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       const imgHeightEMU = imgHeightPx * EMU_PER_PX;
 
       // Приблизительные размеры ячейки B3 в пикселях
-      const cellWidthPx  = 36 * 7 + 5;                 
-      const cellWidthEMU = cellWidthPx * EMU_PER_PX;
+      const cellWidthEMU = 36 * EMU_PER_PX;
       const cellHeightEMU = 90 * EMU_PER_PT;             
 
       // Отступы для центрирования (в пикселях)
