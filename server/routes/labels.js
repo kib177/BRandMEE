@@ -98,15 +98,15 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       const cellHeightPx = row3.height * 1.33;             
 
       // Отступы для центрирования (в пикселях)
-      const offsetX = (cellWidthPx - imgWidthPx) / 2;   
-      const offsetY = (cellHeightPx - imgHeightPx) / 2; 
+      const offsetX = Math.max(0, (cellWidthPx - imgWidthPx) / 2);   
+      const offsetY = Math.max(0, (cellHeightPx - imgHeightPx) / 2); 
 
       sheet.addImage(imageId, {
         tl: {
           col: 1,
           row: row3.number - 1,
-          colOff: offsetX,   
-          rowOff: offsetY    
+          colOff: Math.round(offsetX),   
+          rowOff: Math.round(offsetY)    
         },
         ext: {
           width: imgWidthPx,   
