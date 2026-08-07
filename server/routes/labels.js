@@ -32,18 +32,18 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Наклейки');
 
-    // Ширина колонок (36 ≈ 252 пикселей)
+    // Ширина колонок (36 ≈ 252 пикселя)
     sheet.getColumn(1).width = 36;
     sheet.getColumn(2).width = 36;
 
     // Стили для текста
     const headerStyle = {
-      font: { bold: true, size: 11 },
+      font: { bold: true, size: 10 },
       alignment: { horizontal: 'center', vertical: 'middle', wrapText: true }
     };
 
     const nameStyle = {
-      font: { bold: true, size: 15 },
+      font: { bold: true, size: 14 },
       alignment: { horizontal: 'center', vertical: 'middle', wrapText: true }
     };
 
@@ -89,31 +89,31 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Размеры изображения (ширина 170, высота 64 пикселя) – используем пиксели как есть (без EMU)
-      const imgWidthPx = 170;
-      const imgHeightPx = 64;
+      // Размеры изображения в пикселях (как в проверенной версии Kimi)
+      const imgWidthPx = 140;
+      const imgHeightPx = 50;
 
       // Приблизительные размеры ячейки B3 в пикселях
-      const cellWidthPx = 120;
-      const cellHeightPx = 267;             
+      const cellWidthPx = sheet.getColumn(2).width * 7;    // 36 * 7 = 252 px
+      const cellHeightPx = row3.height * 0.75;             // 90 * 0.75 = 67.5 px
 
       // Отступы для центрирования (в пикселях)
-     const offsetX = Math.max(0, Math.round((cellWidthPx  - imgWidthPx)  / 2)); 
-      const offsetY = Math.max(0, Math.round((cellHeightPx - imgHeightPx) / 2));
+      const offsetX = Math.max(0, (cellWidthPx - imgWidthPx) / 2);   // ~56 px
+      const offsetY = Math.max(0, (cellHeightPx - imgHeightPx) / 2); // ~8.75 px
 
-      // Вставляем изображение с центрированием (offsetX/offsetY заданы в пикселях)
+      // Вставляем изображение с центрированием (offsetX/offsetY в пикселях, без EMU!)
       sheet.addImage(imageId, {
         tl: {
-          col: 1,               
-          row: row3.number - 1, 
-          offsetX: offsetX,    
-          offsetY: offsetY      
+          col: 1,
+          row: row3.number - 1,
+          offsetX: Math.round(offsetX),   // 56 px
+          offsetY: Math.round(offsetY)    // 9 px
         },
         ext: {
-          width: imgWidthEMU,   
-          height: imgHeightEMU  
+          width: imgWidthPx,   // 140 px
+          height: imgHeightPx  // 50 px
         },
-        editAs: 'absolute',     
+        editAs: 'oneCell',
       });
 
       row3.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
