@@ -37,7 +37,7 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     sheet.getColumn(2).width = 36;
 
     const headerStyle = {
-      font: { bold: true, size: 10 },
+      font: { bold: true, size: 11 },
       alignment: { horizontal: 'center', vertical: 'middle', wrapText: true }
     };
 
