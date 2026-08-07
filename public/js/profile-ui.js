@@ -12,10 +12,10 @@ function injectMenu() {
     <button class="btn-icon-menu" id="menuToggle" title="Меню">☰</button>
     <div class="dropdown-menu hidden" id="dropdownMenu">
       <button class="dropdown-item" id="menuProfile">👤 Настройки профиля</button>
-      <a href="/admin/users.html" class="dropdown-item admin-only" id="menuUsers" style="display:none;">👥 Пользователи</a>
-      <a href="/admin/mailing.html" class="dropdown-item admin-only" id="menuMailing" style="display:none;">📧 Рассылка</a>
-      <a href="/labels.html" class="dropdown-item admin-only moderator-only storekeeper-only" id="menuLabels" style="display:none;">🏷️ Наклейки</a>
-      <a href="/admin.html" class="dropdown-item admin-only moderator-only" id="menuDirectories" style="display:none;">📚 Справочники</a>
+      <a href="/admin/users.html" class="dropdown-item" id="menuUsers" style="display:none;">👥 Пользователи</a>
+      <a href="/admin/mailing.html" class="dropdown-item" id="menuMailing" style="display:none;">📧 Рассылка</a>
+      <a href="/labels.html" class="dropdown-item" id="menuLabels" style="display:none;">🏷️ Наклейки</a>
+      <a href="/admin.html" class="dropdown-item" id="menuDirectories" style="display:none;">📚 Справочники</a>
     </div>
   `;
   headerInner.appendChild(menuContainer);
