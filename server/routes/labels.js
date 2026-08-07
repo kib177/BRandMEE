@@ -32,31 +32,46 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Наклейки');
 
-    // Ширина колонок (примерно 70 мм каждая)
-    sheet.getColumn(1).width = 35;
-    sheet.getColumn(2).width = 35;
+    // Ширина колонок = 36 (примерно 70 мм)
+    sheet.getColumn(1).width = 36;
+    sheet.getColumn(2).width = 36;
+
+    // Стили по умолчанию для всех ячеек
+    const boldCenter = {
+      bold: true,
+      size: 10,
+      horizontal: 'center',
+      vertical: 'middle',
+      wrapText: true
+    };
 
     for (const row of rows) {
       const article = String(row.model || row.code);
       const codeLine = `Код материала: S${row.code}`;
       const name = String(row.name || '');
 
-      // === Строка 1: Артикул ===
+      // === Строка 1: Артикул (высота 15) ===
       const row1 = sheet.addRow([article, article]);
-      row1.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
-      row1.getCell(2).alignment = { vertical: 'middle', horizontal: 'left' };
-      row1.height = 18;
+      row1.height = 15;
+      row1.getCell(1).alignment = boldCenter;
+      row1.getCell(1).font = { bold: true, size: 10 };
+      row1.getCell(2).alignment = boldCenter;
+      row1.getCell(2).font = { bold: true, size: 10 };
 
-      // === Строка 2: Код материала ===
+      // === Строка 2: Код материала (высота 15) ===
       const row2 = sheet.addRow([codeLine, codeLine]);
-      row2.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
-      row2.getCell(2).alignment = { vertical: 'middle', horizontal: 'left' };
-      row2.height = 18;
+      row2.height = 15;
+      row2.getCell(1).alignment = boldCenter;
+      row2.getCell(1).font = { bold: true, size: 10 };
+      row2.getCell(2).alignment = boldCenter;
+      row2.getCell(2).font = { bold: true, size: 10 };
 
-      // === Строка 3: Название (колонка A) и штрихкод (колонка B) ===
+      // === Строка 3: Название + штрихкод (высота 90) ===
       const row3 = sheet.addRow([name, '']);
-      row3.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
-      row3.height = 65;
+      row3.height = 90;
+      row3.getCell(1).alignment = { ...boldCenter, vertical: 'middle' };
+      row3.getCell(1).font = { bold: true, size: 10 };
+      row3.getCell(2).alignment = boldCenter; // для штрихкода
 
       // Генерируем штрихкод Code 128
       const pngBuffer = await bwipjs.toBuffer({
@@ -73,15 +88,14 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Вставляем изображение строго в ячейку B3 текущего блока
-      // row3.number - 1, т.к. ExcelJS считает строки с 0 для изображений
+      // Вставляем изображение строго в ячейку B3
       sheet.addImage(imageId, {
         tl: { col: 1, row: row3.number - 1 },
         ext: { width: 140, height: 50 },
-        editAs: 'oneCell',  // ← ключевое исправление: привязываем изображение к одной ячейке
+        editAs: 'oneCell',
       });
 
-      // === Пустая строка-разделитель между наклейками ===
+      // === Пустая строка-разделитель ===
       const separator = sheet.addRow(['', '']);
       separator.height = 8;
     }
