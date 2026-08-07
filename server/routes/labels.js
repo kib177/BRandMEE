@@ -36,13 +36,10 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     sheet.getColumn(1).width = 36;
     sheet.getColumn(2).width = 36;
 
-    // Стили по умолчанию для всех ячеек
-    const boldCenter = {
-      bold: true,
-      size: 10,
-      horizontal: 'center',
-      vertical: 'middle',
-      wrapText: true
+    // Общие настройки для ячеек с текстом
+    const textStyle = {
+      font: { bold: true, size: 10 },
+      alignment: { horizontal: 'center', vertical: 'middle', wrapText: true }
     };
 
     for (const row of rows) {
@@ -50,30 +47,29 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       const codeLine = `Код материала: S${row.code}`;
       const name = String(row.name || '');
 
-      // === Строка 1: Артикул (высота 15) ===
+      // Строка 1: Артикул
       const row1 = sheet.addRow([article, article]);
       row1.height = 15;
-      row1.getCell(1).alignment = boldCenter;
-      row1.getCell(1).font = { bold: true, size: 10 };
-      row1.getCell(2).alignment = boldCenter;
-      row1.getCell(2).font = { bold: true, size: 10 };
+      row1.getCell(1).font = textStyle.font;
+      row1.getCell(1).alignment = textStyle.alignment;
+      row1.getCell(2).font = textStyle.font;
+      row1.getCell(2).alignment = textStyle.alignment;
 
-      // === Строка 2: Код материала (высота 15) ===
+      // Строка 2: Код материала
       const row2 = sheet.addRow([codeLine, codeLine]);
       row2.height = 15;
-      row2.getCell(1).alignment = boldCenter;
-      row2.getCell(1).font = { bold: true, size: 10 };
-      row2.getCell(2).alignment = boldCenter;
-      row2.getCell(2).font = { bold: true, size: 10 };
+      row2.getCell(1).font = textStyle.font;
+      row2.getCell(1).alignment = textStyle.alignment;
+      row2.getCell(2).font = textStyle.font;
+      row2.getCell(2).alignment = textStyle.alignment;
 
-      // === Строка 3: Название + штрихкод (высота 90) ===
+      // Строка 3: Название + штрихкод
       const row3 = sheet.addRow([name, '']);
       row3.height = 90;
-      row3.getCell(1).alignment = { ...boldCenter, vertical: 'middle' };
-      row3.getCell(1).font = { bold: true, size: 10 };
-      row3.getCell(2).alignment = boldCenter; // для штрихкода
+      row3.getCell(1).font = textStyle.font;
+      row3.getCell(1).alignment = textStyle.alignment;
 
-      // Генерируем штрихкод Code 128
+      // Генерируем штрихкод
       const pngBuffer = await bwipjs.toBuffer({
         bcid: 'code128',
         text: String(row.code),
@@ -88,17 +84,17 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Вставляем изображение строго в ячейку B3
+      // Вставляем штрихкод в ячейку B3 с центровкой
       sheet.addImage(imageId, {
         tl: { col: 1, row: row3.number - 1 },
-        ext: { width: 140, height: 50 },
+        ext: { width: 160, height: 60 },   // чуть крупнее для лучшей читаемости
         editAs: 'oneCell',
       });
-
-      // === Пустая строка-разделитель ===
-      const separator = sheet.addRow(['', '']);
-      separator.height = 8;
+      // Дополнительно выровняем ячейку B3 (для красоты)
+      row3.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
     }
+
+    // Пустые строки между наклейками не добавляем (как вы просили)
 
     res.setHeader('Content-Disposition', 'attachment; filename=labels.xlsx');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
