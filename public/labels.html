@@ -6,12 +6,18 @@
   <title>Генератор наклеек</title>
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
-  <link rel="stylesheet" href="/css/burger.css">
-  <link rel="stylesheet" href="css/utilities.css">
-<link rel="stylesheet" href="css/mobile.css">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#1a3c5e">
-  
+  <style>
+    .labels-page { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 1.5rem; margin-bottom: 1.5rem; }
+    .flex-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .search-box { margin-bottom: 0.8rem; }
+    .search-box input { width: 100%; padding: 0.5rem; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9rem; }
+    .item-select { width: 100%; max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem; }
+    .item-select label { display: block; margin-bottom: 0.2rem; cursor: pointer; }
+    .no-results { text-align: center; padding: 1rem; color: var(--text-secondary); font-style: italic; }
+  </style>
 </head>
 <body>
   <header class="header">
@@ -46,6 +52,5 @@
   <script src="/js/utils.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/labels.js"></script>
-  <script src="/js/profile-ui.js"></script>
 </body>
 </html>
