@@ -5,7 +5,6 @@ function injectMenu() {
   const headerInner = document.querySelector('.header-inner');
   if (!headerInner) return;
 
-  // Создаём контейнер с кнопкой и меню
   const menuContainer = document.createElement('div');
   menuContainer.className = 'header-menu';
   menuContainer.innerHTML = `
@@ -15,19 +14,20 @@ function injectMenu() {
       <a href="/admin/users.html" class="dropdown-item" id="menuUsers" style="display:none;">👥 Пользователи</a>
       <a href="/admin/mailing.html" class="dropdown-item" id="menuMailing" style="display:none;">📧 Рассылка</a>
       <a href="/labels.html" class="dropdown-item" id="menuLabels" style="display:none;">🏷️ Наклейки</a>
-      <a href="/admin/directories.html" class="dropdown-item" id="menuDirectories" style="display:none;">📚 Справочники</a>
+      <a href="/admin.html" class="dropdown-item" id="menuDirectories" style="display:none;">📚 Справочники</a>
     </div>
   `;
   headerInner.appendChild(menuContainer);
 
-  // Обработчики открытия/закрытия
   const toggle = document.getElementById('menuToggle');
   const dropdown = document.getElementById('dropdownMenu');
 
+  // Открытие/закрытие по клику на бургер
   toggle.addEventListener('click', (e) => {
     e.stopPropagation();
     const isHidden = dropdown.classList.contains('hidden');
     if (isHidden) {
+      // Позиционирование (как раньше)
       const btnRect = toggle.getBoundingClientRect();
       const menuWidth = dropdown.offsetWidth || 200;
       const spaceRight = window.innerWidth - btnRect.right;
@@ -47,17 +47,25 @@ function injectMenu() {
     }
   });
 
+  // Закрытие при клике ВНЕ меню и кнопки
   document.addEventListener('click', (e) => {
     if (!dropdown.contains(e.target) && e.target !== toggle) {
       dropdown.classList.add('hidden');
     }
   });
 
+  // Закрытие при клике по любому пункту меню (ссылке или кнопке профиля)
+  dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+    item.addEventListener('click', () => {
+      dropdown.classList.add('hidden');
+    });
+  });
+
+  // Предотвращаем закрытие при клике внутри самого меню
   dropdown.addEventListener('click', (e) => e.stopPropagation());
 
-  // Кнопка «Настройки профиля»
+  // Обработчик для кнопки профиля (если используется)
   document.getElementById('menuProfile').addEventListener('click', () => {
-    dropdown.classList.add('hidden');
     openProfileModal();
   });
 }
