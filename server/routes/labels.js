@@ -32,7 +32,7 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Наклейки');
 
-    // Ширина колонок (примерно 70 мм каждая)
+    // Ширина колонок (≈70 мм каждая)
     sheet.getColumn(1).width = 35;
     sheet.getColumn(2).width = 35;
 
@@ -41,24 +41,20 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       const codeLine = `Код материала: S${row.code}`;
       const name = row.name;
 
-      // Используем символ перевода строки (\n) – ExcelJS поддерживает при wrapText
-      const leftText = `${article}\n${codeLine}\n${name}`;
-      const rightText = `${article}\n${codeLine}`;
+      // Записываем три строки
+      const row1 = sheet.addRow([article, article]);
+      const row2 = sheet.addRow([codeLine, codeLine]);
+      const row3 = sheet.addRow([name, '']);  // в правой ячейке B будет штрихкод
 
-      const newRow = sheet.addRow([]);
-      const rowNumber = newRow.number;
+      // Стилизуем ячейки
+      [row1, row2, row3].forEach(r => {
+        r.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+        r.getCell(2).alignment = { vertical: 'middle', horizontal: 'left' };
+        r.height = 20; // базовая высота строки
+      });
 
-      // Левая ячейка (A)
-      const leftCell = sheet.getCell(`A${rowNumber}`);
-      leftCell.value = leftText;
-      leftCell.alignment = { wrapText: true, vertical: 'top', horizontal: 'left' };
-      leftCell.font = { size: 10 };
-
-      // Правая ячейка (B) – сначала текст
-      const rightCell = sheet.getCell(`B${rowNumber}`);
-      rightCell.value = rightText;
-      rightCell.alignment = { wrapText: true, vertical: 'top', horizontal: 'left' };
-      rightCell.font = { size: 10 };
+      // Объединяем ячейки B1:B3 для штрихкода (чтобы он был на всю высоту)
+      sheet.mergeCells(`B${row1.number}:B${row3.number}`);
 
       // Генерируем штрихкод
       const pngBuffer = await bwipjs.toBuffer({
@@ -75,14 +71,16 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Вставляем изображение штрихкода в ячейку B со смещением 1.2 см (~432 000 EMU)
+      // Вставляем изображение в ячейку B (объединённая область)
       sheet.addImage(imageId, {
-        tl: { col: 1, row: rowNumber - 1, offsetY: 432000 },
-        ext: { width: 150, height: 40 },
+        tl: { col: 1, row: row1.number - 1 },  // col 1 = B, row начала
+        ext: { width: 150, height: 60 },       // растягиваем на высоту трёх строк
       });
 
-      // Высота строки – достаточно для трёх строк текста и штрихкода
-      sheet.getRow(rowNumber).height = 100;
+      // Устанавливаем высоту строк, чтобы соответствовать высоте изображения
+      row1.height = 25;
+      row2.height = 25;
+      row3.height = 25;
     }
 
     res.setHeader('Content-Disposition', 'attachment; filename=labels.xlsx');
