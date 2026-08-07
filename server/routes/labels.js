@@ -36,9 +36,14 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     sheet.getColumn(1).width = 36;
     sheet.getColumn(2).width = 36;
 
-    // Общие настройки для ячеек с текстом
-    const textStyle = {
+    // Стили для текста
+    const headerStyle = {
       font: { bold: true, size: 10 },
+      alignment: { horizontal: 'center', vertical: 'middle', wrapText: true }
+    };
+
+    const nameStyle = {
+      font: { bold: true, size: 14 },
       alignment: { horizontal: 'center', vertical: 'middle', wrapText: true }
     };
 
@@ -50,24 +55,24 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       // Строка 1: Артикул
       const row1 = sheet.addRow([article, article]);
       row1.height = 15;
-      row1.getCell(1).font = textStyle.font;
-      row1.getCell(1).alignment = textStyle.alignment;
-      row1.getCell(2).font = textStyle.font;
-      row1.getCell(2).alignment = textStyle.alignment;
+      row1.getCell(1).font = headerStyle.font;
+      row1.getCell(1).alignment = headerStyle.alignment;
+      row1.getCell(2).font = headerStyle.font;
+      row1.getCell(2).alignment = headerStyle.alignment;
 
       // Строка 2: Код материала
       const row2 = sheet.addRow([codeLine, codeLine]);
       row2.height = 15;
-      row2.getCell(1).font = textStyle.font;
-      row2.getCell(1).alignment = textStyle.alignment;
-      row2.getCell(2).font = textStyle.font;
-      row2.getCell(2).alignment = textStyle.alignment;
+      row2.getCell(1).font = headerStyle.font;
+      row2.getCell(1).alignment = headerStyle.alignment;
+      row2.getCell(2).font = headerStyle.font;
+      row2.getCell(2).alignment = headerStyle.alignment;
 
       // Строка 3: Название + штрихкод
       const row3 = sheet.addRow([name, '']);
       row3.height = 90;
-      row3.getCell(1).font = textStyle.font;
-      row3.getCell(1).alignment = textStyle.alignment;
+      row3.getCell(1).font = nameStyle.font;   // шрифт 14
+      row3.getCell(1).alignment = nameStyle.alignment;
 
       // Генерируем штрихкод
       const pngBuffer = await bwipjs.toBuffer({
@@ -84,17 +89,25 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Вставляем штрихкод в ячейку B3 с центровкой
+      // Рассчитываем размеры ячейки B3 в пикселях (приблизительно)
+      const colWidth = sheet.getColumn(2).width;   // 36 символов
+      const rowHeight = 90;                        // пунктов
+      // Переводим в пиксели (примерно)
+      const pxWidth = colWidth * 7;    // 36*7 ≈ 252 px
+      const pxHeight = rowHeight * 0.75; // 90*0.75 ≈ 67.5 px
+
+      // Изображение штрихкода занимает 90% ширины и высоты ячейки
+      const imgWidth = Math.floor(pxWidth * 0.9);
+      const imgHeight = Math.floor(pxHeight * 0.9);
+
+      // Вставляем изображение строго в ячейку B3 с центровкой
       sheet.addImage(imageId, {
         tl: { col: 1, row: row3.number - 1 },
-        ext: { width: 160, height: 60 },   // чуть крупнее для лучшей читаемости
+        ext: { width: imgWidth, height: imgHeight },
         editAs: 'oneCell',
       });
-      // Дополнительно выровняем ячейку B3 (для красоты)
       row3.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
     }
-
-    // Пустые строки между наклейками не добавляем (как вы просили)
 
     res.setHeader('Content-Disposition', 'attachment; filename=labels.xlsx');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
