@@ -65,26 +65,99 @@ function injectMenu() {
   updateMenuVisibility();
 }
 
-// Функция для показа/скрытия пунктов в зависимости от роли
-function updateMenuVisibility() {
-  const role = currentUser?.role;
-  if (!role) return;
+function openProfileModal() {
+  const old = document.getElementById('profileModalOverlay');
+  if (old) old.remove();
 
-  // Пользователи – только админ
-  const usersLink = document.getElementById('menuUsers');
-  if (usersLink) usersLink.style.display = (role === 'admin') ? 'block' : 'none';
+  const overlay = document.createElement('div');
+  overlay.id = 'profileModalOverlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width: 450px; position: relative;">
+      <button class="btn-icon-info" id="closeProfileModal" style="position:absolute; top:10px; right:10px;">✕</button>
+      <h2>Настройки профиля</h2>
+      <form id="profileForm">
+        <div class="form-group">
+          <label>Текущий пароль *</label>
+          <input type="password" id="currentPassword" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Новый логин (оставьте пустым, чтобы не менять)</label>
+          <input type="text" id="newUsername" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Новый пароль (оставьте пустым, чтобы не менять)</label>
+          <input type="password" id="newPassword" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="newEmail">
+        </div>
+        <div class="form-error" id="profileError" style="display:none;"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(overlay);
 
-  // Рассылка – только админ
-  const mailingLink = document.getElementById('menuMailing');
-  if (mailingLink) mailingLink.style.display = (role === 'admin') ? 'block' : 'none';
+  // Предзаполняем email из currentUser (если доступен)
+  if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
+    overlay.querySelector('#newEmail').value = currentUser.email;
+  }
 
-  // Наклейки – админ, модератор, кладовщик
-  const labelsLink = document.getElementById('menuLabels');
-  if (labelsLink) labelsLink.style.display = (role === 'admin' || role === 'moderator' || role === 'storekeeper') ? 'block' : 'none';
+  // Закрытие по крестику или клику вне модалки
+  overlay.querySelector('#closeProfileModal').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
 
-  // Справочники – админ, модератор
-  const dirLink = document.getElementById('menuDirectories');
-  if (dirLink) dirLink.style.display = (role === 'admin' || role === 'moderator') ? 'block' : 'none';
+  // Отправка формы
+  overlay.querySelector('#profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const currentPassword = overlay.querySelector('#currentPassword').value;
+    const newUsername = overlay.querySelector('#newUsername').value.trim();
+    const newPassword = overlay.querySelector('#newPassword').value;
+    const newEmail = overlay.querySelector('#newEmail').value.trim();
+
+    const errEl = overlay.querySelector('#profileError');
+    errEl.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/auth/update-profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newUsername: newUsername || undefined,
+          newPassword: newPassword || undefined,
+          newEmail: newEmail || undefined
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Ошибка';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (data.user) {
+        // обновляем currentUser (глобальная переменная из auth.js)
+        if (typeof currentUser !== 'undefined') {
+          currentUser.username = data.user.username;
+          currentUser.email = data.user.email;
+          currentUser.display_name = data.user.display_name;
+        }
+        if (typeof updateAuthUI === 'function') updateAuthUI();
+      }
+      overlay.remove();
+      alert('Профиль обновлён');
+    } catch (err) {
+      errEl.textContent = 'Ошибка сети';
+      errEl.style.display = 'block';
+    }
+  });
 }
-
-// Функция openProfileModal остаётся без изменений (она уже определена у вас)
