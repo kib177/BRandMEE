@@ -95,7 +95,7 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
 
       // Приблизительные размеры ячейки B3 в пикселях
       const cellWidthPx = sheet.getColumn(2).width * 7;    
-      const cellHeightPx = row3.height * 0,;             
+      const cellHeightPx = row3.height * 1.33;             
 
       // Отступы для центрирования (в пикселях)
       const offsetX = (cellWidthPx - imgWidthPx) / 2;   
