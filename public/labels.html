@@ -12,8 +12,11 @@
     .labels-page { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
     .card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 1.5rem; margin-bottom: 1.5rem; }
     .flex-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .search-box { margin-bottom: 0.8rem; }
+    .search-box input { width: 100%; padding: 0.5rem; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9rem; }
     .item-select { width: 100%; max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem; }
     .item-select label { display: block; margin-bottom: 0.2rem; cursor: pointer; }
+    .no-results { text-align: center; padding: 1rem; color: var(--text-secondary); font-style: italic; }
   </style>
 </head>
 <body>
@@ -29,6 +32,9 @@
   <main class="labels-page">
     <div class="card">
       <h2>Выберите позиции для наклеек</h2>
+      <div class="search-box">
+        <input type="text" id="searchItems" placeholder="Поиск по коду или названию..." autocomplete="off">
+      </div>
       <div class="flex-row" style="margin-bottom:1rem;">
         <button class="btn btn-outline btn-sm" id="btnSelectAll">Выбрать все</button>
         <button class="btn btn-outline btn-sm" id="btnDeselectAll">Снять все</button>
