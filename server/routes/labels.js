@@ -130,7 +130,7 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
 
 router.get('/items', authMiddleware, async (req, res) => {
   try {
-    const result = await pool.query('SELECT code, name FROM inventory ORDER BY code');
+    const result = await pool.query('SELECT code, name, model FROM inventory ORDER BY code');
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: 'Ошибка загрузки позиций' });
