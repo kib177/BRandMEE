@@ -32,43 +32,41 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Наклейки');
 
-    // Ширина колонок (примерно 70 мм)
+    // Ширина колонок (≈70 мм каждая)
     sheet.getColumn(1).width = 35;
     sheet.getColumn(2).width = 35;
 
-    let currentRow = 2; // начинаем со 2-й строки
+    for (const row of rows) {
+      const article = row.model || row.code;
+      const codeLine = `Код материала: S${row.code}`;
+      const name = row.name;
 
-    for (const item of rows) {
-      const article = item.model || item.code;
-      const codeLine = `Код материала: S${item.code}`;
-      const name = item.name;
+      // Используем \r\n для корректного переноса строк в Excel
+      const leftText = `${article}\r\n${codeLine}\r\n${name}`;
+      const rightText = `${article}\r\n${codeLine}`;
 
-      // Левая колонка (A)
-      sheet.getCell(`A${currentRow}`).value = article;         // A2 – артикул
-      sheet.getCell(`A${currentRow + 1}`).value = codeLine;    // A3 – код материала
-      sheet.getCell(`A${currentRow + 2}`).value = name;        // A4 – название
+      const newRow = sheet.addRow([]);
+      const rowNumber = newRow.number;
 
-      // Правая колонка (B)
-      sheet.getCell(`B${currentRow}`).value = article;         // B2 – артикул
-      sheet.getCell(`B${currentRow + 1}`).value = codeLine;    // B3 – код материала
+      // Левая ячейка (A) – три строки текста
+      const leftCell = sheet.getCell(`A${rowNumber}`);
+      leftCell.value = leftText;
+      leftCell.alignment = { wrapText: true, vertical: 'top' };
+      leftCell.font = { size: 10 };
 
-      // Базовое форматирование
-      for (let r = 0; r < 3; r++) {
-        const leftCell = sheet.getCell(`A${currentRow + r}`);
-        const rightCell = sheet.getCell(`B${currentRow + r}`);
-        leftCell.font = { size: 9 };
-        leftCell.alignment = { wrapText: true, vertical: 'top' };
-        rightCell.font = { size: 9 };
-        rightCell.alignment = { wrapText: true, vertical: 'top' };
-      }
+      // Правая ячейка (B) – две верхние строки текста
+      const rightCell = sheet.getCell(`B${rowNumber}`);
+      rightCell.value = rightText;
+      rightCell.alignment = { wrapText: true, vertical: 'top' };
+      rightCell.font = { size: 10 };
 
       // Генерируем штрихкод Code 128
       const pngBuffer = await bwipjs.toBuffer({
         bcid: 'code128',
-        text: item.code,
+        text: row.code,
         scale: 3,
-        height: 10,
-        includetext: false,
+        height: 10,          // высота штрихкода в мм
+        includetext: false,   // без текста под штрихкодом
         textxalign: 'center',
       });
 
@@ -77,18 +75,15 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Вставляем штрихкод в B4 (строка currentRow + 2 в Excel, row = currentRow + 1 в терминах ExcelJS)
+      // Вставляем изображение штрихкода в ячейку B со смещением вниз,
+      // чтобы не перекрыть текст (35 пикселей ≈ 35 * 12700 = 444500 EMU)
       sheet.addImage(imageId, {
-        tl: { col: 1, row: currentRow + 1 }, // col 1 = B, row отсчитывается от 0
+        tl: { col: 1, row: rowNumber - 1, offsetY: 444500 },
         ext: { width: 160, height: 40 },
       });
 
-      // Высота строк
-      sheet.getRow(currentRow).height = 22;
-      sheet.getRow(currentRow + 1).height = 22;
-      sheet.getRow(currentRow + 2).height = 50; // достаточно для штрихкода
-
-      currentRow += 4; // следующая наклейка через одну пустую строку
+      // Высота строки: достаточно для трёх строк текста + штрихкода
+      sheet.getRow(rowNumber).height = 80;
     }
 
     res.setHeader('Content-Disposition', 'attachment; filename=labels.xlsx');
