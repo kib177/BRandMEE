@@ -93,27 +93,34 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       const imgWidthPx = 170;
       const imgHeightPx = 64;
 
+      const EMU_PER_PX = 9525;   // 1 px = 9525 EMU (при 96 DPI)
+      const EMU_PER_PT = 12700;  // 1 pt = 12700 EMU
+
+      const imgWidthEMU  = imgWidthPx  * EMU_PER_PX;  // 1 619 250
+      const imgHeightEMU = imgHeightPx * EMU_PER_PX;
+
       // Приблизительные размеры ячейки B3 в пикселях
-      const cellWidthPx = sheet.getColumn(2).width * 7;    // 36 * 7 = 252 px
-      const cellHeightPx = row3.height * 0.75;             // 90 * 0.75 = 67.5 px
+      const cellWidthPx  = 36 * 7 + 5;                 
+      const cellWidthEMU = cellWidthPx * EMU_PER_PX;
+      const cellHeightEMU = 90 * EMU_PER_PT;             
 
       // Отступы для центрирования (в пикселях)
-      const offsetX = Math.max(0, (cellWidthPx - imgWidthPx) / 2);   // ~41 px
-      const offsetY = Math.max(0, (cellHeightPx - imgHeightPx) / 2); // ~1.75 px
+     const offsetX = Math.max(0, Math.round((cellWidthEMU  - imgWidthEMU)  / 2)); 
+      const offsetY = Math.max(0, Math.round((cellHeightEMU - imgHeightEMU) / 2));
 
       // Вставляем изображение с центрированием (offsetX/offsetY заданы в пикселях)
       sheet.addImage(imageId, {
         tl: {
-          col: 1,
-          row: row3.number - 1,
-          offsetX: Math.round(offsetX),   // 41 px (ExcelJS поймёт как пиксели)
-          offsetY: Math.round(offsetY)    // 2 px
+          col: 1,               
+          row: row3.number - 1, 
+          offsetX: offsetX,    
+          offsetY: offsetY      
         },
         ext: {
-          width: imgWidthPx,   // 170 px
-          height: imgHeightPx  // 64 px
+          width: imgWidthEMU,   
+          height: imgHeightEMU  
         },
-        editAs: 'oneCell',
+        editAs: 'absolute',     
       });
 
       row3.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
