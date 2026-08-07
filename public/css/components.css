@@ -306,3 +306,19 @@ tbody tr.low-stock:hover { background: #fff9e6; }
 }
 .btn-logout:hover { opacity: 0.9; }
 
+/* Поле поиска на странице наклеек */
+.search-box input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+}
+
+/* Сообщение «Ничего не найдено» */
+.no-results {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
