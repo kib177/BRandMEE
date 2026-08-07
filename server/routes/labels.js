@@ -94,7 +94,7 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       const imgHeightPx = 64;
 
       // Приблизительные размеры ячейки B3 в пикселях
-      const cellWidthPx = sheet.getColumn(2).width * 7;    
+      const cellWidthPx = (sheet.getColumn(2).width * 7) + 5;    
       const cellHeightPx = row3.height * 1.33;             
 
       // Отступы для центрирования (в пикселях)
@@ -105,8 +105,8 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         tl: {
           col: 1,
           row: row3.number - 1,
-          coloff: offsetX,   
-          rowoff: offsetY    
+          colOff: offsetX,   
+          rowOff: offsetY    
         },
         ext: {
           width: imgWidthPx,   
