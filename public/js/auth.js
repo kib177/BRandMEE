@@ -162,6 +162,23 @@ if (writeoffsLink) writeoffsLink.style.display = (currentUser && (currentUser.ro
     }
 }
 
+function updateMenuVisibility() {
+  const role = currentUser?.role;
+  if (!role) return;
+
+  const usersLink = document.getElementById('menuUsers');
+  if (usersLink) usersLink.style.display = (role === 'admin') ? 'block' : 'none';
+
+  const mailingLink = document.getElementById('menuMailing');
+  if (mailingLink) mailingLink.style.display = (role === 'admin') ? 'block' : 'none';
+
+  const labelsLink = document.getElementById('menuLabels');
+  if (labelsLink) labelsLink.style.display = (role === 'admin' || role === 'moderator' || role === 'storekeeper') ? 'block' : 'none';
+
+  const dirLink = document.getElementById('menuDirectories');
+  if (dirLink) dirLink.style.display = (role === 'admin' || role === 'moderator') ? 'block' : 'none';
+}
+
 function getToken() {
     return token;
 }
