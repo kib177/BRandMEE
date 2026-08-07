@@ -305,3 +305,7 @@ tbody tr.low-stock:hover { background: #fff9e6; }
     font-size: 0.85rem;
 }
 .btn-logout:hover { opacity: 0.9; }
+
+.dropdown-item {
+  text-decoration: none;
+}
