@@ -32,7 +32,7 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Наклейки');
 
-    // Ширина колонок (≈70 мм каждая)
+    // Ширина колонок (примерно 70 мм каждая)
     sheet.getColumn(1).width = 35;
     sheet.getColumn(2).width = 35;
 
@@ -41,22 +41,21 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       const codeLine = `Код материала: S${row.code}`;
       const name = row.name;
 
-      // Добавляем три строки для позиции
-      const row1 = sheet.addRow([article, '']);                // A1, B1 пусто
-      const row2 = sheet.addRow([codeLine, '']);               // A2, B2 пусто
-      const row3 = sheet.addRow([name, '']);                   // A3, B3 – сюда штрихкод
+      // Три строки для одной позиции
+      const row1 = sheet.addRow([article, article]);             // A1, B1
+      const row2 = sheet.addRow([codeLine, codeLine]);           // A2, B2
+      const row3 = sheet.addRow([name, '']);                     // A3, B3 — текст только в A, в B будет штрихкод
 
-      // Стилизуем (выравнивание, высота)
-      row1.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
-      row2.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+      // Стилизация: выравнивание и минимальная высота
+      [row1, row2].forEach(r => {
+        r.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+        r.getCell(2).alignment = { vertical: 'middle', horizontal: 'left' };
+        r.height = 18;
+      });
       row3.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+      row3.height = 65;  // третья строка выше для штрихкода
 
-      // Устанавливаем базовую высоту строк
-      row1.height = 20;
-      row2.height = 20;
-      row3.height = 60; // третья строка выше для штрихкода
-
-      // Генерируем штрихкод Code 128
+      // Генерируем штрихкод Code 128 (без подписи)
       const pngBuffer = await bwipjs.toBuffer({
         bcid: 'code128',
         text: row.code,
