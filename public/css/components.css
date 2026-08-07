@@ -306,6 +306,3 @@ tbody tr.low-stock:hover { background: #fff9e6; }
 }
 .btn-logout:hover { opacity: 0.9; }
 
-.dropdown-item {
-  text-decoration: none;
-}
