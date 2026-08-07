@@ -187,3 +187,9 @@ function setSelectWithFallback(selectId, valueId, valueName) {
         selectEl.value = valueId;
     }
 }
+// Поиск информации о запчасти (открывает Google)
+function fetchPartInfo(model, name) {
+    const searchTerm = (model && model.trim()) ? model.trim() : name;
+    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}+datasheet`;
+    window.open(googleUrl, '_blank');
+}
