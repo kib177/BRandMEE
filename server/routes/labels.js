@@ -32,11 +32,10 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Наклейки');
 
-    // Ширина колонок = 36 (примерно 70 мм)
+    // Ширина колонок (36 ≈ 70 мм)
     sheet.getColumn(1).width = 36;
     sheet.getColumn(2).width = 36;
 
-    // Стили для текста
     const headerStyle = {
       font: { bold: true, size: 10 },
       alignment: { horizontal: 'center', vertical: 'middle', wrapText: true }
@@ -52,7 +51,7 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       const codeLine = `Код материала: S${row.code}`;
       const name = String(row.name || '');
 
-      // Строка 1: Артикул
+      // Строка 1: Артикул (высота 15)
       const row1 = sheet.addRow([article, article]);
       row1.height = 15;
       row1.getCell(1).font = headerStyle.font;
@@ -60,7 +59,7 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       row1.getCell(2).font = headerStyle.font;
       row1.getCell(2).alignment = headerStyle.alignment;
 
-      // Строка 2: Код материала
+      // Строка 2: Код материала (высота 15)
       const row2 = sheet.addRow([codeLine, codeLine]);
       row2.height = 15;
       row2.getCell(1).font = headerStyle.font;
@@ -68,13 +67,13 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       row2.getCell(2).font = headerStyle.font;
       row2.getCell(2).alignment = headerStyle.alignment;
 
-      // Строка 3: Название + штрихкод
+      // Строка 3: Наименование + штрихкод (высота 90)
       const row3 = sheet.addRow([name, '']);
       row3.height = 90;
       row3.getCell(1).font = nameStyle.font;   // шрифт 14
       row3.getCell(1).alignment = nameStyle.alignment;
 
-      // Генерируем штрихкод
+      // Генерируем штрихкод Code 128
       const pngBuffer = await bwipjs.toBuffer({
         bcid: 'code128',
         text: String(row.code),
@@ -89,23 +88,33 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Рассчитываем размеры ячейки B3 в пикселях (приблизительно)
-      const colWidth = sheet.getColumn(2).width;   // 36 символов
-      const rowHeight = 90;                        // пунктов
-      // Переводим в пиксели (примерно)
-      const pxWidth = colWidth * 7;    // 36*7 ≈ 252 px
-      const pxHeight = rowHeight * 0.75; // 90*0.75 ≈ 67.5 px
+      // Размеры изображения (ширина 170, высота 64 пикселя)
+      const imgWidthPx = 170;
+      const imgHeightPx = 64;
 
-      // Изображение штрихкода занимает 90% ширины и высоты ячейки
-      const imgWidth = Math.floor(pxWidth * 0.9);
-      const imgHeight = Math.floor(pxHeight * 0.9);
+      // Размеры ячейки B3 (приблизительно)
+      const cellWidthPx = sheet.getColumn(2).width * 7;   // 36 * 7 = 252 px
+      const cellHeightPx = row3.height * 0.75;            // 90 * 0.75 = 67.5 px
 
-      // Вставляем изображение строго в ячейку B3 с центровкой
+      // Отступы для центрирования (в пикселях)
+      const offsetX = Math.max(0, (cellWidthPx - imgWidthPx) / 2);
+      const offsetY = Math.max(0, (cellHeightPx - imgHeightPx) / 2);
+
+      // Вставляем изображение с центрированием
       sheet.addImage(imageId, {
-        tl: { col: 1, row: row3.number - 1 },
-        ext: { width: imgWidth, height: imgHeight },
+        tl: {
+          col: 1,
+          row: row3.number - 1,
+          offsetX: Math.round(offsetX * 12700),   // EMU
+          offsetY: Math.round(offsetY * 12700)
+        },
+        ext: {
+          width: Math.round(imgWidthPx * 12700),
+          height: Math.round(imgHeightPx * 12700)
+        },
         editAs: 'oneCell',
       });
+
       row3.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
     }
 
