@@ -94,24 +94,23 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       const imgHeightPx = 64;
 
       // Приблизительные размеры ячейки B3 в пикселях
-      const cellWidthPx = sheet.getColumn(2).width * 7;    // 36 * 7 = 252 px
-      const cellHeightPx = row3.height * 1,333;             // 90 * 0.75 = 67.5 px
+      const cellWidthPx = sheet.getColumn(2).width * 7;    
+      const cellHeightPx = row3.height * 0,;             
 
       // Отступы для центрирования (в пикселях)
-      const offsetX = Math.max(0, (cellWidthPx - imgWidthPx) / 2);   // ~56 px
-      const offsetY = Math.max(0, (cellHeightPx - imgHeightPx) / 2); // ~8.75 px
+      const offsetX = (cellWidthPx - imgWidthPx) / 2;   
+      const offsetY = (cellHeightPx - imgHeightPx) / 2; 
 
-      // Вставляем изображение с центрированием (offsetX/offsetY в пикселях, без EMU!)
       sheet.addImage(imageId, {
         tl: {
           col: 1,
           row: row3.number - 1,
-          coloff: Math.round(offsetX),   // 56 px
-          rowoff: Math.round(offsetY)    // 9 px
+          coloff: offsetX,   
+          rowoff: offsetY    
         },
         ext: {
-          width: imgWidthPx,   // 170 px
-          height: imgHeightPx  // 64 px
+          width: imgWidthPx,   
+          height: imgHeightPx  
         },
         editAs: 'oneCell',
       });
