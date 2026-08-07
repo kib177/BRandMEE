@@ -32,26 +32,29 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Наклейки');
 
-    // Ширина колонок (примерно 70 мм)
+    // Ширина колонок (≈70 мм каждая)
     sheet.getColumn(1).width = 35;
     sheet.getColumn(2).width = 35;
 
     for (const row of rows) {
-      const article = row.model || row.code;                // артикул
-      const codeLine = `Код материала: S${row.code}`;      // код материала
-      const name = row.name;                                // наименование
+      const article = row.model || row.code;
+      const codeLine = `Код материала: S${row.code}`;
+      const name = row.name;
 
-      // ---- Левая колонка (A) ----
-      const row1 = sheet.addRow([article, article]);        // A1 и B1
-      const row2 = sheet.addRow([codeLine, codeLine]);      // A2 и B2
-      const row3 = sheet.addRow([name, '']);                // A3, B3 пока пусто
+      // Добавляем три строки для позиции
+      const row1 = sheet.addRow([article, '']);                // A1, B1 пусто
+      const row2 = sheet.addRow([codeLine, '']);               // A2, B2 пусто
+      const row3 = sheet.addRow([name, '']);                   // A3, B3 – сюда штрихкод
 
-      // Стилизация
-      [row1, row2, row3].forEach((r, idx) => {
-        r.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
-        r.getCell(2).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
-        r.height = idx === 2 ? 60 : 20;   // третья строка выше для штрихкода
-      });
+      // Стилизуем (выравнивание, высота)
+      row1.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+      row2.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+      row3.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+
+      // Устанавливаем базовую высоту строк
+      row1.height = 20;
+      row2.height = 20;
+      row3.height = 60; // третья строка выше для штрихкода
 
       // Генерируем штрихкод Code 128
       const pngBuffer = await bwipjs.toBuffer({
@@ -68,7 +71,7 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Вставляем картинку в ячейку B3 (колонка 2, строка row3)
+      // Вставляем изображение в ячейку B3 (колонка 2, строка row3)
       sheet.addImage(imageId, {
         tl: { col: 1, row: row3.number - 1 },   // col 1 = B, row начинается с 0
         ext: { width: 140, height: 50 },
