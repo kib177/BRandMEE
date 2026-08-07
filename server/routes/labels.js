@@ -38,12 +38,12 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
 
     // Стили для текста
     const headerStyle = {
-      font: { bold: true, size: 10 },
+      font: { bold: true, size: 11 },
       alignment: { horizontal: 'center', vertical: 'middle', wrapText: true }
     };
 
     const nameStyle = {
-      font: { bold: true, size: 14 },
+      font: { bold: true, size: 15 },
       alignment: { horizontal: 'center', vertical: 'middle', wrapText: true }
     };
 
@@ -71,7 +71,7 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       // Строка 3: Наименование + штрихкод (высота 90)
       const row3 = sheet.addRow([name, '']);
       row3.height = 90;
-      row3.getCell(1).font = nameStyle.font;   // шрифт 14
+      row3.getCell(1).font = nameStyle.font;   // шрифт 15
       row3.getCell(1).alignment = nameStyle.alignment;
 
       // Генерируем штрихкод Code 128
@@ -89,9 +89,9 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Размеры изображения в пикселях (как в проверенной версии Kimi)
-      const imgWidthPx = 140;
-      const imgHeightPx = 50;
+      
+      const imgWidthPx = 170;
+      const imgHeightPx = 64;
 
       // Приблизительные размеры ячейки B3 в пикселях
       const cellWidthPx = sheet.getColumn(2).width * 7;    // 36 * 7 = 252 px
@@ -106,12 +106,12 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         tl: {
           col: 1,
           row: row3.number - 1,
-          offsetX: Math.round(offsetX),   // 56 px
-          offsetY: Math.round(offsetY)    // 9 px
+          coloff: Math.round(offsetX),   // 56 px
+          rowoff: Math.round(offsetY)    // 9 px
         },
         ext: {
-          width: imgWidthPx,   // 140 px
-          height: imgHeightPx  // 50 px
+          width: imgWidthPx,   // 170 px
+          height: imgHeightPx  // 64 px
         },
         editAs: 'oneCell',
       });
