@@ -32,12 +32,13 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Наклейки');
 
-    // Ширина колонок (36 ≈ 70 мм)
+    // Ширина колонок (36 ≈ 252 пикселей)
     sheet.getColumn(1).width = 36;
     sheet.getColumn(2).width = 36;
 
+    // Стили для текста
     const headerStyle = {
-      font: { bold: true, size: 11 },
+      font: { bold: true, size: 10 },
       alignment: { horizontal: 'center', vertical: 'middle', wrapText: true }
     };
 
@@ -88,29 +89,29 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Размеры изображения (ширина 170, высота 64 пикселя)
+      // Размеры изображения (ширина 170, высота 64 пикселя) – используем пиксели как есть (без EMU)
       const imgWidthPx = 170;
       const imgHeightPx = 64;
 
-      // Размеры ячейки B3 (приблизительно)
-      const cellWidthPx = sheet.getColumn(2).width * 7;   // 36 * 7 = 252 px
-      const cellHeightPx = row3.height * 0.75;            // 90 * 0.75 = 67.5 px
+      // Приблизительные размеры ячейки B3 в пикселях
+      const cellWidthPx = sheet.getColumn(2).width * 7;    // 36 * 7 = 252 px
+      const cellHeightPx = row3.height * 0.75;             // 90 * 0.75 = 67.5 px
 
       // Отступы для центрирования (в пикселях)
-      const offsetX = Math.max(0, (cellWidthPx - imgWidthPx) / 2);
-      const offsetY = Math.max(0, (cellHeightPx - imgHeightPx) / 2);
+      const offsetX = Math.max(0, (cellWidthPx - imgWidthPx) / 2);   // ~41 px
+      const offsetY = Math.max(0, (cellHeightPx - imgHeightPx) / 2); // ~1.75 px
 
-      // Вставляем изображение с центрированием
+      // Вставляем изображение с центрированием (offsetX/offsetY заданы в пикселях)
       sheet.addImage(imageId, {
         tl: {
           col: 1,
           row: row3.number - 1,
-          offsetX: Math.round(offsetX * 12700),   // EMU
-          offsetY: Math.round(offsetY * 12700)
+          offsetX: Math.round(offsetX),   // 41 px (ExcelJS поймёт как пиксели)
+          offsetY: Math.round(offsetY)    // 2 px
         },
         ext: {
-          width: Math.round(imgWidthPx * 12700),
-          height: Math.round(imgHeightPx * 12700)
+          width: imgWidthPx,   // 170 px
+          height: imgHeightPx  // 64 px
         },
         editAs: 'oneCell',
       });
