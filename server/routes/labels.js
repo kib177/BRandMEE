@@ -93,19 +93,13 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       const imgWidthPx = 170;
       const imgHeightPx = 64;
 
-      const EMU_PER_PX = 9525;   // 1 px = 9525 EMU (при 96 DPI)
-      const EMU_PER_PT = 12700;  // 1 pt = 12700 EMU
-
-      const imgWidthEMU  = imgWidthPx  * EMU_PER_PX;  // 1 619 250
-      const imgHeightEMU = imgHeightPx * EMU_PER_PX;
-
       // Приблизительные размеры ячейки B3 в пикселях
-      const cellWidthEMU = 120;
-      const cellHeightEMU = 267;             
+      const cellWidthPx = 120;
+      const cellHeightPx = 267;             
 
       // Отступы для центрирования (в пикселях)
-     const offsetX = Math.max(0, Math.round((cellWidthEMU  - imgWidthEMU)  / 2)); 
-      const offsetY = Math.max(0, Math.round((cellHeightEMU - imgHeightEMU) / 2));
+     const offsetX = Math.max(0, Math.round((cellWidthPx  - imgWidthPx)  / 2)); 
+      const offsetY = Math.max(0, Math.round((cellHeightPx - imgHeightPx) / 2));
 
       // Вставляем изображение с центрированием (offsetX/offsetY заданы в пикселях)
       sheet.addImage(imageId, {
