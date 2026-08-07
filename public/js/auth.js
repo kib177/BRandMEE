@@ -135,6 +135,10 @@ if (writeoffsLink) writeoffsLink.style.display = (currentUser && (currentUser.ro
         }
     }
 
+    if (typeof updateMenuVisibility === 'function') {
+  updateMenuVisibility();
+}
+
     let loginBtn = document.getElementById('btnLoginLogout');
     if (!loginBtn) {
         loginBtn = document.createElement('button');
