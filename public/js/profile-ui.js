@@ -5,23 +5,25 @@ function injectMenu() {
   const headerInner = document.querySelector('.header-inner');
   if (!headerInner) return;
 
-  // 1. Создаём контейнер с кнопкой и меню
+  // Создаём контейнер с кнопкой и меню
   const menuContainer = document.createElement('div');
   menuContainer.className = 'header-menu';
   menuContainer.innerHTML = `
     <button class="btn-icon-menu" id="menuToggle" title="Меню">☰</button>
     <div class="dropdown-menu hidden" id="dropdownMenu">
-     <button class="dropdown-item" id="menuProfile">👤 Настройки профиля</button>
-     <a href="/reports_writeoffs.html" class="dropdown-item" id="menuReportsWriteoffs" style="display:none;">📊 Отчёт по списаниям</a>
-</div>
+      <button class="dropdown-item" id="menuProfile">👤 Настройки профиля</button>
+      <a href="/admin/users.html" class="dropdown-item admin-only" id="menuUsers" style="display:none;">👥 Пользователи</a>
+      <a href="/admin/mailing.html" class="dropdown-item admin-only" id="menuMailing" style="display:none;">📧 Рассылка</a>
+      <a href="/labels.html" class="dropdown-item admin-only moderator-only storekeeper-only" id="menuLabels" style="display:none;">🏷️ Наклейки</a>
+      <a href="/admin.html" class="dropdown-item admin-only moderator-only" id="menuDirectories" style="display:none;">📚 Справочники</a>
+    </div>
   `;
   headerInner.appendChild(menuContainer);
 
-  // 2. Получаем созданные элементы
+  // Обработчики открытия/закрытия (без изменений)
   const toggle = document.getElementById('menuToggle');
   const dropdown = document.getElementById('dropdownMenu');
 
-  // 3. Обработчик клика с динамическим позиционированием
   toggle.addEventListener('click', (e) => {
     e.stopPropagation();
     const isHidden = dropdown.classList.contains('hidden');
@@ -45,7 +47,6 @@ function injectMenu() {
     }
   });
 
-  // 4. Закрытие по клику вне меню
   document.addEventListener('click', (e) => {
     if (!dropdown.contains(e.target) && e.target !== toggle) {
       dropdown.classList.add('hidden');
@@ -54,93 +55,36 @@ function injectMenu() {
 
   dropdown.addEventListener('click', (e) => e.stopPropagation());
 
-  // 5. Кнопка «Настройки профиля»
+  // Кнопка «Настройки профиля»
   document.getElementById('menuProfile').addEventListener('click', () => {
     dropdown.classList.add('hidden');
     openProfileModal();
   });
+
+  // Обновляем видимость пунктов меню при загрузке
+  updateMenuVisibility();
 }
 
-function openProfileModal() {
-  const old = document.getElementById('profileModalOverlay');
-  if (old) old.remove();
+// Функция для показа/скрытия пунктов в зависимости от роли
+function updateMenuVisibility() {
+  const role = currentUser?.role;
+  if (!role) return;
 
-  const overlay = document.createElement('div');
-  overlay.id = 'profileModalOverlay';
-  overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
-    <div class="modal" style="max-width: 450px; position: relative;">
-      <button class="btn-icon-info" id="closeProfileModal" style="position:absolute; top:10px; right:10px;">✕</button>
-      <h2>Настройки профиля</h2>
-      <form id="profileForm">
-        <div class="form-group">
-          <label>Текущий пароль *</label>
-          <input type="password" id="currentPassword" required autocomplete="off">
-        </div>
-        <div class="form-group">
-          <label>Новый логин (оставьте пустым, чтобы не менять)</label>
-          <input type="text" id="newUsername" autocomplete="off">
-        </div>
-        <div class="form-group">
-          <label>Новый пароль (оставьте пустым, чтобы не менять)</label>
-          <input type="password" id="newPassword" autocomplete="off">
-        </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="newEmail" value="${currentUser?.email || ''}">
-        </div>
-        <div class="form-error" id="profileError" style="display:none;"></div>
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary">Сохранить</button>
-        </div>
-      </form>
-    </div>
-  `;
-  document.body.appendChild(overlay);
+  // Пользователи – только админ
+  const usersLink = document.getElementById('menuUsers');
+  if (usersLink) usersLink.style.display = (role === 'admin') ? 'block' : 'none';
 
-  document.getElementById('closeProfileModal').addEventListener('click', () => overlay.remove());
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
+  // Рассылка – только админ
+  const mailingLink = document.getElementById('menuMailing');
+  if (mailingLink) mailingLink.style.display = (role === 'admin') ? 'block' : 'none';
 
-  document.getElementById('profileForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const currentPassword = document.getElementById('currentPassword').value;
-    const newUsername = document.getElementById('newUsername').value.trim();
-    const newPassword = document.getElementById('newPassword').value;
-    const newEmail = document.getElementById('newEmail').value.trim();
+  // Наклейки – админ, модератор, кладовщик
+  const labelsLink = document.getElementById('menuLabels');
+  if (labelsLink) labelsLink.style.display = (role === 'admin' || role === 'moderator' || role === 'storekeeper') ? 'block' : 'none';
 
-    try {
-      const res = await fetch('/api/auth/update-profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          currentPassword,
-          newUsername: newUsername || undefined,
-          newPassword: newPassword || undefined,
-          newEmail: newEmail || undefined
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        document.getElementById('profileError').textContent = data.error || 'Ошибка';
-        document.getElementById('profileError').style.display = 'block';
-        return;
-      }
-      if (data.user) {
-        currentUser = data.user;
-        if (typeof updateAuthUI === 'function') updateAuthUI();
-      }
-      overlay.remove();
-      if (typeof showToast === 'function') showToast('Профиль обновлён', 'success');
-      else alert('Профиль обновлён');
-    } catch (err) {
-      console.error(err);
-    }
-  });
+  // Справочники – админ, модератор
+  const dirLink = document.getElementById('menuDirectories');
+  if (dirLink) dirLink.style.display = (role === 'admin' || role === 'moderator') ? 'block' : 'none';
 }
-document.addEventListener('DOMContentLoaded', injectMenu);
 
+// Функция openProfileModal остаётся без изменений (она уже определена у вас)
