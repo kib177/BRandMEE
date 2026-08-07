@@ -32,31 +32,28 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Наклейки');
 
-    // Ширина колонок (≈70 мм каждая)
+    // Ширина колонок (примерно 70 мм)
     sheet.getColumn(1).width = 35;
     sheet.getColumn(2).width = 35;
 
     for (const row of rows) {
-      const article = row.model || row.code;
-      const codeLine = `Код материала: S${row.code}`;
-      const name = row.name;
+      const article = row.model || row.code;                // артикул
+      const codeLine = `Код материала: S${row.code}`;      // код материала
+      const name = row.name;                                // наименование
 
-      // Записываем три строки
-      const row1 = sheet.addRow([article, article]);
-      const row2 = sheet.addRow([codeLine, codeLine]);
-      const row3 = sheet.addRow([name, '']);  // в правой ячейке B будет штрихкод
+      // ---- Левая колонка (A) ----
+      const row1 = sheet.addRow([article, article]);        // A1 и B1
+      const row2 = sheet.addRow([codeLine, codeLine]);      // A2 и B2
+      const row3 = sheet.addRow([name, '']);                // A3, B3 пока пусто
 
-      // Стилизуем ячейки
-      [row1, row2, row3].forEach(r => {
-        r.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
-        r.getCell(2).alignment = { vertical: 'middle', horizontal: 'left' };
-        r.height = 20; // базовая высота строки
+      // Стилизация
+      [row1, row2, row3].forEach((r, idx) => {
+        r.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+        r.getCell(2).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+        r.height = idx === 2 ? 60 : 20;   // третья строка выше для штрихкода
       });
 
-      // Объединяем ячейки B1:B3 для штрихкода (чтобы он был на всю высоту)
-      sheet.mergeCells(`B${row1.number}:B${row3.number}`);
-
-      // Генерируем штрихкод
+      // Генерируем штрихкод Code 128
       const pngBuffer = await bwipjs.toBuffer({
         bcid: 'code128',
         text: row.code,
@@ -71,16 +68,11 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Вставляем изображение в ячейку B (объединённая область)
+      // Вставляем картинку в ячейку B3 (колонка 2, строка row3)
       sheet.addImage(imageId, {
-        tl: { col: 1, row: row1.number - 1 },  // col 1 = B, row начала
-        ext: { width: 150, height: 60 },       // растягиваем на высоту трёх строк
+        tl: { col: 1, row: row3.number - 1 },   // col 1 = B, row начинается с 0
+        ext: { width: 140, height: 50 },
       });
-
-      // Устанавливаем высоту строк, чтобы соответствовать высоте изображения
-      row1.height = 25;
-      row2.height = 25;
-      row3.height = 25;
     }
 
     res.setHeader('Content-Disposition', 'attachment; filename=labels.xlsx');
