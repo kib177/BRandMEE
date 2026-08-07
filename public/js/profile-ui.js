@@ -20,7 +20,7 @@ function injectMenu() {
   `;
   headerInner.appendChild(menuContainer);
 
-  // Обработчики открытия/закрытия (без изменений)
+  // Обработчики открытия/закрытия
   const toggle = document.getElementById('menuToggle');
   const dropdown = document.getElementById('dropdownMenu');
 
@@ -60,9 +60,6 @@ function injectMenu() {
     dropdown.classList.add('hidden');
     openProfileModal();
   });
-
-  // Обновляем видимость пунктов меню при загрузке
-  updateMenuVisibility();
 }
 
 function openProfileModal() {
@@ -160,4 +157,10 @@ function openProfileModal() {
       errEl.style.display = 'block';
     }
   });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', injectMenu);
+} else {
+  injectMenu();
 }
