@@ -37,6 +37,8 @@
   font-size: 0.9rem;
   cursor: pointer;
   color: var(--text);
+  /* Убираем подчёркивание у ссылок в бургер-меню */
+  text-decoration: none;
 }
 
 .dropdown-item:hover {
