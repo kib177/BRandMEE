@@ -37,30 +37,33 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     sheet.getColumn(2).width = 35;
 
     for (const row of rows) {
-      const article = row.model || row.code;
+      const article = String(row.model || row.code);
       const codeLine = `Код материала: S${row.code}`;
-      const name = row.name;
+      const name = String(row.name || '');
 
-      // Три строки для одной позиции
-      const row1 = sheet.addRow([article, article]);             // A1, B1
-      const row2 = sheet.addRow([codeLine, codeLine]);           // A2, B2
-      const row3 = sheet.addRow([name, '']);                     // A3, B3 — текст только в A, в B будет штрихкод
+      // === Строка 1: Артикул ===
+      const row1 = sheet.addRow([article, article]);
+      row1.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+      row1.getCell(2).alignment = { vertical: 'middle', horizontal: 'left' };
+      row1.height = 18;
 
-      // Стилизация: выравнивание и минимальная высота
-      [row1, row2].forEach(r => {
-        r.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
-        r.getCell(2).alignment = { vertical: 'middle', horizontal: 'left' };
-        r.height = 18;
-      });
-      row3.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
-      row3.height = 65;  // третья строка выше для штрихкода
+      // === Строка 2: Код материала ===
+      const row2 = sheet.addRow([codeLine, codeLine]);
+      row2.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+      row2.getCell(2).alignment = { vertical: 'middle', horizontal: 'left' };
+      row2.height = 18;
 
-      // Генерируем штрихкод Code 128 (без подписи)
+      // === Строка 3: Название (колонка A) и штрихкод (колонка B) ===
+      const row3 = sheet.addRow([name, '']);
+      row3.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+      row3.height = 65;
+
+      // Генерируем штрихкод Code 128
       const pngBuffer = await bwipjs.toBuffer({
         bcid: 'code128',
-        text: row.code,
+        text: String(row.code),
         scale: 3,
-        height: 10,          // мм
+        height: 10,
         includetext: false,
         textxalign: 'center',
       });
@@ -70,11 +73,17 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Вставляем изображение в ячейку B3 (колонка 2, строка row3)
+      // Вставляем изображение строго в ячейку B3 текущего блока
+      // row3.number - 1, т.к. ExcelJS считает строки с 0 для изображений
       sheet.addImage(imageId, {
-        tl: { col: 1, row: row3.number - 1 },   // col 1 = B, row начинается с 0
+        tl: { col: 1, row: row3.number - 1 },
         ext: { width: 140, height: 50 },
+        editAs: 'oneCell',  // ← ключевое исправление: привязываем изображение к одной ячейке
       });
+
+      // === Пустая строка-разделитель между наклейками ===
+      const separator = sheet.addRow(['', '']);
+      separator.height = 8;
     }
 
     res.setHeader('Content-Disposition', 'attachment; filename=labels.xlsx');
