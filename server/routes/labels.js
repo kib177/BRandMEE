@@ -32,13 +32,13 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Наклейки');
 
-    // Ширина колонок (36 ≈ 252 пикселей)
+    // Ширина колонок (36 символов ≈ 252 пикселя)
     sheet.getColumn(1).width = 36;
     sheet.getColumn(2).width = 36;
 
     // Стили для текста
     const headerStyle = {
-      font: { bold: true, size: 10 },
+      font: { bold: true, size: 11 },
       alignment: { horizontal: 'center', vertical: 'middle', wrapText: true }
     };
 
@@ -89,7 +89,7 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
         extension: 'png',
       });
 
-      // Размеры изображения (ширина 170, высота 64 пикселя) – используем пиксели как есть (без EMU)
+      // Размеры изображения (ширина 170, высота 64 пикселя)
       const imgWidthPx = 170;
       const imgHeightPx = 64;
 
@@ -101,17 +101,17 @@ router.post('/generate', authMiddleware, requireRole('admin', 'moderator'), asyn
       const offsetX = Math.max(0, (cellWidthPx - imgWidthPx) / 2);   // ~41 px
       const offsetY = Math.max(0, (cellHeightPx - imgHeightPx) / 2); // ~1.75 px
 
-      // Вставляем изображение с центрированием (offsetX/offsetY заданы в пикселях)
+      // Вставляем изображение с центрированием (переводим пиксели в EMU: 1 px ≈ 9525 EMU для 96 dpi)
       sheet.addImage(imageId, {
         tl: {
           col: 1,
           row: row3.number - 1,
-          offsetX: Math.round(offsetX),   // 41 px (ExcelJS поймёт как пиксели)
-          offsetY: Math.round(offsetY)    // 2 px
+          offsetX: Math.round(offsetX * 9525),   // 41 * 9525 ≈ 390525 EMU
+          offsetY: Math.round(offsetY * 9525)    // 1.75 * 9525 ≈ 16669 EMU
         },
         ext: {
-          width: imgWidthPx,   // 170 px
-          height: imgHeightPx  // 64 px
+          width: Math.round(imgWidthPx * 9525),   // 170 * 9525 ≈ 1 619 250 EMU
+          height: Math.round(imgHeightPx * 9525)  // 64 * 9525 ≈ 609 600 EMU
         },
         editAs: 'oneCell',
       });
