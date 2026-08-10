@@ -15,6 +15,7 @@ function injectMenu() {
       <a href="/admin/mailing.html" class="dropdown-item" id="menuMailing" style="display:none;">📧 Рассылка</a>
       <a href="/labels.html" class="dropdown-item" id="menuLabels" style="display:none;">🏷️ Наклейки</a>
       <a href="/admin/directories.html" class="dropdown-item" id="menuDirectories" style="display:none;">📚 Справочники</a>
+      <a href="/reports_writeoffs.html" class="dropdown-item" id="menuReportsWriteoffs" style="display:none;">📊 Отчёт по списаниям</a>
     </div>
   `;
   headerInner.appendChild(menuContainer);
