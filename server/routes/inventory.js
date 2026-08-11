@@ -3,9 +3,9 @@ const router = express.Router();
 const pool = require('../db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const multer = require('multer');
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }
+const fileUpload = multer({
+  storage: storage,
+  limits: { fileSize: 20 * 1024 * 1024 }   
 });
 const XLSX = require('xlsx');
 const path = require('path');
@@ -187,12 +187,10 @@ router.get('/export-excel', authMiddleware, resolveDepartment, async (req, res) 
   }
 });
 
-// Загрузка файла для позиции
+// ---------- POST /files/:code (картинка) ----------
 router.post('/files/:code', authMiddleware, fileUpload.array('files', 5), async (req, res) => {
-  console.log('Получен запрос на загрузку файлов для кода:', req.params.code);
 console.log('Файлы:', req.files);
   try {
-    console.log('Начало обработки загрузки');
     const { code } = req.params;
     if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'Файлы не загружены' });
 
@@ -214,12 +212,11 @@ console.log('Файлы:', req.files);
     res.json({ ok: true, files: results });
   } catch (err) {
     res.status(500).json({ error: 'Ошибка загрузки файлов', details: err.message });
-    console.error('Ошибка загрузки файлов:', err);
     res.status(500).json({ error: 'Ошибка загрузки файлов' });
   }
 });
 
-// Получение списка файлов позиции
+// ---------- GET /files/:code (картинка) ----------
 router.get('/files/:code', async (req, res) => {
   try {
     const { code } = req.params;
@@ -235,7 +232,7 @@ router.get('/files/:code', async (req, res) => {
   }
 });
 
-// Удаление файла
+// ---------- DELETE /files/:code (картинка) ----------
 router.delete('/files/:code/:fileId', authMiddleware, async (req, res) => {
   try {
     const { code, fileId } = req.params;
@@ -253,9 +250,9 @@ router.delete('/files/:code/:fileId', authMiddleware, async (req, res) => {
 
     res.json({ ok: true });
   } catch (err) {
-    console.error('Ошибка удаления файла:', err);
-    res.status(500).json({ error: 'Ошибка удаления файла' });
-  }
+  console.error('Ошибка удаления файла:', err);
+  res.status(500).json({ error: 'Ошибка удаления файла' });
+}
 });
 
 // ---------- GET /:code (одна позиция) ----------
@@ -700,6 +697,15 @@ router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', '
   }
 });
 
+// Обработчик ошибок multer (например, файл слишком большой)
+router.use((err, req, res, next) => {
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ error: 'Файл слишком большой. Максимальный размер 20 МБ' });
+  }
+  // Другие ошибки
+  console.error('Multer error:', err);
+  res.status(500).json({ error: 'Ошибка загрузки файла' });
+});
 
 
 module.exports = router;
