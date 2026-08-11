@@ -2,7 +2,7 @@
   "name": "Склад электронных компонентов",
   "short_name": "Склад",
   "description": "Управление складом запчастей и списаниями",
-  "start_url": "/",
+  "start_url": "https://brandmee.site/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#f0f4f8",
