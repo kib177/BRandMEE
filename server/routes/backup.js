@@ -45,22 +45,17 @@ router.post('/restore', authMiddleware, requireRole('admin'), upload.single('fil
   if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
 
   const filePath = req.file.path;
-
-  const dbHost = process.env.DB_HOST || 'localhost';
-  const dbPort = process.env.DB_PORT || 5432;
   const dbName = process.env.DB_NAME || 'warehouse_db';
-  const dbUser = process.env.DB_USER || 'warehouse_admin';
-  const dbPassword = process.env.DB_PASSWORD || '';
 
-  const env = { ...process.env, PGPASSWORD: dbPassword };
-  // Восстановление из SQL-дампа (plain text)
-  const cmd = `psql -h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${dbName} -f ${filePath}`;
+  // Используем sudo, чтобы выполнить psql от имени postgres (суперпользователь)
+  const cmd = `sudo -u postgres psql -d ${dbName} -f ${filePath}`;
 
-  exec(cmd, { env }, (error, stdout, stderr) => {
+  exec(cmd, (error, stdout, stderr) => {
+    // Удаляем временный файл
     fs.unlink(filePath, () => {});
     if (error) {
       console.error('Ошибка восстановления:', stderr);
-      return res.status(500).json({ error: 'Ошибка восстановления базы данных' });
+      return res.status(500).json({ error: 'Ошибка восстановления: ' + stderr });
     }
     res.json({ ok: true, message: 'База данных успешно восстановлена' });
   });
