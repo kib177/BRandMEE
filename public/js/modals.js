@@ -195,7 +195,7 @@ async function loadFilesList(code) {
     if (!filesContainer) return;
 
     try {
-       const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
+       const res = await fetch(`/api/inventory/files/${encodeURIComponent(code)}`, {
     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
 });
         if (!res.ok) throw new Error('Ошибка загрузки списка файлов');
