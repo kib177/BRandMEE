@@ -17,12 +17,24 @@
         const err = await res.json();
         throw new Error(err.error || 'Ошибка');
       }
+      // Извлекаем имя файла из заголовка Content-Disposition
+      const contentDisposition = res.headers.get('Content-Disposition');
+      let filename = 'backup.sql'; // fallback
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (match && match[1]) {
+          filename = match[1].replace(/['"]/g, '');
+        }
+      }
+
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'backup.sql';
+      a.download = filename;   // используем имя от сервера
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
       status.textContent = 'Дамп скачан';
     } catch (e) {
