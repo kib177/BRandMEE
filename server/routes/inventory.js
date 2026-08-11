@@ -630,28 +630,30 @@ router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', '
 });
 
 // Загрузка файла для позиции
-router.post('/:code/files', authMiddleware, fileUpload.single('file'), async (req, res) => {
+router.post('/:code/files', authMiddleware, fileUpload.array('files', 5), async (req, res) => {
   try {
     const { code } = req.params;
-    if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
+    if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'Файлы не загружены' });
 
-    // Находим позицию и её отдел (любой отдел, куда есть доступ)
     const itemRes = await pool.query('SELECT department_id FROM inventory WHERE code = $1 LIMIT 1', [code]);
     if (itemRes.rows.length === 0) return res.status(404).json({ error: 'Позиция не найдена' });
 
     const departmentId = itemRes.rows[0].department_id;
+    const results = [];
 
-    // Сохраняем запись в БД
-    const result = await pool.query(
-      `INSERT INTO inventory_files (inventory_code, department_id, filename, original_name, mime_type, size)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-      [code, departmentId, req.file.filename, req.file.originalname, req.file.mimetype, req.file.size]
-    );
+    for (const file of req.files) {
+      const result = await pool.query(
+        `INSERT INTO inventory_files (inventory_code, department_id, filename, original_name, mime_type, size)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        [code, departmentId, file.filename, file.originalname, file.mimetype, file.size]
+      );
+      results.push({ id: result.rows[0].id, filename: file.filename });
+    }
 
-    res.json({ ok: true, fileId: result.rows[0].id, filename: req.file.filename });
+    res.json({ ok: true, files: results });
   } catch (err) {
-    console.error('Ошибка загрузки файла:', err);
-    res.status(500).json({ error: 'Ошибка загрузки файла' });
+    console.error('Ошибка загрузки файлов:', err);
+    res.status(500).json({ error: 'Ошибка загрузки файлов' });
   }
 });
 
