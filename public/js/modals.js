@@ -199,6 +199,7 @@ function showItemDetails(code) {
 }
 
 // Загрузка списка файлов для позиции
+// Загрузка списка файлов для позиции (без inline-обработчиков)
 async function loadFilesList(code) {
     const filesContainer = document.getElementById('filesList');
     if (!filesContainer) return;
@@ -225,17 +226,17 @@ async function loadFilesList(code) {
                 ? `<img src="${url}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 0.3rem; cursor: pointer;" onclick="window.open('${url}', '_blank')">`
                 : `<span style="font-size: 2rem; cursor: pointer;" onclick="window.open('${url}', '_blank')">📄</span>`;
 
+            // Кнопка удаления с data-атрибутами, без onclick
             return `<div style="display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.3rem;">
                 ${preview}
                 <span style="font-size: 0.8rem;">${f.original_name} (${formatSize(f.size)})</span>
-                <button class="btn-icon" title="Удалить" onclick="deleteFile('${code}', ${f.id})" style="color: red;">🗑️</button>
+                <button class="btn-icon delete-file-btn" data-code="${code}" data-file-id="${f.id}" title="Удалить" style="color: red;">🗑️</button>
             </div>`;
         }).join('');
     } catch (e) {
         filesContainer.innerHTML = '<span style="color: red;">Ошибка загрузки файлов</span>';
     }
 }
-
 // Удаление файла
 async function deleteFile(code, fileId) {
     if (!confirm('Удалить файл?')) return;
@@ -316,3 +317,15 @@ function fetchPartInfo(model, name) {
     const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}+datasheet`;
     window.open(googleUrl, '_blank');
 }
+
+// Глобальный обработчик удаления файлов (без inline‑событий)
+document.addEventListener('click', (e) => {
+    const deleteBtn = e.target.closest('.delete-file-btn');
+    if (!deleteBtn) return;
+
+    const code = deleteBtn.dataset.code;
+    const fileId = deleteBtn.dataset.fileId;
+    if (code && fileId) {
+        deleteFile(code, fileId);
+    }
+});
