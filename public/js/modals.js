@@ -198,7 +198,6 @@ function showItemDetails(code) {
     $('#viewModalOverlay').classList.remove('hidden');
 }
 
-// Загрузка списка файлов для позиции
 // Загрузка списка файлов для позиции (без inline-обработчиков)
 async function loadFilesList(code) {
     const filesContainer = document.getElementById('filesList');
@@ -223,8 +222,8 @@ async function loadFilesList(code) {
             const isImage = f.mime_type?.startsWith('image/');
             const url = `/uploads/${f.filename}`;
             const preview = isImage
-                ? `<img src="${url}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 0.3rem; cursor: pointer;" onclick="window.open('${url}', '_blank')">`
-                : `<span style="font-size: 2rem; cursor: pointer;" onclick="window.open('${url}', '_blank')">📄</span>`;
+                ? `<img src="${url}" class="file-thumbnail" data-url="${url}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 0.3rem; cursor: pointer;">`
+                : `<span class="file-thumbnail" data-url="${url}" style="font-size: 2rem; cursor: pointer;">📄</span>`;
 
             // Кнопка удаления с data-атрибутами, без onclick
             return `<div style="display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.3rem;">
@@ -237,6 +236,63 @@ async function loadFilesList(code) {
         filesContainer.innerHTML = '<span style="color: red;">Ошибка загрузки файлов</span>';
     }
 }
+
+// Глобальный обработчик кликов: удаление файлов и открытие превью
+document.addEventListener('click', (e) => {
+    // Удаление файла
+    const deleteBtn = e.target.closest('.delete-file-btn');
+    if (deleteBtn) {
+        const code = deleteBtn.dataset.code;
+        const fileId = deleteBtn.dataset.fileId;
+        if (code && fileId) {
+            deleteFile(code, fileId);
+        }
+    }
+
+    // Открытие превью для изображений
+    const thumbnail = e.target.closest('.file-thumbnail');
+    if (thumbnail) {
+        const url = thumbnail.dataset.url;
+        if (url) {
+            // Проверяем, что это изображение (если нет, просто откроем в новой вкладке)
+            const isImage = thumbnail.tagName === 'IMG';
+            if (isImage) {
+                openImageViewer(url);
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+    }
+});
+
+// Функция для открытия полноэкранного просмотра изображения
+function openImageViewer(src) {
+    // Удаляем старый просмотрщик, если есть
+    const oldOverlay = document.getElementById('imageViewerOverlay');
+    if (oldOverlay) oldOverlay.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'imageViewerOverlay';
+    overlay.className = 'modal-overlay';
+    overlay.style.cssText = 'display: flex; align-items: center; justify-content: center; z-index: 1000;';
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = 'max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);';
+
+    overlay.appendChild(img);
+    document.body.appendChild(overlay);
+
+    // Закрытие по клику на оверлей или по Escape
+    overlay.addEventListener('click', () => overlay.remove());
+    document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    });
+}
+
 // Удаление файла
 async function deleteFile(code, fileId) {
     if (!confirm('Удалить файл?')) return;
@@ -256,7 +312,7 @@ async function deleteFile(code, fileId) {
             }
             throw new Error(message);
         }
-        loadFilesList(code); // обновляем список
+        loadFilesList(code);
     } catch (e) {
         alert('Ошибка: ' + e.message);
     }
@@ -317,15 +373,3 @@ function fetchPartInfo(model, name) {
     const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}+datasheet`;
     window.open(googleUrl, '_blank');
 }
-
-// Глобальный обработчик удаления файлов (без inline‑событий)
-document.addEventListener('click', (e) => {
-    const deleteBtn = e.target.closest('.delete-file-btn');
-    if (!deleteBtn) return;
-
-    const code = deleteBtn.dataset.code;
-    const fileId = deleteBtn.dataset.fileId;
-    if (code && fileId) {
-        deleteFile(code, fileId);
-    }
-});
