@@ -157,37 +157,40 @@ function showItemDetails(code) {
 
     // Обработчик выбора файлов
     document.getElementById('fileInput').addEventListener('change', async (e) => {
-        const files = e.target.files;
-        if (!files.length) return;
+        const fileInput = document.getElementById('fileInput');
+// Удаляем старый обработчик, если он был
+const newInput = fileInput.cloneNode(true);
+fileInput.parentNode.replaceChild(newInput, fileInput);
 
-        const status = document.getElementById('uploadStatus');
-        status.textContent = 'Загрузка...';
+newInput.addEventListener('change', async (e) => {
+    const files = e.target.files;
+    if (!files.length) return;
 
-        const formData = new FormData();
-        for (let file of files) {
-            formData.append('files', file);
+    const status = document.getElementById('uploadStatus');
+    status.textContent = 'Загрузка...';
+
+    const formData = new FormData();
+    for (let file of files) {
+        formData.append('files', file);
+    }
+
+    try {
+        const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: formData
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Ошибка загрузки');
         }
-
-        try {
-            const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-    body: formData
+        status.textContent = 'Файлы загружены';
+        loadFilesList(item.code);
+    } catch (err) {
+        status.textContent = 'Ошибка: ' + err.message;
+    }
+    e.target.value = '';
 });
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || 'Ошибка загрузки');
-            }
-            status.textContent = 'Файлы загружены';
-            loadFilesList(item.code); // обновляем список
-        } catch (err) {
-            status.textContent = 'Ошибка: ' + err.message;
-        }
-        e.target.value = ''; // сбрасываем input
-    });
-
-    $('#viewModalOverlay').classList.remove('hidden');
-}
 
 // Загрузка списка файлов для позиции
 async function loadFilesList(code) {
