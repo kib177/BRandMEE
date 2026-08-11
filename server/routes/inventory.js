@@ -630,4 +630,69 @@ router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', '
   }
 });
 
+// Загрузка файла для позиции
+router.post('/:code/files', authMiddleware, fileUpload.single('file'), async (req, res) => {
+  try {
+    const { code } = req.params;
+    if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
+
+    // Находим позицию и её отдел (любой отдел, куда есть доступ)
+    const itemRes = await pool.query('SELECT department_id FROM inventory WHERE code = $1 LIMIT 1', [code]);
+    if (itemRes.rows.length === 0) return res.status(404).json({ error: 'Позиция не найдена' });
+
+    const departmentId = itemRes.rows[0].department_id;
+
+    // Сохраняем запись в БД
+    const result = await pool.query(
+      `INSERT INTO inventory_files (inventory_code, department_id, filename, original_name, mime_type, size)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [code, departmentId, req.file.filename, req.file.originalname, req.file.mimetype, req.file.size]
+    );
+
+    res.json({ ok: true, fileId: result.rows[0].id, filename: req.file.filename });
+  } catch (err) {
+    console.error('Ошибка загрузки файла:', err);
+    res.status(500).json({ error: 'Ошибка загрузки файла' });
+  }
+});
+
+// Получение списка файлов позиции
+router.get('/:code/files', async (req, res) => {
+  try {
+    const { code } = req.params;
+    const files = await pool.query(
+      `SELECT id, filename, original_name, mime_type, size, created_at 
+       FROM inventory_files WHERE inventory_code = $1 ORDER BY created_at DESC`,
+      [code]
+    );
+    res.json(files.rows);
+  } catch (err) {
+    console.error('Ошибка получения файлов:', err);
+    res.status(500).json({ error: 'Ошибка получения файлов' });
+  }
+});
+
+// Удаление файла
+router.delete('/:code/files/:fileId', authMiddleware, async (req, res) => {
+  try {
+    const { code, fileId } = req.params;
+    
+    // Находим файл
+    const fileRes = await pool.query('SELECT * FROM inventory_files WHERE id = $1 AND inventory_code = $2', [fileId, code]);
+    if (fileRes.rows.length === 0) return res.status(404).json({ error: 'Файл не найден' });
+
+    // Удаляем физический файл
+    const filePath = path.join(__dirname, '..', '..', 'public', 'uploads', fileRes.rows[0].filename);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    // Удаляем запись из БД
+    await pool.query('DELETE FROM inventory_files WHERE id = $1', [fileId]);
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Ошибка удаления файла:', err);
+    res.status(500).json({ error: 'Ошибка удаления файла' });
+  }
+});
+
 module.exports = router;
