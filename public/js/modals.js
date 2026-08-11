@@ -255,7 +255,7 @@ async function deleteFile(code, fileId) {
             }
             throw new Error(message);
         }
-        loadFilesList(code);
+        loadFilesList(code); // обновляем список
     } catch (e) {
         alert('Ошибка: ' + e.message);
     }
