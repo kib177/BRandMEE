@@ -7,25 +7,28 @@ const sharp = require('sharp');
 const pool = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 
-// Настройка временного хранилища (файл сначала сохраняется, потом обрабатывается)
-const upload = multer({
-  dest: path.join(__dirname, '..', 'public', 'uploads', 'temp'),
-  limits: { fileSize: 20 * 1024 * 1024 } // 20 МБ
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  }
 });
 
-// Готовим папки
-const tempDir = path.join(__dirname, '..', 'public', 'uploads', 'temp');
-const finalDir = path.join(__dirname, '..', 'public', 'uploads');
-fs.mkdirSync(tempDir, { recursive: true });
-fs.mkdirSync(finalDir, { recursive: true });
+const upload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } });
 
-// Логирование
 router.use((req, res, next) => {
   console.log('[INVENTORY-FILES]', req.method, req.path);
   next();
 });
 
-// Загрузка файлов
 router.post('/:code', authMiddleware, upload.array('files', 5), async (req, res) => {
   try {
     const { code } = req.params;
@@ -44,35 +47,28 @@ router.post('/:code', authMiddleware, upload.array('files', 5), async (req, res)
     const results = [];
 
     for (const file of req.files) {
-      const originalExt = path.extname(file.originalname).toLowerCase();
-      let finalFilename;
+      let finalFilename = file.filename;
       let mimeType = file.mimetype;
       let fileSize = file.size;
-      const finalPath = path.join(finalDir, file.filename + '.jpg'); // всегда jpg после сжатия
 
-      // Сжимаем изображения, остальные файлы просто перемещаем
       if (file.mimetype.startsWith('image/')) {
+        const compressedFilename = file.filename + '.jpg';
+        const compressedPath = path.join(path.dirname(file.path), compressedFilename);
+
         try {
           await sharp(file.path)
             .resize({ width: 1920, height: 1920, fit: 'inside', withoutEnlargement: true })
             .jpeg({ quality: 80 })
-            .toFile(finalPath);
-          
-          fileSize = fs.statSync(finalPath).size;
+            .toFile(compressedPath);
+
+          fs.unlinkSync(file.path);
+
+          finalFilename = compressedFilename;
           mimeType = 'image/jpeg';
-          finalFilename = file.filename + '.jpg';
-          fs.unlinkSync(file.path); // удаляем временный файл
+          fileSize = fs.statSync(compressedPath).size;
         } catch (err) {
-          console.error('Ошибка сжатия файла:', err);
-          // Если сжатие не удалось, просто перемещаем оригинал
-          fs.renameSync(file.path, path.join(finalDir, file.filename));
-          finalFilename = file.filename;
-          // используем оригинальные mimeType и size
+          console.error('Ошибка сжатия:', err);
         }
-      } else {
-        // Для не-изображений просто перемещаем
-        fs.renameSync(file.path, path.join(finalDir, file.filename));
-        finalFilename = file.filename;
       }
 
       const result = await pool.query(
@@ -91,7 +87,6 @@ router.post('/:code', authMiddleware, upload.array('files', 5), async (req, res)
   }
 });
 
-// Получение списка файлов
 router.get('/:code', async (req, res) => {
   try {
     const { code } = req.params;
@@ -107,18 +102,15 @@ router.get('/:code', async (req, res) => {
   }
 });
 
-// Удаление файла
 router.delete('/:code/:fileId', authMiddleware, async (req, res) => {
   try {
     const { code, fileId } = req.params;
-    console.log('DELETE file:', code, fileId);
-
     const fileRes = await pool.query('SELECT * FROM inventory_files WHERE id = $1 AND inventory_code = $2', [fileId, code]);
     if (fileRes.rows.length === 0) {
       return res.status(404).json({ error: 'Файл не найден' });
     }
 
-    const filePath = path.join(finalDir, fileRes.rows[0].filename);
+    const filePath = path.join(__dirname, '..', 'public', 'uploads', fileRes.rows[0].filename);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
