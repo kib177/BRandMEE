@@ -167,7 +167,18 @@ function showItemDetails(code) {
 
         const formData = new FormData();
         for (let file of files) {
-            formData.append('files', file);
+            // Сжимаем изображения перед отправкой
+            if (file.type.startsWith('image/')) {
+                try {
+                    const compressed = await compressImage(file, 1920, 0.7);
+                    formData.append('files', compressed, file.name);
+                } catch (err) {
+                    // Если сжатие не удалось, отправляем оригинал
+                    formData.append('files', file);
+                }
+            } else {
+                formData.append('files', file);
+            }
         }
 
         try {
@@ -196,6 +207,42 @@ function showItemDetails(code) {
     });
 
     $('#viewModalOverlay').classList.remove('hidden');
+}
+
+// Сжатие изображения через Canvas
+function compressImage(file, maxWidthOrHeight, quality) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
+                if (width > height) {
+                    height *= maxWidthOrHeight / width;
+                    width = maxWidthOrHeight;
+                } else {
+                    width *= maxWidthOrHeight / height;
+                    height = maxWidthOrHeight;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    resolve(blob);
+                } else {
+                    reject(new Error('Canvas toBlob failed'));
+                }
+            }, 'image/jpeg', quality);
+        };
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+    });
 }
 
 // Загрузка списка файлов для позиции (без inline-обработчиков)
