@@ -228,7 +228,7 @@ async function loadFilesList(code) {
 async function deleteFile(code, fileId) {
     if (!confirm('Удалить файл?')) return;
     try {
-        const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
+        const res = await fetch(`/api/inventory/files/${encodeURIComponent(code)}/${fileId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
