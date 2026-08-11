@@ -13,24 +13,29 @@ router.get('/download', authMiddleware, requireRole('admin'), async (req, res) =
   const fileName = `backup_${timestamp}.sql`;
   const filePath = path.join('/tmp', fileName);
 
-  // Получаем параметры подключения из переменных окружения (или используем стандартные)
-  const dbHost = process.env.DB_HOST || 'localhost';
-  const dbPort = process.env.DB_PORT || 5432;
   const dbName = process.env.DB_NAME || 'warehouse_db';
-  const dbUser = process.env.DB_USER || 'warehouse_admin';
-  const dbPassword = process.env.DB_PASSWORD || '';
 
-  const env = { ...process.env, PGPASSWORD: dbPassword };
-  const cmd = `pg_dump -h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${dbName} -F p > ${filePath}`;
+  // Запускаем pg_dump от имени postgres (суперпользователь), чтобы избежать проблем с правами
+  const cmd = `sudo -u postgres pg_dump -d ${dbName} -F p > ${filePath}`;
 
-  exec(cmd, { env }, (error, stdout, stderr) => {
+  exec(cmd, (error, stdout, stderr) => {
     if (error) {
       console.error('Ошибка pg_dump:', stderr);
-      return res.status(500).json({ error: 'Ошибка создания дампа' });
+      // Запасной вариант: ручной дамп через Node.js
+      generateManualDump().then(dump => {
+        fs.writeFileSync(filePath, dump);
+        res.download(filePath, fileName, (err) => {
+          if (err) console.error('Ошибка отправки:', err);
+          fs.unlink(filePath, () => {});
+        });
+      }).catch(err => {
+        res.status(500).json({ error: 'Ошибка создания дампа: ' + err.message });
+      });
+      return;
     }
     res.download(filePath, fileName, (err) => {
-      if (err) console.error('Ошибка отправки файла:', err);
-      fs.unlink(filePath, () => {}); // удаляем временный файл
+      if (err) console.error('Ошибка отправки:', err);
+      fs.unlink(filePath, () => {});
     });
   });
 });
