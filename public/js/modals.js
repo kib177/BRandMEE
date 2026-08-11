@@ -169,11 +169,11 @@ function showItemDetails(code) {
         }
 
         try {
-            const res = await fetch(`/api/inventory/files/${code}`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-                body: formData
-            });
+            const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+    body: formData
+});
             if (!res.ok) {
                 const err = await res.json();
                 throw new Error(err.error || 'Ошибка загрузки');
