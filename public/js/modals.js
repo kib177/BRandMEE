@@ -170,7 +170,7 @@ function showItemDetails(code) {
             // Сжимаем изображения перед отправкой
             if (file.type.startsWith('image/')) {
                 try {
-                    const compressed = await compressImage(file, 1920, 0.7);
+                    const compressed = await compressImage(file, 1920, 0.8);
                     formData.append('files', compressed, file.name);
                 } catch (err) {
                     // Если сжатие не удалось, отправляем оригинал
@@ -209,7 +209,7 @@ function showItemDetails(code) {
     $('#viewModalOverlay').classList.remove('hidden');
 }
 
-// Сжатие изображения через Canvas
+// Сжатие изображения через Canvas (dataURL -> Blob)
 function compressImage(file, maxWidthOrHeight, quality) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -232,13 +232,16 @@ function compressImage(file, maxWidthOrHeight, quality) {
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
-            canvas.toBlob((blob) => {
-                if (blob) {
-                    resolve(blob);
-                } else {
-                    reject(new Error('Canvas toBlob failed'));
-                }
-            }, 'image/jpeg', quality);
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            const byteString = atob(dataUrl.split(',')[1]);
+            const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+            const blob = new Blob([ab], { type: mimeString });
+            resolve(blob);
         };
         img.onerror = reject;
         img.src = URL.createObjectURL(file);
