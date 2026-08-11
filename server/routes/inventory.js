@@ -3,13 +3,13 @@ const router = express.Router();
 const pool = require('../db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const multer = require('multer');
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 20 * 1024 * 1024 }   
-});
 const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
+const upload = multer({ // для таблиц
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
 
 // Настройка хранилища для загрузок
 const storage = multer.diskStorage({
@@ -27,9 +27,9 @@ const storage = multer.diskStorage({
   }
 });
 
-const fileUpload = multer({ 
+const fileUpload = multer({ // для файлов
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10 МБ
+  limits: { fileSize: 20 * 1024 * 1024 } // 20 МБ
 });
 
 // ---------- Вспомогательные функции ----------
