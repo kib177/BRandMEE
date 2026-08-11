@@ -169,7 +169,7 @@ function showItemDetails(code) {
         }
 
         try {
-            const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
+            const res = await fetch(`/api/inventory/files/${code}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: formData
