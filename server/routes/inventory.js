@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const multer = require('multer');
-const fileUpload = multer({
+const upload = multer({
   storage: storage,
   limits: { fileSize: 20 * 1024 * 1024 }   
 });
