@@ -119,4 +119,16 @@ router.delete('/:code/:fileId', authMiddleware, async (req, res) => {
   }
 });
 
+// Обработчик ошибок multer (например, файл слишком большой)
+router.use((err, req, res, next) => {
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ error: 'Файл слишком большой. Максимальный размер 20 МБ' });
+  }
+  if (err.name === 'MulterError') {
+    return res.status(400).json({ error: err.message });
+  }
+  console.error('Необработанная ошибка в роуте инвентаря:', err);
+  res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+});
+
 module.exports = router;
