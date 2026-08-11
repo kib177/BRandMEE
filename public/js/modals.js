@@ -169,7 +169,7 @@ function showItemDetails(code) {
         }
 
         try {
-            const res = await fetch(`/api/inventory/${encodeURIComponent(item.code)}/files`, {
+            const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                 body: formData
@@ -195,7 +195,7 @@ async function loadFilesList(code) {
     if (!filesContainer) return;
 
     try {
-       const res = await fetch(`/api/inventory/files/${encodeURIComponent(code)}`, {
+       const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
 });
         if (!res.ok) throw new Error('Ошибка загрузки списка файлов');
@@ -228,7 +228,7 @@ async function loadFilesList(code) {
 async function deleteFile(code, fileId) {
     if (!confirm('Удалить файл?')) return;
     try {
-        const res = await fetch(`/api/inventory/${encodeURIComponent(code)}/files/${fileId}`, {
+        const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
