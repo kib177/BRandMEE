@@ -9,7 +9,7 @@ const upload = multer({ dest: '/tmp/' });
 
 // Скачивание дампа
 router.get('/download', authMiddleware, requireRole('admin'), async (req, res) => {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); 
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); // 2026-08-11T10-30-00-000Z
   const fileName = `backup_${timestamp}.sql`;
   const filePath = path.join('/tmp', fileName);
 
@@ -33,6 +33,7 @@ router.get('/download', authMiddleware, requireRole('admin'), async (req, res) =
       });
       return;
     }
+    console.log('Отправляю файл с именем:', fileName);
     res.download(filePath, fileName, (err) => {
       if (err) console.error('Ошибка отправки:', err);
       fs.unlink(filePath, () => {});
