@@ -27,9 +27,9 @@ const storage = multer.diskStorage({
   }
 });
 
-const fileUpload = multer({ // для файлов
+const fileUpload = multer({
   storage: storage,
-  limits: { fileSize: 50 * 1024 * 1024 } // 20 МБ
+  limits: { fileSize: 20 * 1024 * 1024 } // 20 МБ
 });
 
 // ---------- Вспомогательные функции ----------
@@ -188,14 +188,18 @@ router.get('/export-excel', authMiddleware, resolveDepartment, async (req, res) 
 });
 
 // ---------- POST /files/:code (картинка) ----------
+// Загрузка файлов
 router.post('/files/:code', authMiddleware, fileUpload.array('files', 5), async (req, res) => {
-console.log('Файлы:', req.files);
   try {
     const { code } = req.params;
-    if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'Файлы не загружены' });
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'Файлы не выбраны' });
+    }
 
     const itemRes = await pool.query('SELECT department_id FROM inventory WHERE code = $1 LIMIT 1', [code]);
-    if (itemRes.rows.length === 0) return res.status(404).json({ error: 'Позиция не найдена' });
+    if (itemRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Позиция не найдена' });
+    }
 
     const departmentId = itemRes.rows[0].department_id;
     const results = [];
@@ -211,7 +215,7 @@ console.log('Файлы:', req.files);
 
     res.json({ ok: true, files: results });
   } catch (err) {
-    res.status(500).json({ error: 'Ошибка загрузки файлов', details: err.message });
+    console.error('Ошибка загрузки файлов:', err);
     res.status(500).json({ error: 'Ошибка загрузки файлов' });
   }
 });
@@ -236,23 +240,24 @@ router.get('/files/:code', async (req, res) => {
 router.delete('/files/:code/:fileId', authMiddleware, async (req, res) => {
   try {
     const { code, fileId } = req.params;
-    
-    // Находим файл
+
     const fileRes = await pool.query('SELECT * FROM inventory_files WHERE id = $1 AND inventory_code = $2', [fileId, code]);
-    if (fileRes.rows.length === 0) return res.status(404).json({ error: 'Файл не найден' });
+    if (fileRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Файл не найден' });
+    }
 
-    // Удаляем физический файл
     const filePath = path.join(__dirname, '..', '..', 'public', 'uploads', fileRes.rows[0].filename);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
 
-    // Удаляем запись из БД
     await pool.query('DELETE FROM inventory_files WHERE id = $1', [fileId]);
 
     res.json({ ok: true });
   } catch (err) {
-  console.error('Ошибка удаления файла:', err);
-  res.status(500).json({ error: 'Ошибка удаления файла' });
-}
+    console.error('Ошибка удаления файла:', err);
+    res.status(500).json({ error: 'Ошибка удаления файла' });
+  }
 });
 
 // ---------- GET /:code (одна позиция) ----------
@@ -702,9 +707,11 @@ router.use((err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({ error: 'Файл слишком большой. Максимальный размер 20 МБ' });
   }
-  // Другие ошибки
-  console.error('Multer error:', err);
-  res.status(500).json({ error: 'Ошибка загрузки файла' });
+  if (err.name === 'MulterError') {
+    return res.status(400).json({ error: err.message });
+  }
+  console.error('Необработанная ошибка в роуте инвентаря:', err);
+  res.status(500).json({ error: 'Внутренняя ошибка сервера' });
 });
 
 
