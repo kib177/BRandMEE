@@ -36,7 +36,6 @@ async function openEditModal(code) {
     const item = inventory.find(i => i.code === code);
     if (!item) return;
 
-    // Получаем полные данные с сервера, чтобы узнать привязанные оборудования
     let equipmentIds = [];
     try {
         const res = await fetch(`/api/inventory/${encodeURIComponent(code)}`);
@@ -61,7 +60,6 @@ async function openEditModal(code) {
     setVal('formModel', item.model);
     setSelectWithFallback('formType', item.type_id, item.type_name);
 
-    // Устанавливаем выбранные оборудования в мультиселект
     const equipSelect = document.getElementById('formEquipments');
     if (equipSelect) {
         for (const opt of equipSelect.options) {
@@ -93,7 +91,7 @@ async function submitForm(e) {
         name: getVal('formName').trim(),
         model: getVal('formModel').trim(),
         type_id: getVal('formType') || null,
-        equipment_ids: selectedEquipmentIds,          // ← передаём массив
+        equipment_ids: selectedEquipmentIds,
         location: getVal('formLocation').trim(),
         unit: getVal('formUnit') || 'ШТ',
         quantity: parseFloat((getVal('formQty') || '0').replace(',', '.')),
@@ -155,8 +153,12 @@ function showItemDetails(code) {
     // Загружаем список файлов
     loadFilesList(item.code);
 
-    // Обработчик выбора файлов
-    document.getElementById('fileInput').addEventListener('change', async (e) => {
+    // Полностью заменяем fileInput, чтобы избежать дублирования обработчиков
+    const oldFileInput = document.getElementById('fileInput');
+    const newFileInput = oldFileInput.cloneNode(true);
+    oldFileInput.parentNode.replaceChild(newFileInput, oldFileInput);
+
+    newFileInput.addEventListener('change', async (e) => {
         const files = e.target.files;
         if (!files.length) return;
 
@@ -170,34 +172,45 @@ function showItemDetails(code) {
 
         try {
             const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-    body: formData
-});
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                body: formData
+            });
             if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || 'Ошибка загрузки');
+                const text = await res.text();
+                let message;
+                try {
+                    const err = JSON.parse(text);
+                    message = err.error || 'Ошибка загрузки';
+                } catch {
+                    message = text || 'Ошибка загрузки';
+                }
+                throw new Error(message);
             }
             status.textContent = 'Файлы загружены';
-            loadFilesList(item.code); // обновляем список
+            loadFilesList(item.code);
         } catch (err) {
             status.textContent = 'Ошибка: ' + err.message;
         }
-        e.target.value = ''; // сбрасываем input
+        e.target.value = '';
     });
 
     $('#viewModalOverlay').classList.remove('hidden');
 }
+
 // Загрузка списка файлов для позиции
 async function loadFilesList(code) {
     const filesContainer = document.getElementById('filesList');
     if (!filesContainer) return;
 
     try {
-       const res = await fetch(`/api/inventory/files/${encodeURIComponent(code)}`, {
-    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-});
-        if (!res.ok) throw new Error('Ошибка загрузки списка файлов');
+        const res = await fetch(`/api/inventory/files/${encodeURIComponent(code)}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || 'Ошибка загрузки списка файлов');
+        }
         const files = await res.json();
 
         if (!files.length) {
@@ -232,10 +245,17 @@ async function deleteFile(code, fileId) {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || 'Ошибка удаления');
+            const text = await res.text();
+            let message;
+            try {
+                const err = JSON.parse(text);
+                message = err.error || 'Ошибка удаления';
+            } catch {
+                message = text || 'Ошибка удаления';
+            }
+            throw new Error(message);
         }
-        loadFilesList(code); // обновляем список
+        loadFilesList(code);
     } catch (e) {
         alert('Ошибка: ' + e.message);
     }
@@ -246,6 +266,7 @@ function formatSize(bytes) {
     const kb = bytes / 1024;
     return kb < 1024 ? `${kb.toFixed(1)} KB` : `${(kb / 1024).toFixed(1)} MB`;
 }
+
 // ========== МОДАЛКИ ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ ==========
 let pendingDeleteCode = null;
 
@@ -288,6 +309,7 @@ function setSelectWithFallback(selectId, valueId, valueName) {
         selectEl.value = valueId;
     }
 }
+
 // Поиск информации о запчасти (открывает Google)
 function fetchPartInfo(model, name) {
     const searchTerm = (model && model.trim()) ? model.trim() : name;
