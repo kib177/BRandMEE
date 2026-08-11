@@ -188,7 +188,7 @@ router.get('/export-excel', authMiddleware, resolveDepartment, async (req, res) 
 });
 
 // Загрузка файла для позиции
-router.post('/:code/files', authMiddleware, fileUpload.array('files', 5), async (req, res) => {
+router.post('/files/:code', authMiddleware, fileUpload.array('files', 5), async (req, res) => {
   try {
     const { code } = req.params;
     if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'Файлы не загружены' });
@@ -216,7 +216,7 @@ router.post('/:code/files', authMiddleware, fileUpload.array('files', 5), async 
 });
 
 // Получение списка файлов позиции
-router.get('/:code/files', async (req, res) => {
+router.get('/files/:code', async (req, res) => {
   try {
     const { code } = req.params;
     const files = await pool.query(
@@ -232,7 +232,7 @@ router.get('/:code/files', async (req, res) => {
 });
 
 // Удаление файла
-router.delete('/:code/files/:fileId', authMiddleware, async (req, res) => {
+router.delete('/files/:code/:fileId', authMiddleware, async (req, res) => {
   try {
     const { code, fileId } = req.params;
     
