@@ -189,7 +189,10 @@ router.get('/export-excel', authMiddleware, resolveDepartment, async (req, res) 
 
 // Загрузка файла для позиции
 router.post('/files/:code', authMiddleware, fileUpload.array('files', 5), async (req, res) => {
+  console.log('Получен запрос на загрузку файлов для кода:', req.params.code);
+console.log('Файлы:', req.files);
   try {
+    console.log('Начало обработки загрузки');
     const { code } = req.params;
     if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'Файлы не загружены' });
 
@@ -210,6 +213,7 @@ router.post('/files/:code', authMiddleware, fileUpload.array('files', 5), async 
 
     res.json({ ok: true, files: results });
   } catch (err) {
+    res.status(500).json({ error: 'Ошибка загрузки файлов', details: err.message });
     console.error('Ошибка загрузки файлов:', err);
     res.status(500).json({ error: 'Ошибка загрузки файлов' });
   }
