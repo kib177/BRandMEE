@@ -166,6 +166,9 @@ function updateMenuVisibility() {
   const role = currentUser?.role;
   if (!role) return;
 
+  const backupLink = document.getElementById('menuBackup');
+  if (backupLink) backupLink.style.display = (role === 'admin') ? 'block' : 'none';
+
   const usersLink = document.getElementById('menuUsers');
   if (usersLink) usersLink.style.display = (role === 'admin') ? 'block' : 'none';
 
