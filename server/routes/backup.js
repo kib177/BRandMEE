@@ -9,7 +9,7 @@ const upload = multer({ dest: '/tmp/' });
 
 // Скачивание дампа
 router.get('/download', authMiddleware, requireRole('admin'), async (req, res) => {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); 
   const fileName = `backup_${timestamp}.sql`;
   const filePath = path.join('/tmp', fileName);
 
