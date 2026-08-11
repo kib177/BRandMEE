@@ -55,6 +55,14 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/labels', require('./routes/labels'));
 app.use('/api/backup', require('./routes/backup'));
 
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), {
+  setHeaders: (res, filePath) => {
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.jpg' || ext === '.jpeg') res.setHeader('Content-Type', 'image/jpeg');
+    else if (ext === '.png') res.setHeader('Content-Type', 'image/png');
+    else if (ext === '.webp') res.setHeader('Content-Type', 'image/webp');
+  }
+}));
 
 // Статические файлы (фронтенд)
 app.use(express.static(path.join(__dirname, '..', 'public')));
