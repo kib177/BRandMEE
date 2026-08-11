@@ -170,7 +170,7 @@ function showItemDetails(code) {
             // Сжимаем изображения перед отправкой
             if (file.type.startsWith('image/')) {
                 try {
-                    const compressed = await compressImage(file, 1920, 0.8);
+                    const compressed = await compressImage(file, 1600, 0.5);
                     formData.append('files', compressed, file.name);
                 } catch (err) {
                     // Если сжатие не удалось, отправляем оригинал
