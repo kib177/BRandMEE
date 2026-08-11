@@ -164,6 +164,25 @@ router.patch('/:id', authMiddleware, requireRole('admin', 'moderator', 'storekee
       await pool.query('UPDATE write_offs SET status = $1, resolved_at = CURRENT_TIMESTAMP WHERE id = $2', [status, req.params.id]);
     }
 
+    // Если в заявке указано оборудование, добавляем его в связи запчасти (many-to-many)
+if (writeOff.equipment_id) {
+  try {
+    const existingLink = await pool.query(
+      'SELECT 1 FROM inventory_equipment WHERE inventory_code = $1 AND department_id = $2 AND equipment_id = $3',
+      [writeOff.item_code, writeOff.department_id, writeOff.equipment_id]
+    );
+    if (existingLink.rows.length === 0) {
+      await pool.query(
+        'INSERT INTO inventory_equipment (inventory_code, department_id, equipment_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+        [writeOff.item_code, writeOff.department_id, writeOff.equipment_id]
+      );
+      console.log(`Оборудование ${writeOff.equipment_id} добавлено к запчасти ${writeOff.item_code}`);
+    }
+  } catch (err) {
+    console.error('Ошибка при добавлении оборудования к запчасти:', err);
+  }
+}
+
     res.json({ ok: true });
     
   } catch (err) {
