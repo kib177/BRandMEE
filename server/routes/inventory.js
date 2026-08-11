@@ -11,27 +11,6 @@ const upload = multer({ // для таблиц
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 
-// Настройка хранилища для загрузок
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-  }
-});
-
-const fileUpload = multer({
-  storage: storage,
-  limits: { fileSize: 20 * 1024 * 1024 } // 20 МБ
-});
-
 // ---------- Вспомогательные функции ----------
 async function getOrCreateTypeId(typeName) {
   if (!typeName || !typeName.trim()) return null;
@@ -184,79 +163,6 @@ router.get('/export-excel', authMiddleware, resolveDepartment, async (req, res) 
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Ошибка экспорта Excel' });
-  }
-});
-
-// ---------- POST /files/:code (картинка) ----------
-// Загрузка файлов
-router.post('/files/:code', authMiddleware, fileUpload.array('files', 5), async (req, res) => {
-  try {
-    const { code } = req.params;
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'Файлы не выбраны' });
-    }
-
-    const itemRes = await pool.query('SELECT department_id FROM inventory WHERE code = $1 LIMIT 1', [code]);
-    if (itemRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Позиция не найдена' });
-    }
-
-    const departmentId = itemRes.rows[0].department_id;
-    const results = [];
-
-    for (const file of req.files) {
-      const result = await pool.query(
-        `INSERT INTO inventory_files (inventory_code, department_id, filename, original_name, mime_type, size)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-        [code, departmentId, file.filename, file.originalname, file.mimetype, file.size]
-      );
-      results.push({ id: result.rows[0].id, filename: file.filename });
-    }
-
-    res.json({ ok: true, files: results });
-  } catch (err) {
-    console.error('Ошибка загрузки файлов:', err);
-    res.status(500).json({ error: 'Ошибка загрузки файлов' });
-  }
-});
-
-// ---------- GET /files/:code (картинка) ----------
-router.get('/files/:code', async (req, res) => {
-  try {
-    const { code } = req.params;
-    const files = await pool.query(
-      `SELECT id, filename, original_name, mime_type, size, created_at 
-       FROM inventory_files WHERE inventory_code = $1 ORDER BY created_at DESC`,
-      [code]
-    );
-    res.json(files.rows);
-  } catch (err) {
-    console.error('Ошибка получения файлов:', err);
-    res.status(500).json({ error: 'Ошибка получения файлов' });
-  }
-});
-
-// ---------- DELETE /files/:code (картинка) ----------
-router.delete('/files/:code/:fileId', authMiddleware, async (req, res) => {
-  try {
-    const { code, fileId } = req.params;
-
-    const fileRes = await pool.query('SELECT * FROM inventory_files WHERE id = $1 AND inventory_code = $2', [fileId, code]);
-    if (fileRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Файл не найден' });
-    }
-
-    const filePath = path.join(__dirname, '..', '..', 'public', 'uploads', fileRes.rows[0].filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-
-    await pool.query('DELETE FROM inventory_files WHERE id = $1', [fileId]);
-
-    res.json({ ok: true });
-  } catch (err) {
-    console.error('Ошибка удаления файла:', err);
-    res.status(500).json({ error: 'Ошибка удаления файла' });
   }
 });
 
@@ -701,18 +607,5 @@ router.post('/import-excel', authMiddleware, requireRole('admin', 'moderator', '
     res.status(500).json({ error: 'Ошибка импорта Excel' });
   }
 });
-
-// Обработчик ошибок multer (например, файл слишком большой)
-router.use((err, req, res, next) => {
-  if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(413).json({ error: 'Файл слишком большой. Максимальный размер 20 МБ' });
-  }
-  if (err.name === 'MulterError') {
-    return res.status(400).json({ error: err.message });
-  }
-  console.error('Необработанная ошибка в роуте инвентаря:', err);
-  res.status(500).json({ error: 'Внутренняя ошибка сервера' });
-});
-
 
 module.exports = router;
