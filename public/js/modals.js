@@ -210,44 +210,52 @@ function showItemDetails(code) {
 }
 
 // Сжатие изображения через Canvas (dataURL -> Blob)
-function compressImage(file, maxWidthOrHeight, quality) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
+function compressImage(file, maxWidthOrHeight = 1600, quality = 0.5) {
+  return new Promise((resolve, reject) => {
+    // Не сжимаем, если файл уже маленький
+    if (file.size < 500 * 1024) {
+      resolve(file);
+      return;
+    }
 
-            if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
-                if (width > height) {
-                    height *= maxWidthOrHeight / width;
-                    width = maxWidthOrHeight;
-                } else {
-                    width *= maxWidthOrHeight / height;
-                    height = maxWidthOrHeight;
-                }
-            }
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
 
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            const dataUrl = canvas.toDataURL('image/jpeg', quality);
-            const byteString = atob(dataUrl.split(',')[1]);
-            const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
-            const ab = new ArrayBuffer(byteString.length);
-            const ia = new Uint8Array(ab);
-            for (let i = 0; i < byteString.length; i++) {
-                ia[i] = byteString.charCodeAt(i);
-            }
-            const blob = new Blob([ab], { type: mimeString });
+      if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
+        if (width > height) {
+          height *= maxWidthOrHeight / width;
+          width = maxWidthOrHeight;
+        } else {
+          width *= maxWidthOrHeight / height;
+          height = maxWidthOrHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Используем toBlob для надёжности
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
             resolve(blob);
-        };
-        img.onerror = reject;
-        img.src = URL.createObjectURL(file);
-    });
+          } else {
+            reject(new Error('Canvas toBlob failed'));
+          }
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
 }
-
 // Загрузка списка файлов для позиции (без inline-обработчиков)
 async function loadFilesList(code) {
     const filesContainer = document.getElementById('filesList');
