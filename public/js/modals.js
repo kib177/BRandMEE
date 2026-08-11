@@ -173,7 +173,7 @@ function showItemDetails(code) {
                     const compressed = await compressImage(file, 1600, 0.5);
                     formData.append('files', compressed, file.name);
                 } catch (err) {
-                    // Если сжатие не удалось, отправляем оригинал
+                    console.warn('Сжатие не удалось, отправляю оригинал', err);
                     formData.append('files', file);
                 }
             } else {
@@ -209,15 +209,10 @@ function showItemDetails(code) {
     $('#viewModalOverlay').classList.remove('hidden');
 }
 
-// Сжатие изображения через Canvas (dataURL -> Blob)
+// Функция сжатия изображения (с логированием)
 function compressImage(file, maxWidthOrHeight = 1600, quality = 0.5) {
+  console.log(`Сжатие: исходный размер ${(file.size / 1024 / 1024).toFixed(2)} МБ`);
   return new Promise((resolve, reject) => {
-    // Не сжимаем, если файл уже маленький
-    if (file.size < 500 * 1024) {
-      resolve(file);
-      return;
-    }
-
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
@@ -239,23 +234,28 @@ function compressImage(file, maxWidthOrHeight = 1600, quality = 0.5) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Используем toBlob для надёжности
       canvas.toBlob(
         (blob) => {
           if (blob) {
+            console.log(`Сжато до ${(blob.size / 1024 / 1024).toFixed(2)} МБ`);
             resolve(blob);
           } else {
-            reject(new Error('Canvas toBlob failed'));
+            console.warn('Canvas toBlob failed, отправляю оригинал');
+            resolve(file); // fallback – оригинал
           }
         },
         'image/jpeg',
         quality
       );
     };
-    img.onerror = reject;
+    img.onerror = () => {
+      console.warn('Image load failed, отправляю оригинал');
+      resolve(file);
+    };
     img.src = URL.createObjectURL(file);
   });
 }
+
 // Загрузка списка файлов для позиции (без inline-обработчиков)
 async function loadFilesList(code) {
     const filesContainer = document.getElementById('filesList');
@@ -283,7 +283,6 @@ async function loadFilesList(code) {
                 ? `<img src="${url}" class="file-thumbnail" data-url="${url}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 0.3rem; cursor: pointer;">`
                 : `<span class="file-thumbnail" data-url="${url}" style="font-size: 2rem; cursor: pointer;">📄</span>`;
 
-            // Кнопка удаления с data-атрибутами, без onclick
             return `<div style="display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.3rem;">
                 ${preview}
                 <span style="font-size: 0.8rem;">${f.original_name} (${formatSize(f.size)})</span>
@@ -297,7 +296,6 @@ async function loadFilesList(code) {
 
 // Глобальный обработчик кликов: удаление файлов и открытие превью
 document.addEventListener('click', (e) => {
-    // Удаление файла
     const deleteBtn = e.target.closest('.delete-file-btn');
     if (deleteBtn) {
         const code = deleteBtn.dataset.code;
@@ -307,12 +305,10 @@ document.addEventListener('click', (e) => {
         }
     }
 
-    // Открытие превью для изображений
     const thumbnail = e.target.closest('.file-thumbnail');
     if (thumbnail) {
         const url = thumbnail.dataset.url;
         if (url) {
-            // Проверяем, что это изображение (если нет, просто откроем в новой вкладке)
             const isImage = thumbnail.tagName === 'IMG';
             if (isImage) {
                 openImageViewer(url);
@@ -323,9 +319,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Функция для открытия полноэкранного просмотра изображения
 function openImageViewer(src) {
-    // Удаляем старый просмотрщик, если есть
     const oldOverlay = document.getElementById('imageViewerOverlay');
     if (oldOverlay) oldOverlay.remove();
 
@@ -341,17 +335,16 @@ function openImageViewer(src) {
     overlay.appendChild(img);
     document.body.appendChild(overlay);
 
-    // Закрытие по клику на оверлей или по Escape
     overlay.addEventListener('click', () => overlay.remove());
-    document.addEventListener('keydown', function escHandler(e) {
+    const escHandler = (e) => {
         if (e.key === 'Escape') {
             overlay.remove();
             document.removeEventListener('keydown', escHandler);
         }
-    });
+    };
+    document.addEventListener('keydown', escHandler);
 }
 
-// Удаление файла
 async function deleteFile(code, fileId) {
     if (!confirm('Удалить файл?')) return;
     try {
@@ -425,7 +418,6 @@ function setSelectWithFallback(selectId, valueId, valueName) {
     }
 }
 
-// Поиск информации о запчасти (открывает Google)
 function fetchPartInfo(model, name) {
     const searchTerm = (model && model.trim()) ? model.trim() : name;
     const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}+datasheet`;
