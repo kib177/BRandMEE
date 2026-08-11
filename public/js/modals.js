@@ -156,13 +156,13 @@ function showItemDetails(code) {
     loadFilesList(item.code);
 
     // Обработчик выбора файлов
-    document.getElementById('fileInput').addEventListener('change', async (e) => {
-        const fileInput = document.getElementById('fileInput');
-// Удаляем старый обработчик, если он был
-const newInput = fileInput.cloneNode(true);
-fileInput.parentNode.replaceChild(newInput, fileInput);
+    // Удаляем старый input с его обработчиками
+const oldFileInput = document.getElementById('fileInput');
+const newFileInput = oldFileInput.cloneNode(true);
+oldFileInput.parentNode.replaceChild(newFileInput, oldFileInput);
 
-newInput.addEventListener('change', async (e) => {
+// Навешиваем новый обработчик на свежий input
+newFileInput.addEventListener('change', async (e) => {
     const files = e.target.files;
     if (!files.length) return;
 
@@ -189,9 +189,7 @@ newInput.addEventListener('change', async (e) => {
     } catch (err) {
         status.textContent = 'Ошибка: ' + err.message;
     }
-    e.target.value = '';
-}););}
-
+});
 // Загрузка списка файлов для позиции
 async function loadFilesList(code) {
     const filesContainer = document.getElementById('filesList');
