@@ -190,7 +190,7 @@ newInput.addEventListener('change', async (e) => {
         status.textContent = 'Ошибка: ' + err.message;
     }
     e.target.value = '';
-});
+});}
 
 // Загрузка списка файлов для позиции
 async function loadFilesList(code) {
