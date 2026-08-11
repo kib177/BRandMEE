@@ -156,40 +156,38 @@ function showItemDetails(code) {
     loadFilesList(item.code);
 
     // Обработчик выбора файлов
-    // Удаляем старый input с его обработчиками
-const oldFileInput = document.getElementById('fileInput');
-const newFileInput = oldFileInput.cloneNode(true);
-oldFileInput.parentNode.replaceChild(newFileInput, oldFileInput);
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+        const files = e.target.files;
+        if (!files.length) return;
 
-// Навешиваем новый обработчик на свежий input
-newFileInput.addEventListener('change', async (e) => {
-    const files = e.target.files;
-    if (!files.length) return;
+        const status = document.getElementById('uploadStatus');
+        status.textContent = 'Загрузка...';
 
-    const status = document.getElementById('uploadStatus');
-    status.textContent = 'Загрузка...';
-
-    const formData = new FormData();
-    for (let file of files) {
-        formData.append('files', file);
-    }
-
-    try {
-        const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: formData
-        });
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || 'Ошибка загрузки');
+        const formData = new FormData();
+        for (let file of files) {
+            formData.append('files', file);
         }
-        status.textContent = 'Файлы загружены';
-        loadFilesList(item.code);
-    } catch (err) {
-        status.textContent = 'Ошибка: ' + err.message;
-    }
+
+        try {
+            const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+    body: formData
 });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Ошибка загрузки');
+            }
+            status.textContent = 'Файлы загружены';
+            loadFilesList(item.code); // обновляем список
+        } catch (err) {
+            status.textContent = 'Ошибка: ' + err.message;
+        }
+        e.target.value = ''; // сбрасываем input
+    });
+
+    $('#viewModalOverlay').classList.remove('hidden');
+}
 // Загрузка списка файлов для позиции
 async function loadFilesList(code) {
     const filesContainer = document.getElementById('filesList');
