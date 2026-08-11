@@ -61,13 +61,17 @@ router.post('/:code', authMiddleware, upload.array('files', 5), async (req, res)
             .jpeg({ quality: 80 })
             .toFile(compressedPath);
 
-          fs.unlinkSync(file.path);
+          // Устанавливаем права, чтобы nginx мог прочитать файл
+          fs.chmodSync(compressedPath, 0o644);
+
+          fs.unlinkSync(file.path); // удаляем оригинал
 
           finalFilename = compressedFilename;
           mimeType = 'image/jpeg';
           fileSize = fs.statSync(compressedPath).size;
         } catch (err) {
-          console.error('Ошибка сжатия:', err);
+          console.error('Ошибка сжатия, оставляем оригинал:', err);
+          // Оригинальный файл уже в uploads, ничего не делаем
         }
       }
 
