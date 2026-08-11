@@ -112,7 +112,6 @@ function showItemDetails(code) {
     if (!item) return;
 
     const typeName = item.type_name || getTypeName(item.type_id);
-    // equipment_name теперь содержит несколько названий через ";"
     const equipName = item.equipment_name || '—';
 
     $('#viewModalTitle').textContent = `Позиция ${item.code}`;
@@ -126,8 +125,49 @@ function showItemDetails(code) {
         <p><strong>Ед. изм.:</strong> ${escapeHtml(item.unit)}</p>
         <p><strong>Количество:</strong> ${formatQty(item.quantity)}</p>
         <p><strong>Дата:</strong> ${escapeHtml(item.date)}</p>
+        <div id="partFilesBlock" style="margin-top: 1rem;">
+            <strong>Прикреплённые файлы:</strong>
+            <div id="filesList" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;"></div>
+            <div style="margin-top: 0.5rem;">
+                <input type="file" id="fileInput" multiple style="display: none;">
+                <button class="btn btn-sm btn-outline" id="btnAddFiles">➕ Добавить файлы</button>
+            </div>
+        </div>
     `;
 
+    // Загружаем список файлов
+    loadFilesList(code);
+
+    // Обработчик кнопки добавления файлов
+    document.getElementById('btnAddFiles').addEventListener('click', () => {
+        document.getElementById('fileInput').click();
+    });
+
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+        const files = e.target.files;
+        if (!files.length) return;
+
+        for (const file of files) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch(`/api/inventory/${encodeURIComponent(code)}/files`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    body: formData
+                });
+                if (res.ok) {
+                    await loadFilesList(code);
+                }
+            } catch (err) {
+                console.error('Ошибка загрузки файла:', err);
+            }
+        }
+        e.target.value = '';
+    });
+
+    // Остальные кнопки (инфо, списание)
     const btnInfo = document.getElementById('btnPartInfo');
     if (btnInfo) {
         btnInfo.style.display = 'inline-flex';
@@ -145,6 +185,62 @@ function showItemDetails(code) {
     $('#viewModalOverlay').classList.remove('hidden');
 }
 
+async function loadFilesList(code) {
+    const filesDiv = document.getElementById('filesList');
+    if (!filesDiv) return;
+
+    try {
+        const res = await fetch(`/api/inventory/${encodeURIComponent(code)}/files`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const files = await res.json();
+
+        filesDiv.innerHTML = files.map(f => {
+            const isImage = f.mime_type?.startsWith('image/');
+            const fileUrl = `/uploads/${f.filename}`;
+            
+            if (isImage) {
+                return `<div style="position: relative; display: inline-block; margin: 4px;">
+                    <a href="${fileUrl}" target="_blank" title="${f.original_name}">
+                        <img src="${fileUrl}" style="max-width: 100px; max-height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+                    </a>
+                    <button class="btn-delete-file" data-fileid="${f.id}" data-code="${code}" style="position: absolute; top: -8px; right: -8px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; line-height: 1;">×</button>
+                </div>`;
+            } else {
+                return `<div style="position: relative; display: inline-block; margin: 4px; text-align: center; width: 100px;">
+                    <a href="${fileUrl}" target="_blank" title="${f.original_name}" style="display: block; padding: 10px; background: #f0f0f0; border-radius: 4px; text-decoration: none; color: #333;">
+                        <div style="font-size: 24px;">📄</div>
+                        <div style="font-size: 10px; word-break: break-all;">${f.original_name.length > 15 ? f.original_name.substring(0, 12) + '…' : f.original_name}</div>
+                    </a>
+                    <button class="btn-delete-file" data-fileid="${f.id}" data-code="${code}" style="position: absolute; top: -8px; right: -8px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; line-height: 1;">×</button>
+                </div>`;
+            }
+        }).join('');
+
+        // Обработчики удаления
+        document.querySelectorAll('.btn-delete-file').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const fileId = btn.dataset.fileid;
+                const code = btn.dataset.code;
+                if (confirm('Удалить файл?')) {
+                    try {
+                        const res = await fetch(`/api/inventory/${encodeURIComponent(code)}/files/${fileId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                        });
+                        if (res.ok) {
+                            loadFilesList(code);
+                        }
+                    } catch (err) {
+                        console.error('Ошибка удаления файла:', err);
+                    }
+                }
+            });
+        });
+    } catch (err) {
+        console.error('Ошибка загрузки списка файлов:', err);
+    }
+}
 // ========== МОДАЛКИ ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ ==========
 let pendingDeleteCode = null;
 
