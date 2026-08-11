@@ -159,102 +159,45 @@ function showItemDetails(code) {
     oldFileInput.parentNode.replaceChild(newFileInput, oldFileInput);
 
     newFileInput.addEventListener('change', async (e) => {
-        const files = e.target.files;
-        if (!files.length) return;
+    const files = e.target.files;
+    if (!files.length) return;
 
-        const status = document.getElementById('uploadStatus');
-        status.textContent = 'Загрузка...';
+    const status = document.getElementById('uploadStatus');
+    status.textContent = 'Загрузка...';
 
-        const formData = new FormData();
-        for (let file of files) {
-            // Сжимаем изображения перед отправкой
-            if (file.type.startsWith('image/')) {
-                try {
-                    const compressed = await compressImage(file, 1600, 0.5);
-                    formData.append('files', compressed, file.name);
-                } catch (err) {
-                    console.warn('Сжатие не удалось, отправляю оригинал', err);
-                    formData.append('files', file);
-                }
-            } else {
-                formData.append('files', file);
+    const formData = new FormData();
+    for (let file of files) {
+        formData.append('files', file);   // просто добавляем оригинал
+    }
+
+    try {
+        const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: formData
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            let message;
+            try {
+                const err = JSON.parse(text);
+                message = err.error || 'Ошибка загрузки';
+            } catch {
+                message = text || 'Ошибка загрузки';
             }
+            throw new Error(message);
         }
-
-        try {
-            const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-                body: formData
-            });
-            if (!res.ok) {
-                const text = await res.text();
-                let message;
-                try {
-                    const err = JSON.parse(text);
-                    message = err.error || 'Ошибка загрузки';
-                } catch {
-                    message = text || 'Ошибка загрузки';
-                }
-                throw new Error(message);
-            }
-            status.textContent = 'Файлы загружены';
-            loadFilesList(item.code);
-        } catch (err) {
-            status.textContent = 'Ошибка: ' + err.message;
-        }
-        e.target.value = '';
-    });
+        status.textContent = 'Файлы загружены';
+        loadFilesList(item.code);
+    } catch (err) {
+        status.textContent = 'Ошибка: ' + err.message;
+    }
+    e.target.value = '';
+});
 
     $('#viewModalOverlay').classList.remove('hidden');
 }
 
-// Функция сжатия изображения (с логированием)
-function compressImage(file, maxWidthOrHeight = 1600, quality = 0.5) {
-  console.log(`Сжатие: исходный размер ${(file.size / 1024 / 1024).toFixed(2)} МБ`);
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let width = img.width;
-      let height = img.height;
-
-      if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
-        if (width > height) {
-          height *= maxWidthOrHeight / width;
-          width = maxWidthOrHeight;
-        } else {
-          width *= maxWidthOrHeight / height;
-          height = maxWidthOrHeight;
-        }
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            console.log(`Сжато до ${(blob.size / 1024 / 1024).toFixed(2)} МБ`);
-            resolve(blob);
-          } else {
-            console.warn('Canvas toBlob failed, отправляю оригинал');
-            resolve(file); // fallback – оригинал
-          }
-        },
-        'image/jpeg',
-        quality
-      );
-    };
-    img.onerror = () => {
-      console.warn('Image load failed, отправляю оригинал');
-      resolve(file);
-    };
-    img.src = URL.createObjectURL(file);
-  });
-}
 
 // Загрузка списка файлов для позиции (без inline-обработчиков)
 async function loadFilesList(code) {
