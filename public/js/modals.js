@@ -228,14 +228,14 @@ async function deleteFile(code, fileId) {
     if (!confirm('Удалить файл?')) return;
     try {
         const res = await fetch(`/api/inventory/files/${encodeURIComponent(code)}/${fileId}`, {
-    method: 'DELETE',
-    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-});
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
         if (!res.ok) {
             const err = await res.json();
             throw new Error(err.error || 'Ошибка удаления');
         }
-        loadFilesList(code);
+        loadFilesList(code); // обновляем список
     } catch (e) {
         alert('Ошибка: ' + e.message);
     }
