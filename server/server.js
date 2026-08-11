@@ -44,6 +44,7 @@ app.use(cors({
 app.use(express.json({ limit: '5mb' }));
 
 // API маршруты
+app.use('/api/inventory/files', require('./routes/inventory-files'));
 app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/write-offs', require('./routes/writeoffs'));
@@ -53,6 +54,7 @@ app.use('/api/mailing', require('./routes/mailing'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/labels', require('./routes/labels'));
 app.use('/api/backup', require('./routes/backup'));
+
 
 // Статические файлы (фронтенд)
 app.use(express.static(path.join(__dirname, '..', 'public')));
