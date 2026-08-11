@@ -99,19 +99,23 @@ router.get('/:code', async (req, res) => {
 router.delete('/:code/:fileId', authMiddleware, async (req, res) => {
   try {
     const { code, fileId } = req.params;
+    console.log('DELETE file:', code, fileId);
 
     const fileRes = await pool.query('SELECT * FROM inventory_files WHERE id = $1 AND inventory_code = $2', [fileId, code]);
     if (fileRes.rows.length === 0) {
+      console.log('Файл не найден в БД');
       return res.status(404).json({ error: 'Файл не найден' });
     }
 
     const filePath = path.join(__dirname, '..', 'public', 'uploads', fileRes.rows[0].filename);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+      console.log('Файл удалён с диска:', filePath);
+    } else {
+      console.log('Файл на диске не найден:', filePath);
     }
 
     await pool.query('DELETE FROM inventory_files WHERE id = $1', [fileId]);
-
     res.json({ ok: true });
   } catch (err) {
     console.error('Ошибка удаления файла:', err);
