@@ -44,7 +44,7 @@ router.post('/restore', authMiddleware, requireRole('admin'), upload.single('fil
   const dbHost = process.env.DB_HOST || 'localhost';
   const dbPort = process.env.DB_PORT || 5432;
   const dbName = process.env.DB_NAME || 'warehouse_db';
-  const dbUser = process.env.DB_USER || 'warehouse_user';
+  const dbUser = process.env.DB_USER || 'warehouse_admin';
   const dbPassword = process.env.DB_PASSWORD || '';
 
   const env = { ...process.env, PGPASSWORD: dbPassword };
