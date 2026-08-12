@@ -112,6 +112,30 @@ function showItemDetails(code) {
     const typeName = item.type_name || getTypeName(item.type_id);
     const equipName = item.equipment_name || '—';
 
+    const canManageFiles = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'storekeeper');
+
+    let filesBlockHtml = '';
+    if (canManageFiles) {
+        filesBlockHtml = `
+            <div id="partFilesBlock" style="margin-top: 1rem;">
+                <strong>Прикреплённые файлы:</strong>
+                <div id="filesList" style="margin-top: 0.5rem;"></div>
+                <div style="margin-top: 0.8rem;">
+                    <label class="btn btn-sm btn-outline" style="cursor:pointer;">
+                        ➕ Добавить файлы
+                        <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" style="display:none;">
+                    </label>
+                    <span id="uploadStatus" style="margin-left: 0.5rem; font-size: 0.85rem;"></span>
+                </div>
+            </div>`;
+    } else {
+        filesBlockHtml = `
+            <div id="partFilesBlock" style="margin-top: 1rem;">
+                <strong>Прикреплённые файлы:</strong>
+                <div id="filesList" style="margin-top: 0.5rem;"></div>
+            </div>`;
+    }
+
     $('#viewModalTitle').textContent = `Позиция ${item.code}`;
     $('#viewModalContent').innerHTML = `
         <p><strong>Код:</strong> ${escapeHtml(item.code)}</p>
@@ -123,17 +147,7 @@ function showItemDetails(code) {
         <p><strong>Ед. изм.:</strong> ${escapeHtml(item.unit)}</p>
         <p><strong>Количество:</strong> ${formatQty(item.quantity)}</p>
         <p><strong>Дата:</strong> ${escapeHtml(item.date)}</p>
-        <div id="partFilesBlock" style="margin-top: 1rem;">
-            <strong>Прикреплённые файлы:</strong>
-            <div id="filesList" style="margin-top: 0.5rem;"></div>
-            <div style="margin-top: 0.8rem;">
-                <label class="btn btn-sm btn-outline" style="cursor:pointer;">
-                    ➕ Добавить файлы
-                    <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" style="display:none;">
-                </label>
-                <span id="uploadStatus" style="margin-left: 0.5rem; font-size: 0.85rem;"></span>
-            </div>
-        </div>
+        ${filesBlockHtml}
     `;
 
     const btnInfo = document.getElementById('btnPartInfo');
@@ -150,57 +164,60 @@ function showItemDetails(code) {
         };
     }
 
-    // Загружаем список файлов
-    loadFilesList(item.code);
+    // Загружаем список файлов с учётом прав
+    loadFilesList(item.code, canManageFiles);
 
-    // Полностью заменяем fileInput, чтобы избежать дублирования обработчиков
-    const oldFileInput = document.getElementById('fileInput');
-    const newFileInput = oldFileInput.cloneNode(true);
-    oldFileInput.parentNode.replaceChild(newFileInput, oldFileInput);
+    // Если есть права, навешиваем обработчик загрузки
+    if (canManageFiles) {
+        const oldFileInput = document.getElementById('fileInput');
+        if (oldFileInput) {
+            const newFileInput = oldFileInput.cloneNode(true);
+            oldFileInput.parentNode.replaceChild(newFileInput, oldFileInput);
 
-    newFileInput.addEventListener('change', async (e) => {
-    const files = e.target.files;
-    if (!files.length) return;
+            newFileInput.addEventListener('change', async (e) => {
+                const files = e.target.files;
+                if (!files.length) return;
 
-    const status = document.getElementById('uploadStatus');
-    status.textContent = 'Загрузка...';
+                const status = document.getElementById('uploadStatus');
+                status.textContent = 'Загрузка...';
 
-    const formData = new FormData();
-    for (let file of files) {
-        formData.append('files', file);   // просто добавляем оригинал
-    }
+                const formData = new FormData();
+                for (let file of files) {
+                    formData.append('files', file);
+                }
 
-    try {
-        const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: formData
-        });
-        if (!res.ok) {
-            const text = await res.text();
-            let message;
-            try {
-                const err = JSON.parse(text);
-                message = err.error || 'Ошибка загрузки';
-            } catch {
-                message = text || 'Ошибка загрузки';
-            }
-            throw new Error(message);
+                try {
+                    const res = await fetch(`/api/inventory/files/${encodeURIComponent(item.code)}`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                        body: formData
+                    });
+                    if (!res.ok) {
+                        const text = await res.text();
+                        let message;
+                        try {
+                            const err = JSON.parse(text);
+                            message = err.error || 'Ошибка загрузки';
+                        } catch {
+                            message = text || 'Ошибка загрузки';
+                        }
+                        throw new Error(message);
+                    }
+                    status.textContent = 'Файлы загружены';
+                    loadFilesList(item.code, canManageFiles);
+                } catch (err) {
+                    status.textContent = 'Ошибка: ' + err.message;
+                }
+                e.target.value = '';
+            });
         }
-        status.textContent = 'Файлы загружены';
-        loadFilesList(item.code);
-    } catch (err) {
-        status.textContent = 'Ошибка: ' + err.message;
     }
-    e.target.value = '';
-});
 
     $('#viewModalOverlay').classList.remove('hidden');
 }
 
-
-// Загрузка списка файлов для позиции (без inline-обработчиков)
-async function loadFilesList(code) {
+// Загрузка списка файлов для позиции
+async function loadFilesList(code, canManageFiles = false) {
     const filesContainer = document.getElementById('filesList');
     if (!filesContainer) return;
 
@@ -226,10 +243,14 @@ async function loadFilesList(code) {
                 ? `<img src="${url}" class="file-thumbnail" data-url="${url}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 0.3rem; cursor: pointer;">`
                 : `<span class="file-thumbnail" data-url="${url}" style="font-size: 2rem; cursor: pointer;">📄</span>`;
 
+            const deleteButton = canManageFiles
+                ? `<button class="btn-icon delete-file-btn" data-code="${code}" data-file-id="${f.id}" title="Удалить" style="color: red;">🗑️</button>`
+                : '';
+
             return `<div style="display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.3rem;">
                 ${preview}
                 <span style="font-size: 0.8rem;">${f.original_name} (${formatSize(f.size)})</span>
-                <button class="btn-icon delete-file-btn" data-code="${code}" data-file-id="${f.id}" title="Удалить" style="color: red;">🗑️</button>
+                ${deleteButton}
             </div>`;
         }).join('');
     } catch (e) {
@@ -306,7 +327,7 @@ async function deleteFile(code, fileId) {
             }
             throw new Error(message);
         }
-        loadFilesList(code);
+        loadFilesList(code, true); // после удаления перезагружаем с canManageFiles=true, так как у пользователя есть права (кнопка удаления была видна)
     } catch (e) {
         alert('Ошибка: ' + e.message);
     }
