@@ -56,22 +56,21 @@ router.post('/:code', authMiddleware, upload.array('files', 5), async (req, res)
         const compressedPath = path.join(path.dirname(file.path), compressedFilename);
 
         try {
+          // Добавляем rotate() для автоматического исправления ориентации по EXIF
           await sharp(file.path)
+            .rotate()   // <-- исправляет поворот из EXIF
             .resize({ width: 1920, height: 1920, fit: 'inside', withoutEnlargement: true })
             .jpeg({ quality: 80 })
             .toFile(compressedPath);
 
-          // Устанавливаем права, чтобы nginx мог прочитать файл
           fs.chmodSync(compressedPath, 0o644);
-
-          fs.unlinkSync(file.path); // удаляем оригинал
+          fs.unlinkSync(file.path);
 
           finalFilename = compressedFilename;
           mimeType = 'image/jpeg';
           fileSize = fs.statSync(compressedPath).size;
         } catch (err) {
           console.error('Ошибка сжатия, оставляем оригинал:', err);
-          // Оригинальный файл уже в uploads, ничего не делаем
         }
       }
 
