@@ -29,7 +29,7 @@ router.use((req, res, next) => {
   next();
 });
 
-router.post('/:code', authMiddleware, upload.array('files', 5), async (req, res) => {
+router.post('/:code', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), upload.array('files', 5), async (req, res) => {
   try {
     const { code } = req.params;
     console.log('Загрузка файлов для кода:', code, 'Файлов:', req.files?.length);
@@ -105,7 +105,7 @@ router.get('/:code', async (req, res) => {
   }
 });
 
-router.delete('/:code/:fileId', authMiddleware, async (req, res) => {
+router.delete('/:code/:fileId', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
   try {
     const { code, fileId } = req.params;
     const fileRes = await pool.query('SELECT * FROM inventory_files WHERE id = $1 AND inventory_code = $2', [fileId, code]);
