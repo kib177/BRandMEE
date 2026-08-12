@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
 const pool = require('../db');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, requireRole } = require('../middleware/auth');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -24,11 +24,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } });
 
-router.use((req, res, next) => {
-  console.log('[INVENTORY-FILES]', req.method, req.path);
-  next();
-});
-
+// Загрузка файлов – только admin, moderator, storekeeper
 router.post('/:code', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), upload.array('files', 5), async (req, res) => {
   try {
     const { code } = req.params;
@@ -56,9 +52,9 @@ router.post('/:code', authMiddleware, requireRole('admin', 'moderator', 'storeke
         const compressedPath = path.join(path.dirname(file.path), compressedFilename);
 
         try {
-          // Добавляем rotate() для автоматического исправления ориентации по EXIF
+          // Исправление ориентации + сжатие
           await sharp(file.path)
-            .rotate()   // <-- исправляет поворот из EXIF
+            .rotate()                       // автоматический поворот согласно EXIF
             .resize({ width: 1920, height: 1920, fit: 'inside', withoutEnlargement: true })
             .jpeg({ quality: 80 })
             .toFile(compressedPath);
@@ -70,7 +66,8 @@ router.post('/:code', authMiddleware, requireRole('admin', 'moderator', 'storeke
           mimeType = 'image/jpeg';
           fileSize = fs.statSync(compressedPath).size;
         } catch (err) {
-          console.error('Ошибка сжатия, оставляем оригинал:', err);
+          console.error('Ошибка сжатия:', err);
+          // Оригинал остаётся в uploads, используем как есть
         }
       }
 
@@ -90,7 +87,8 @@ router.post('/:code', authMiddleware, requireRole('admin', 'moderator', 'storeke
   }
 });
 
-router.get('/:code', async (req, res) => {
+// Получение списка файлов (доступно всем авторизованным)
+router.get('/:code', authMiddleware, async (req, res) => {
   try {
     const { code } = req.params;
     const files = await pool.query(
@@ -105,6 +103,7 @@ router.get('/:code', async (req, res) => {
   }
 });
 
+// Удаление файла – только admin, moderator, storekeeper
 router.delete('/:code/:fileId', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
   try {
     const { code, fileId } = req.params;
