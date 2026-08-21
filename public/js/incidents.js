@@ -41,7 +41,7 @@ console.log('Incidents response status:', res2.status);
 const text = await res2.text();
 console.log('Incidents response text:', text);
 if (!res2.ok) throw new Error('Ошибка загрузки');
-const incidents = JSON.parse(text);
+const incidents2 = JSON.parse(text);
       if (!res.ok) throw new Error('Ошибка загрузки');
       const incidents = await res.json();
 
