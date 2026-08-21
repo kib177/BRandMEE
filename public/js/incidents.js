@@ -33,17 +33,13 @@
   async function loadIncidents(equipmentId) {
     const content = document.getElementById('incidentContent');
     try {
-      const res = await fetch(`/api/incidents?equipment_id=${equipmentId}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (!res.ok) throw new Error('Ошибка загрузки');
-      const incidents = await res.json();
-const res = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
 console.log('Incidents response status:', res.status);
 const text = await res.text();
 console.log('Incidents response text:', text);
 if (!res.ok) throw new Error('Ошибка загрузки');
 const incidents = JSON.parse(text);
+
       if (!incidents.length) {
         content.innerHTML = '<p>Нет записей о неисправностях.</p>';
         return;
