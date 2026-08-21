@@ -36,15 +36,14 @@
       const res = await fetch(`/api/incidents?equipment_id=${equipmentId}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
-      const res2 = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-console.log('Incidents response status:', res2.status);
-const text = await res2.text();
-console.log('Incidents response text:', text);
-if (!res2.ok) throw new Error('Ошибка загрузки');
-const incidents2 = JSON.parse(text);
       if (!res.ok) throw new Error('Ошибка загрузки');
       const incidents = await res.json();
-
+const res = await fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+console.log('Incidents response status:', res.status);
+const text = await res.text();
+console.log('Incidents response text:', text);
+if (!res.ok) throw new Error('Ошибка загрузки');
+const incidents = JSON.parse(text);
       if (!incidents.length) {
         content.innerHTML = '<p>Нет записей о неисправностях.</p>';
         return;
