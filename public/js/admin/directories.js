@@ -18,7 +18,7 @@ async function loadTypes() {
         <td>
           <button class="btn btn-sm btn-outline save-type" data-id="${t.id}">💾</button>
           <button class="btn btn-sm btn-danger delete-type" data-id="${t.id}">🗑️</button>
-          <button class="btn btn-sm btn-info incident-btn" data-id="${e.id}" title="История неисправностей">🔧</button>
+        
         </td>
       </tr>
     `).join('');
@@ -40,6 +40,7 @@ async function loadEquipment() {
         <td>
           <button class="btn btn-sm btn-outline save-equip" data-id="${e.id}">💾</button>
           <button class="btn btn-sm btn-danger delete-equip" data-id="${e.id}">🗑️</button>
+            <button class="btn btn-sm btn-info incident-btn" data-id="${e.id}" title="История неисправностей">🔧</button>
         </td>
       </tr>
     `).join('');
