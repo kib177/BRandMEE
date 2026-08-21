@@ -66,6 +66,66 @@
     </div>
   </main>
 
+  <!-- Модалка истории неисправностей -->
+<div class="modal-overlay hidden" id="incidentModalOverlay">
+  <div class="modal" style="max-width: 700px;">
+    <h2 id="incidentModalTitle">История неисправностей</h2>
+    <div id="incidentContent" style="margin-bottom: 1rem;"></div>
+    <div class="form-actions">
+      <button class="btn btn-outline" id="btnCloseIncidentModal">Закрыть</button>
+      <button class="btn btn-primary" id="btnAddIncident" style="display:none;">➕ Добавить неисправность</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка добавления/редактирования неисправности -->
+<div class="modal-overlay hidden" id="incidentFormOverlay">
+  <div class="modal" style="max-width: 600px;">
+    <h2 id="incidentFormTitle">Новая неисправность</h2>
+    <form id="incidentForm">
+      <input type="hidden" id="incidentId">
+      <input type="hidden" id="incidentEquipmentId">
+      <div class="form-group">
+        <label>Оборудование</label>
+        <input type="text" id="incidentEquipmentName" readonly>
+      </div>
+      <div class="form-group">
+        <label>Заголовок *</label>
+        <input type="text" id="incidentTitle" required>
+      </div>
+      <div class="form-group">
+        <label>Описание</label>
+        <textarea id="incidentDescription" rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Причина</label>
+        <textarea id="incidentRootCause" rows="2"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Решение</label>
+        <textarea id="incidentSolution" rows="2"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Статус</label>
+        <select id="incidentStatus">
+          <option value="open">Открыт</option>
+          <option value="in_progress">В работе</option>
+          <option value="resolved">Решён</option>
+          <option value="closed">Закрыт</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Запчасти</label>
+        <div id="incidentPartsSelect" style="height: auto;"></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" id="btnCancelIncidentForm">Отмена</button>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
   <script src="../js/auth.js"></script>
   <script src="../js/admin/directories.js"></script>
   <script src="../js/theme.js"></script>
