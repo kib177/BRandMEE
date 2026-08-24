@@ -90,7 +90,7 @@ const fs = require('fs');
 const BACKUP_DIR = '/opt/warehouse/backups';
 
 // Еженедельный дамп – каждое воскресенье в 3:00
-cron.schedule('0 3 * * 0', async () => {
+cron.schedule('* * * * *', async () => {
   console.log('Начало еженедельного резервного копирования');
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
