@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Журнал неисправностей</title>
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/utilities.css">
+  <link rel="stylesheet" href="/css/mobile.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a3c5e">
+  <style>
+    .incident-page { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 1.5rem; margin-bottom: 1.5rem; }
+    .equipment-select-wrapper { position: relative; margin-bottom: 1rem; }
+    .equipment-select-wrapper input {
+      width: 100%; padding: 0.6rem 0.8rem; border: 2px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 0.9rem; outline: none;
+    }
+    .equipment-select-wrapper input:focus { border-color: var(--accent); }
+    .equipment-select-wrapper select {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      opacity: 0; cursor: pointer;
+    }
+    .incident-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .incident-table th, .incident-table td { padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
+    .incident-table th { background: #f7f9fb; font-weight: 600; }
+    .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.1rem; margin: 0 0.2rem; }
+    .hidden { display: none !important; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .modal { background: var(--card-bg); border-radius: var(--radius); padding: 1.5rem; max-width: 600px; width: 100%; box-shadow: var(--shadow-lg); position: relative; }
+    .modal h2 { margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 600; font-size: 0.8rem; margin-bottom: 0.3rem; color: var(--text-secondary); }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.6rem; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9rem; background: #fafbfc; }
+    .form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem; }
+    .parts-list label { display: block; margin-bottom: 0.3rem; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <a href="/index.html" style="color:#fff; text-decoration:none;">📦 Склад</a>
+        <span style="margin-left:2rem;">→ Журнал неисправностей</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="incident-page">
+    <div class="card">
+      <h2>История неисправностей оборудования</h2>
+      <div class="equipment-select-wrapper">
+        <input type="text" id="equipmentSearch" placeholder="Поиск оборудования..." autocomplete="off">
+        <select id="equipmentSelect" size="1"></select>
+      </div>
+      <div id="incidentList">
+        <p>Выберите оборудование для просмотра истории.</p>
+      </div>
+      <div style="margin-top:1rem;">
+        <button class="btn btn-primary" id="btnAddIncident" style="display:none;">➕ Добавить неисправность</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Модалка добавления/редактирования -->
+  <div class="modal-overlay hidden" id="incidentFormOverlay">
+    <div class="modal">
+      <h2 id="incidentFormTitle">Новая неисправность</h2>
+      <form id="incidentForm">
+        <input type="hidden" id="incidentId">
+        <input type="hidden" id="incidentEquipmentId">
+        <div class="form-group">
+          <label>Оборудование</label>
+          <input type="text" id="incidentEquipmentName" readonly>
+        </div>
+        <div class="form-group">
+          <label>Заголовок *</label>
+          <input type="text" id="incidentTitle" required>
+        </div>
+        <div class="form-group">
+          <label>Описание</label>
+          <textarea id="incidentDescription" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Причина</label>
+          <textarea id="incidentRootCause" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Решение</label>
+          <textarea id="incidentSolution" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Статус</label>
+          <select id="incidentStatus">
+            <option value="open">Открыт</option>
+            <option value="in_progress">В работе</option>
+            <option value="resolved">Решён</option>
+            <option value="closed">Закрыт</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Запчасти</label>
+          <div id="incidentPartsSelect" class="parts-list"></div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline" id="btnCancelIncidentForm">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/utils.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/incidents.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/profile-ui.js"></script>
+</body>
+</html>
