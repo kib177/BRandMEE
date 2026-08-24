@@ -25,9 +25,28 @@
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   opacity: 0; cursor: pointer;
 }
-.incident-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-.incident-table th, .incident-table td { padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
-.incident-table th { background: #f7f9fb; font-weight: 600; }
+.incident-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+incident-table th, .incident-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    white-space: nowrap;
+}
+.incident-table tbody tr {
+    cursor: pointer;
+}
+.incident-table tbody tr:hover {
+    background: #f8fafc;
+}
+    .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
 .btn-icon { background: none; border: none; cursor: pointer; font-size: 1.1rem; margin: 0 0.2rem; }
 .hidden { display: none !important; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; }
