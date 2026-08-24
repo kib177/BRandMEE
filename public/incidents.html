@@ -59,10 +59,15 @@
   margin-bottom: 0.3rem;
   font-size: 0.85rem;
 }
-.incident-part-checkbox {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
+/* Компактные чекбоксы */
+input[type="checkbox"].incident-part-checkbox {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    margin: 0;
+    vertical-align: middle;
+    flex-shrink: 0;
 }
 .incident-detail p {
   margin-bottom: 0.5rem;
