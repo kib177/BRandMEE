@@ -50,7 +50,7 @@
     }
   }
 
-  // Загрузка инцидентов
+// Загрузка инцидентов
 async function loadIncidents(equipmentId) {
     const container = document.getElementById('incidentList');
     container.innerHTML = 'Загрузка...';
@@ -66,11 +66,9 @@ async function loadIncidents(equipmentId) {
             return;
         }
 
-        // Всегда добавляем столбец действий, даже если пользователь не может управлять
-        let html = '<table class="incident-table"><thead><tr><th>Дата</th><th>Заголовок</th><th>Статус</th><th>Запчасти</th><th></th></tr></thead><tbody>';
-
+        let html = '<div class="table-wrapper"><table class="incident-table"><thead><tr><th>Дата</th><th>Заголовок</th><th>Статус</th><th>Запчасти</th><th></th></tr></thead><tbody>';
         incidents.forEach(inc => {
-            html += `<tr>
+            html += `<tr data-id="${inc.id}">
                 <td>${new Date(inc.reported_at).toLocaleDateString('ru')}</td>
                 <td>${inc.title}</td>
                 <td>${inc.status}</td>
@@ -85,18 +83,26 @@ async function loadIncidents(equipmentId) {
             }
             html += `</td></tr>`;
         });
-
-        html += '</tbody></table>';
+        html += '</tbody></table></div>';
         container.innerHTML = html;
 
-        // Навешиваем обработчики
-        document.querySelectorAll('.incident-view-btn').forEach(btn => {
+        // Клик по строке открывает просмотр
+        container.querySelectorAll('tr[data-id]').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('button')) return;
+                const id = row.dataset.id;
+                viewIncident(id);
+            });
+        });
+
+        // Обработчики кнопок
+        container.querySelectorAll('.incident-view-btn').forEach(btn => {
             btn.addEventListener('click', () => viewIncident(btn.dataset.id));
         });
-        document.querySelectorAll('.incident-edit-btn').forEach(btn => {
+        container.querySelectorAll('.incident-edit-btn').forEach(btn => {
             btn.addEventListener('click', () => openIncidentForm(equipmentId, btn.dataset.id));
         });
-        document.querySelectorAll('.incident-delete-btn').forEach(btn => {
+        container.querySelectorAll('.incident-delete-btn').forEach(btn => {
             btn.addEventListener('click', () => deleteIncident(equipmentId, btn.dataset.id));
         });
     } catch (e) {
