@@ -10,6 +10,16 @@
     return currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'storekeeper');
   }
 
+   function statusLabel(status) {
+                const map = {
+                    'open': { text: 'Открыт', color: '#ffcc80' },
+                    'in_progress': { text: 'В работе', color: '#90caf9' },
+                    'resolved': { text: 'Решён', color: '#c8e6c9' },
+                    'closed': { text: 'Закрыт', color: '#e0e0e0' }
+               };
+          return map[status] || { text: status, color: '#ccc' };
+         }
+
   // Загрузка списка оборудования
   async function loadEquipment() {
     try {
@@ -71,7 +81,7 @@ async function loadIncidents(equipmentId) {
             html += `<tr data-id="${inc.id}">
                 <td>${new Date(inc.reported_at).toLocaleDateString('ru')}</td>
                 <td>${inc.title}</td>
-                <td>${inc.status}</td>
+                <td>${statusLabel(inc.status).text}</td>
                 <td>${inc.parts_count}</td>
                 <td>`;
             if (canManage()) {
@@ -80,7 +90,7 @@ async function loadIncidents(equipmentId) {
                          <button class="btn-icon incident-delete-btn" data-id="${inc.id}">🗑️</button>`;
             } else {
                 html += `<button class="btn-icon incident-view-btn" data-id="${inc.id}">👁️</button>`;
-            }
+            }        
             html += `</td></tr>`;
         });
         html += '</tbody></table></div>';
