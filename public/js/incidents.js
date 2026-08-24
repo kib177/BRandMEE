@@ -51,57 +51,58 @@
   }
 
   // Загрузка инцидентов
-  async function loadIncidents(equipmentId) {
+async function loadIncidents(equipmentId) {
     const container = document.getElementById('incidentList');
     container.innerHTML = 'Загрузка...';
     try {
-      const res = await fetch(`/api/incidents?equipment_id=${equipmentId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Ошибка загрузки');
-      const incidents = await res.json();
+        const res = await fetch(`/api/incidents?equipment_id=${equipmentId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Ошибка загрузки');
+        const incidents = await res.json();
 
-      if (!incidents.length) {
-        container.innerHTML = '<p>Нет записей о неисправностях.</p>';
-        return;
-      }
-
-      let html = '<table class="incident-table"><thead><tr><th>Дата</th><th>Заголовок</th><th>Статус</th><th>Запчасти</th>';
-      if (canManage()) html += '<th></th>';
-      html += '</tr></thead><tbody>';
-      incidents.forEach(inc => {
-        html += `<tr>
-          <td>${new Date(inc.reported_at).toLocaleDateString('ru')}</td>
-          <td>${inc.title}</td>
-          <td>${inc.status}</td>
-          <td>${inc.parts_count}</td>`;
-        if (canManage()) {
-          html += `<td>
-            <button class="btn-icon incident-view-btn" data-id="${inc.id}">👁️</button>
-            <button class="btn-icon incident-edit-btn" data-id="${inc.id}">✏️</button>
-            <button class="btn-icon incident-delete-btn" data-id="${inc.id}">🗑️</button>
-          </td>`;
-        } else {
-          html += `<td><button class="btn-icon incident-view-btn" data-id="${inc.id}">👁️</button></td>`;
+        if (!incidents.length) {
+            container.innerHTML = '<p>Нет записей о неисправностях.</p>';
+            return;
         }
-        html += '</tr>';
-      });
-      html += '</tbody></table>';
-      container.innerHTML = html;
 
-      document.querySelectorAll('.incident-view-btn').forEach(btn => {
-        btn.addEventListener('click', () => viewIncident(btn.dataset.id));
-      });
-      document.querySelectorAll('.incident-edit-btn').forEach(btn => {
-        btn.addEventListener('click', () => openIncidentForm(equipmentId, btn.dataset.id));
-      });
-      document.querySelectorAll('.incident-delete-btn').forEach(btn => {
-        btn.addEventListener('click', () => deleteIncident(equipmentId, btn.dataset.id));
-      });
+        // Всегда добавляем столбец действий, даже если пользователь не может управлять
+        let html = '<table class="incident-table"><thead><tr><th>Дата</th><th>Заголовок</th><th>Статус</th><th>Запчасти</th><th></th></tr></thead><tbody>';
+
+        incidents.forEach(inc => {
+            html += `<tr>
+                <td>${new Date(inc.reported_at).toLocaleDateString('ru')}</td>
+                <td>${inc.title}</td>
+                <td>${inc.status}</td>
+                <td>${inc.parts_count}</td>
+                <td>`;
+            if (canManage()) {
+                html += `<button class="btn-icon incident-view-btn" data-id="${inc.id}">👁️</button>
+                         <button class="btn-icon incident-edit-btn" data-id="${inc.id}">✏️</button>
+                         <button class="btn-icon incident-delete-btn" data-id="${inc.id}">🗑️</button>`;
+            } else {
+                html += `<button class="btn-icon incident-view-btn" data-id="${inc.id}">👁️</button>`;
+            }
+            html += `</td></tr>`;
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+
+        // Навешиваем обработчики
+        document.querySelectorAll('.incident-view-btn').forEach(btn => {
+            btn.addEventListener('click', () => viewIncident(btn.dataset.id));
+        });
+        document.querySelectorAll('.incident-edit-btn').forEach(btn => {
+            btn.addEventListener('click', () => openIncidentForm(equipmentId, btn.dataset.id));
+        });
+        document.querySelectorAll('.incident-delete-btn').forEach(btn => {
+            btn.addEventListener('click', () => deleteIncident(equipmentId, btn.dataset.id));
+        });
     } catch (e) {
-      container.innerHTML = '<p style="color:red;">Ошибка загрузки.</p>';
+        container.innerHTML = '<p style="color:red;">Ошибка загрузки.</p>';
     }
-  }
+}
 
   // Просмотр инцидента
   async function viewIncident(incidentId) {
