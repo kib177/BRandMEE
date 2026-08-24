@@ -3,7 +3,9 @@
   const token = localStorage.getItem('token');
   if (!token) window.location.href = '/welcome.html';
 
-  // Глобальная функция для проверки роли
+  let allParts = [];
+  let selectedPartsCodes = [];
+
   function canManage() {
     return currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'storekeeper');
   }
@@ -19,7 +21,6 @@
       const select = document.getElementById('equipmentSelect');
       select.innerHTML = '<option value="">Выберите оборудование</option>' + equips.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
 
-      // Фильтрация оборудования при вводе
       document.getElementById('equipmentSearch').addEventListener('input', function(e) {
         const query = e.target.value.toLowerCase().trim();
         const options = select.querySelectorAll('option');
@@ -27,10 +28,9 @@
           if (opt.value === '') return;
           opt.style.display = opt.textContent.toLowerCase().includes(query) ? '' : 'none';
         });
-        if (!query) select.value = ''; // сбрасываем выбор при пустом поиске
+        if (!query) select.value = '';
       });
 
-      // Обработка выбора
       select.addEventListener('change', async () => {
         const equipmentId = select.value;
         if (!equipmentId) {
@@ -50,7 +50,7 @@
     }
   }
 
-  // Загрузка инцидентов для выбранного оборудования
+  // Загрузка инцидентов
   async function loadIncidents(equipmentId) {
     const container = document.getElementById('incidentList');
     container.innerHTML = 'Загрузка...';
@@ -86,7 +86,6 @@
       html += '</tbody></table>';
       container.innerHTML = html;
 
-      // Обработчики редактирования и удаления
       document.querySelectorAll('.incident-edit-btn').forEach(btn => {
         btn.addEventListener('click', () => openIncidentForm(equipmentId, btn.dataset.id));
       });
@@ -98,7 +97,7 @@
     }
   }
 
-  // Открытие формы создания/редактирования
+  // Открытие формы
   function openIncidentForm(equipmentId, incidentId = null) {
     const form = document.getElementById('incidentForm');
     form.reset();
@@ -106,6 +105,8 @@
     document.getElementById('incidentEquipmentId').value = equipmentId;
     const equipmentSelect = document.getElementById('equipmentSelect');
     document.getElementById('incidentEquipmentName').value = equipmentSelect.options[equipmentSelect.selectedIndex].text;
+
+    selectedPartsCodes = [];
 
     if (incidentId) {
       document.getElementById('incidentFormTitle').textContent = 'Редактировать неисправность';
@@ -117,30 +118,57 @@
           document.getElementById('incidentRootCause').value = data.root_cause || '';
           document.getElementById('incidentSolution').value = data.solution || '';
           document.getElementById('incidentStatus').value = data.status;
-          loadPartsForIncident(data.parts);
+          selectedPartsCodes = data.parts.map(p => p.inventory_code);
+          loadPartsForIncident();
         });
     } else {
       document.getElementById('incidentFormTitle').textContent = 'Новая неисправность';
-      loadPartsForIncident([]);
+      loadPartsForIncident();
     }
     document.getElementById('incidentFormOverlay').classList.remove('hidden');
   }
 
-  // Загрузка списка запчастей для выбора
-  async function loadPartsForIncident(selectedParts = []) {
+  // Загрузка всех запчастей и рендер списка
+  async function loadPartsForIncident() {
     try {
       const res = await fetch('/api/inventory', { headers: { 'Authorization': `Bearer ${token}` } });
-      const items = await res.json();
-      const container = document.getElementById('incidentPartsSelect');
-      container.innerHTML = items.map(item => `
-        <label>
-          <input type="checkbox" class="incident-part-checkbox" value="${item.code}" ${selectedParts.some(p => p.inventory_code === item.code) ? 'checked' : ''}>
-          ${item.code} – ${item.name}
-        </label>
-      `).join('');
+      allParts = await res.json();
+      renderPartsList('');
+
+      const searchInput = document.getElementById('partSearch');
+      if (searchInput && !searchInput.dataset.listener) {
+        searchInput.addEventListener('input', (e) => renderPartsList(e.target.value));
+        searchInput.dataset.listener = 'true';
+      }
     } catch (e) {
       console.error('Ошибка загрузки запчастей', e);
     }
+  }
+
+  function renderPartsList(query = '') {
+    const container = document.getElementById('incidentPartsSelect');
+    const filtered = allParts.filter(item =>
+      item.code.toLowerCase().includes(query.toLowerCase()) ||
+      item.name.toLowerCase().includes(query.toLowerCase())
+    );
+    container.innerHTML = filtered.map(item => `
+      <label>
+        <input type="checkbox" class="incident-part-checkbox" value="${item.code}" ${selectedPartsCodes.includes(item.code) ? 'checked' : ''}>
+        ${item.code} – ${item.name}
+      </label>
+    `).join('');
+    if (!filtered.length) container.innerHTML = '<span style="color:#888;">Ничего не найдено</span>';
+
+    // Обработчики изменений чекбоксов
+    document.querySelectorAll('.incident-part-checkbox').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if (cb.checked) {
+          if (!selectedPartsCodes.includes(cb.value)) selectedPartsCodes.push(cb.value);
+        } else {
+          selectedPartsCodes = selectedPartsCodes.filter(code => code !== cb.value);
+        }
+      });
+    });
   }
 
   // Отправка формы
@@ -148,7 +176,6 @@
     e.preventDefault();
     const incidentId = document.getElementById('incidentId').value;
     const equipmentId = document.getElementById('incidentEquipmentId').value;
-    const selectedParts = Array.from(document.querySelectorAll('.incident-part-checkbox:checked')).map(cb => cb.value);
 
     const payload = {
       equipment_id: equipmentId,
@@ -157,7 +184,7 @@
       root_cause: document.getElementById('incidentRootCause').value.trim(),
       solution: document.getElementById('incidentSolution').value.trim(),
       status: document.getElementById('incidentStatus').value,
-      parts: selectedParts
+      parts: selectedPartsCodes
     };
 
     try {
@@ -179,7 +206,7 @@
     }
   });
 
-  // Удаление инцидента
+  // Удаление
   async function deleteIncident(equipmentId, incidentId) {
     if (!confirm('Удалить запись о неисправности?')) return;
     try {
@@ -194,7 +221,7 @@
     }
   }
 
-  // Кнопки управления
+  // Кнопки
   document.getElementById('btnAddIncident').addEventListener('click', () => {
     const equipmentId = document.getElementById('incidentEquipmentId').value;
     if (equipmentId) openIncidentForm(equipmentId);
