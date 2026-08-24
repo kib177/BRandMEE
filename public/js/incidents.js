@@ -144,7 +144,7 @@ async function loadIncidents(equipmentId) {
       content.innerHTML = `
         <p><strong>Оборудование:</strong> ${data.equipment_name}</p>
         <p><strong>Заголовок:</strong> ${data.title}</p>
-        <p><strong>Статус:</strong> <span class="badge" style="background:${data.status==='closed'?'#e0e0e0':data.status==='resolved'?'#c8e6c9':'#ffcc80'}">${data.status}</span></p>
+        <p><strong>Статус:</strong> <span class="badge" style="background:${statusLabel(data.status).color}">${statusLabel(data.status).text}</span></p>
         <p><strong>Дата:</strong> ${new Date(data.reported_at).toLocaleString('ru')}</p>
         <p><strong>Описание:</strong><br>${data.description || '—'}</p>
         <p><strong>Причина:</strong><br>${data.root_cause || '—'}</p>
