@@ -102,10 +102,13 @@
             <option value="closed">Закрыт</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>Запчасти</label>
-          <div id="incidentPartsSelect" class="parts-list"></div>
-        </div>
+       <div class="form-group">
+            <label>Запчасти</label>
+            <div class="parts-search">
+              <input type="text" id="partSearch" placeholder="Поиск запчасти..." autocomplete="off">
+            </div>
+         <div class="parts-select-container" id="incidentPartsSelect"></div>
+     </div>
         <div class="form-actions">
           <button type="button" class="btn btn-outline" id="btnCancelIncidentForm">Отмена</button>
           <button type="submit" class="btn btn-primary">Сохранить</button>
