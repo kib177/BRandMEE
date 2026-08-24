@@ -5,7 +5,7 @@ var token = localStorage.getItem('token');   // глобальная перем�
 
 // Сразу скрываем элементы, требующие авторизации
 (function hideRestrictedElements() {
-    document.querySelectorAll('.auth-required, .moderator-only, .admin-only').forEach(el => {
+    document.querySelectorAll('.auth-required, .moderator-only, .admin-only, .storekeeper-only').forEach(el => {
         el.style.display = 'none';
     });
 })();
@@ -20,7 +20,7 @@ function logout() {
 }
 
 async function checkAuth() {
-  if (!token) {
+    if (!token) {
         if (!window.location.pathname.includes('welcome.html')) {
             window.location.href = '/welcome.html';
         }
@@ -67,9 +67,7 @@ function showLoginModal(onSuccess) {
         `;
         document.body.appendChild(overlay);
 
-        document.getElementById('btnLoginCancel').addEventListener('click', () => {
-            overlay.classList.add('hidden');
-        });
+        document.getElementById('btnLoginCancel').addEventListener('click', () => overlay.classList.add('hidden'));
         document.getElementById('btnLoginSubmit').addEventListener('click', async () => {
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
@@ -104,41 +102,39 @@ function showLoginModal(onSuccess) {
     document.getElementById('loginUsername').focus();
 }
 
+// Обновление интерфейса при изменении авторизации
 function updateAuthUI() {
     const isLoggedIn = !!currentUser;
     const role = currentUser?.role;
 
-    const writeoffsLink = document.getElementById('menuReportsWriteoffs');
-if (writeoffsLink) writeoffsLink.style.display = (currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'storekeeper')) ? 'block' : 'none';
-
+    // Обновляем видимость основных элементов
+    document.querySelectorAll('.auth-required').forEach(el => {
+        el.style.display = isLoggedIn ? '' : 'none';
+    });
     document.querySelectorAll('.moderator-only').forEach(el => {
         el.style.display = (isLoggedIn && (role === 'moderator' || role === 'admin')) ? '' : 'none';
     });
-
     document.querySelectorAll('.admin-only').forEach(el => {
         el.style.display = (isLoggedIn && role === 'admin') ? '' : 'none';
     });
-
     document.querySelectorAll('.storekeeper-only').forEach(el => {
-    el.style.display = (isLoggedIn && (role === 'storekeeper' || role === 'moderator' || role === 'admin')) ? '' : 'none';
+        el.style.display = (isLoggedIn && (role === 'storekeeper' || role === 'moderator' || role === 'admin')) ? '' : 'none';
     });
 
+    // Обновляем текст в шапке
     const authDot = document.getElementById('authDot');
     const authLabel = document.getElementById('authLabel');
     if (authDot && authLabel) {
         if (isLoggedIn) {
             authDot.classList.remove('locked');
-            if (authLabel) authLabel.textContent = `${currentUser.display_name || currentUser.username}`;
+            authLabel.textContent = currentUser.display_name || currentUser.username;
         } else {
             authDot.classList.add('locked');
             authLabel.textContent = 'Не авторизован';
         }
     }
 
-    if (typeof updateMenuVisibility === 'function') {
-  updateMenuVisibility();
-}
-
+    // Кнопка входа/выхода
     let loginBtn = document.getElementById('btnLoginLogout');
     if (!loginBtn) {
         loginBtn = document.createElement('button');
@@ -157,32 +153,30 @@ if (writeoffsLink) writeoffsLink.style.display = (currentUser && (currentUser.ro
         loginBtn.onclick = () => showLoginModal();
     }
 
+    // Обновляем видимость пунктов бургер-меню
+    updateMenuVisibility(isLoggedIn, role);
+
     if (typeof updateActionButtons === 'function') {
         updateActionButtons();
     }
 }
 
-function updateMenuVisibility() {
-  const role = currentUser?.role;
-  if (!role) return;
+// Показ/скрытие пунктов меню в зависимости от роли
+function updateMenuVisibility(isLoggedIn, role) {
+    const items = [
+        { id: 'menuIncidents', visible: isLoggedIn },
+        { id: 'menuReportsWriteoffs', visible: isLoggedIn && (role === 'admin' || role === 'moderator' || role === 'storekeeper') },
+        { id: 'menuBackup', visible: isLoggedIn && role === 'admin' },
+        { id: 'menuUsers', visible: isLoggedIn && role === 'admin' },
+        { id: 'menuMailing', visible: isLoggedIn && role === 'admin' },
+        { id: 'menuLabels', visible: isLoggedIn && (role === 'admin' || role === 'moderator' || role === 'storekeeper') },
+        { id: 'menuDirectories', visible: isLoggedIn && (role === 'admin' || role === 'moderator') }
+    ];
 
-  const incidentsLink = document.getElementById('menuIncidents');
-  if (incidentsLink) incidentsLink.style.display = isLoggedIn ? 'block' : 'none';
-
-  const backupLink = document.getElementById('menuBackup');
-  if (backupLink) backupLink.style.display = (role === 'admin') ? 'block' : 'none';
-
-  const usersLink = document.getElementById('menuUsers');
-  if (usersLink) usersLink.style.display = (role === 'admin') ? 'block' : 'none';
-
-  const mailingLink = document.getElementById('menuMailing');
-  if (mailingLink) mailingLink.style.display = (role === 'admin') ? 'block' : 'none';
-
-  const labelsLink = document.getElementById('menuLabels');
-  if (labelsLink) labelsLink.style.display = (role === 'admin' || role === 'moderator' || role === 'storekeeper') ? 'block' : 'none';
-
-  const dirLink = document.getElementById('menuDirectories');
-  if (dirLink) dirLink.style.display = (role === 'admin' || role === 'moderator') ? 'block' : 'none';
+    items.forEach(item => {
+        const el = document.getElementById(item.id);
+        if (el) el.style.display = item.visible ? 'block' : 'none';
+    });
 }
 
 function getToken() {
