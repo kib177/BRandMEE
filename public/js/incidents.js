@@ -77,15 +77,21 @@
           <td>${inc.parts_count}</td>`;
         if (canManage()) {
           html += `<td>
+            <button class="btn-icon incident-view-btn" data-id="${inc.id}">👁️</button>
             <button class="btn-icon incident-edit-btn" data-id="${inc.id}">✏️</button>
             <button class="btn-icon incident-delete-btn" data-id="${inc.id}">🗑️</button>
           </td>`;
+        } else {
+          html += `<td><button class="btn-icon incident-view-btn" data-id="${inc.id}">👁️</button></td>`;
         }
         html += '</tr>';
       });
       html += '</tbody></table>';
       container.innerHTML = html;
 
+      document.querySelectorAll('.incident-view-btn').forEach(btn => {
+        btn.addEventListener('click', () => viewIncident(btn.dataset.id));
+      });
       document.querySelectorAll('.incident-edit-btn').forEach(btn => {
         btn.addEventListener('click', () => openIncidentForm(equipmentId, btn.dataset.id));
       });
@@ -94,6 +100,45 @@
       });
     } catch (e) {
       container.innerHTML = '<p style="color:red;">Ошибка загрузки.</p>';
+    }
+  }
+
+  // Просмотр инцидента
+  async function viewIncident(incidentId) {
+    try {
+      const res = await fetch(`/api/incidents/${incidentId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Ошибка загрузки');
+      const data = await res.json();
+
+      const content = document.getElementById('incidentDetailContent');
+      let partsHtml = '';
+      if (data.parts && data.parts.length) {
+        partsHtml = '<ul>';
+        data.parts.forEach(p => {
+          partsHtml += `<li>${p.inventory_code} – ${p.name} [${p.model || ''}] (${p.quantity} ${p.unit})</li>`;
+        });
+        partsHtml += '</ul>';
+      } else {
+        partsHtml = '<p>Запчасти не указаны</p>';
+      }
+
+      content.innerHTML = `
+        <p><strong>Оборудование:</strong> ${data.equipment_name}</p>
+        <p><strong>Заголовок:</strong> ${data.title}</p>
+        <p><strong>Статус:</strong> <span class="badge" style="background:${data.status==='closed'?'#e0e0e0':data.status==='resolved'?'#c8e6c9':'#ffcc80'}">${data.status}</span></p>
+        <p><strong>Дата:</strong> ${new Date(data.reported_at).toLocaleString('ru')}</p>
+        <p><strong>Описание:</strong><br>${data.description || '—'}</p>
+        <p><strong>Причина:</strong><br>${data.root_cause || '—'}</p>
+        <p><strong>Решение:</strong><br>${data.solution || '—'}</p>
+        <p><strong>Использованные запчасти:</strong></p>
+        ${partsHtml}
+      `;
+
+      document.getElementById('incidentViewOverlay').classList.remove('hidden');
+    } catch (e) {
+      alert('Ошибка просмотра: ' + e.message);
     }
   }
 
@@ -149,17 +194,17 @@
     const container = document.getElementById('incidentPartsSelect');
     const filtered = allParts.filter(item =>
       item.code.toLowerCase().includes(query.toLowerCase()) ||
-      item.name.toLowerCase().includes(query.toLowerCase())
+      item.name.toLowerCase().includes(query.toLowerCase()) ||
+      (item.model && item.model.toLowerCase().includes(query.toLowerCase()))
     );
     container.innerHTML = filtered.map(item => `
       <label>
         <input type="checkbox" class="incident-part-checkbox" value="${item.code}" ${selectedPartsCodes.includes(item.code) ? 'checked' : ''}>
-        ${item.code} – ${item.name}
+        ${item.code} – ${item.name} [${item.model || ''}]
       </label>
     `).join('');
     if (!filtered.length) container.innerHTML = '<span style="color:#888;">Ничего не найдено</span>';
 
-    // Обработчики изменений чекбоксов
     document.querySelectorAll('.incident-part-checkbox').forEach(cb => {
       cb.addEventListener('change', () => {
         if (cb.checked) {
@@ -228,6 +273,9 @@
   });
   document.getElementById('btnCancelIncidentForm').addEventListener('click', () => {
     document.getElementById('incidentFormOverlay').classList.add('hidden');
+  });
+  document.getElementById('btnCloseIncidentView').addEventListener('click', () => {
+    document.getElementById('incidentViewOverlay').classList.add('hidden');
   });
 
   // Инициализация
