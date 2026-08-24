@@ -1,70 +1,92 @@
-// incidents.js – журнал неисправностей оборудования
+// incidents.js – журнал неисправностей оборудования (отдельная страница)
 (function() {
-  // Убираем глобальный canManage, вычисляем всегда актуально
+  const token = localStorage.getItem('token');
+  if (!token) window.location.href = '/welcome.html';
 
-  // Делегирование кликов по кнопкам истории
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.incident-btn');
-    if (btn) {
-      const equipmentId = btn.dataset.id;
-      const equipmentName = btn.closest('tr')?.querySelector('.equip-edit')?.value || 'Оборудование';
-      openIncidentModal(equipmentId, equipmentName);
-    }
-  });
-
-  async function openIncidentModal(equipmentId, equipmentName) {
-    // Вычисляем права прямо сейчас
-    const role = currentUser?.role || null;
-    const canManage = role === 'admin' || role === 'moderator' || role === 'storekeeper';
-
-    const overlay = document.getElementById('incidentModalOverlay');
-    const content = document.getElementById('incidentContent');
-    const title = document.getElementById('incidentModalTitle');
-    title.textContent = `История неисправностей: ${equipmentName}`;
-    content.innerHTML = 'Загрузка...';
-    overlay.classList.remove('hidden');
-
-    document.getElementById('incidentEquipmentId').value = equipmentId;
-    document.getElementById('incidentEquipmentName').value = equipmentName;
-
-    const addBtn = document.getElementById('btnAddIncident');
-    if (addBtn) {
-      addBtn.style.display = canManage ? 'inline-flex' : 'none';
-    }
-
-    await loadIncidents(equipmentId, canManage);
+  // Глобальная функция для проверки роли
+  function canManage() {
+    return currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'storekeeper');
   }
 
-  async function loadIncidents(equipmentId, canManage = false) {
-    const content = document.getElementById('incidentContent');
+  // Загрузка списка оборудования
+  async function loadEquipment() {
+    try {
+      const res = await fetch('/api/directories/equipment', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Ошибка загрузки оборудования');
+      const equips = await res.json();
+      const select = document.getElementById('equipmentSelect');
+      select.innerHTML = '<option value="">Выберите оборудование</option>' + equips.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+
+      // Фильтрация оборудования при вводе
+      document.getElementById('equipmentSearch').addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase().trim();
+        const options = select.querySelectorAll('option');
+        options.forEach(opt => {
+          if (opt.value === '') return;
+          opt.style.display = opt.textContent.toLowerCase().includes(query) ? '' : 'none';
+        });
+        if (!query) select.value = ''; // сбрасываем выбор при пустом поиске
+      });
+
+      // Обработка выбора
+      select.addEventListener('change', async () => {
+        const equipmentId = select.value;
+        if (!equipmentId) {
+          document.getElementById('incidentList').innerHTML = '<p>Выберите оборудование для просмотра истории.</p>';
+          document.getElementById('btnAddIncident').style.display = 'none';
+          return;
+        }
+        const equipmentName = select.options[select.selectedIndex].text;
+        document.getElementById('incidentEquipmentId').value = equipmentId;
+        document.getElementById('incidentEquipmentName').value = equipmentName;
+        document.getElementById('btnAddIncident').style.display = canManage() ? 'inline-flex' : 'none';
+        await loadIncidents(equipmentId);
+      });
+    } catch (e) {
+      console.error(e);
+      document.getElementById('incidentList').innerHTML = '<p style="color:red;">Ошибка загрузки оборудования</p>';
+    }
+  }
+
+  // Загрузка инцидентов для выбранного оборудования
+  async function loadIncidents(equipmentId) {
+    const container = document.getElementById('incidentList');
+    container.innerHTML = 'Загрузка...';
     try {
       const res = await fetch(`/api/incidents?equipment_id=${equipmentId}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Ошибка загрузки');
       const incidents = await res.json();
 
       if (!incidents.length) {
-        content.innerHTML = '<p>Нет записей о неисправностях.</p>';
+        container.innerHTML = '<p>Нет записей о неисправностях.</p>';
         return;
       }
 
-      let html = '<div style="max-height: 400px; overflow-y: auto;">';
-      html += '<table style="width:100%; font-size:0.85rem; border-collapse:collapse;">';
-      html += '<thead><tr><th>Дата</th><th>Заголовок</th><th>Статус</th><th>Запчасти</th><th></th></tr></thead><tbody>';
+      let html = '<table class="incident-table"><thead><tr><th>Дата</th><th>Заголовок</th><th>Статус</th><th>Запчасти</th>';
+      if (canManage()) html += '<th></th>';
+      html += '</tr></thead><tbody>';
       incidents.forEach(inc => {
         html += `<tr>
           <td>${new Date(inc.reported_at).toLocaleDateString('ru')}</td>
           <td>${inc.title}</td>
           <td>${inc.status}</td>
-          <td>${inc.parts_count}</td>
-          <td>${canManage ? `<button class="btn-icon incident-edit-btn" data-id="${inc.id}">✏️</button> <button class="btn-icon incident-delete-btn" data-id="${inc.id}">🗑️</button>` : ''}</td>
-        </tr>`;
+          <td>${inc.parts_count}</td>`;
+        if (canManage()) {
+          html += `<td>
+            <button class="btn-icon incident-edit-btn" data-id="${inc.id}">✏️</button>
+            <button class="btn-icon incident-delete-btn" data-id="${inc.id}">🗑️</button>
+          </td>`;
+        }
+        html += '</tr>';
       });
-      html += '</tbody></table></div>';
-      content.innerHTML = html;
+      html += '</tbody></table>';
+      container.innerHTML = html;
 
-      // Обработчики редактирования/удаления
+      // Обработчики редактирования и удаления
       document.querySelectorAll('.incident-edit-btn').forEach(btn => {
         btn.addEventListener('click', () => openIncidentForm(equipmentId, btn.dataset.id));
       });
@@ -72,52 +94,46 @@
         btn.addEventListener('click', () => deleteIncident(equipmentId, btn.dataset.id));
       });
     } catch (e) {
-      content.innerHTML = '<p style="color:red;">Ошибка загрузки.</p>';
+      container.innerHTML = '<p style="color:red;">Ошибка загрузки.</p>';
     }
   }
 
-  // Кнопка "Добавить неисправность"
-  document.getElementById('btnAddIncident')?.addEventListener('click', () => {
-    openIncidentForm(null);
-  });
-
-  function openIncidentForm(incidentId) {
-    const formOverlay = document.getElementById('incidentFormOverlay');
+  // Открытие формы создания/редактирования
+  function openIncidentForm(equipmentId, incidentId = null) {
     const form = document.getElementById('incidentForm');
-    const title = document.getElementById('incidentFormTitle');
     form.reset();
     document.getElementById('incidentId').value = incidentId || '';
+    document.getElementById('incidentEquipmentId').value = equipmentId;
+    const equipmentSelect = document.getElementById('equipmentSelect');
+    document.getElementById('incidentEquipmentName').value = equipmentSelect.options[equipmentSelect.selectedIndex].text;
+
     if (incidentId) {
-      title.textContent = 'Редактировать неисправность';
-      fetch(`/api/incidents/${incidentId}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      })
-      .then(r => r.json())
-      .then(data => {
-        document.getElementById('incidentTitle').value = data.title;
-        document.getElementById('incidentDescription').value = data.description || '';
-        document.getElementById('incidentRootCause').value = data.root_cause || '';
-        document.getElementById('incidentSolution').value = data.solution || '';
-        document.getElementById('incidentStatus').value = data.status;
-        loadPartsForIncident(data.parts);
-      });
+      document.getElementById('incidentFormTitle').textContent = 'Редактировать неисправность';
+      fetch(`/api/incidents/${incidentId}`, { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('incidentTitle').value = data.title;
+          document.getElementById('incidentDescription').value = data.description || '';
+          document.getElementById('incidentRootCause').value = data.root_cause || '';
+          document.getElementById('incidentSolution').value = data.solution || '';
+          document.getElementById('incidentStatus').value = data.status;
+          loadPartsForIncident(data.parts);
+        });
     } else {
-      title.textContent = 'Новая неисправность';
-      document.getElementById('incidentTitle').value = '';
+      document.getElementById('incidentFormTitle').textContent = 'Новая неисправность';
       loadPartsForIncident([]);
     }
-    formOverlay.classList.remove('hidden');
+    document.getElementById('incidentFormOverlay').classList.remove('hidden');
   }
 
+  // Загрузка списка запчастей для выбора
   async function loadPartsForIncident(selectedParts = []) {
     try {
-      const res = await fetch('/api/inventory', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await fetch('/api/inventory', { headers: { 'Authorization': `Bearer ${token}` } });
       const items = await res.json();
       const container = document.getElementById('incidentPartsSelect');
       container.innerHTML = items.map(item => `
-        <label style="display:block;">
+        <label>
           <input type="checkbox" class="incident-part-checkbox" value="${item.code}" ${selectedParts.some(p => p.inventory_code === item.code) ? 'checked' : ''}>
           ${item.code} – ${item.name}
         </label>
@@ -128,7 +144,7 @@
   }
 
   // Отправка формы
-  document.getElementById('incidentForm')?.addEventListener('submit', async (e) => {
+  document.getElementById('incidentForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const incidentId = document.getElementById('incidentId').value;
     const equipmentId = document.getElementById('incidentEquipmentId').value;
@@ -149,10 +165,7 @@
       const method = incidentId ? 'PATCH' : 'POST';
       const res = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload)
       });
       if (!res.ok) {
@@ -160,35 +173,36 @@
         throw new Error(err.error || 'Ошибка сохранения');
       }
       document.getElementById('incidentFormOverlay').classList.add('hidden');
-      // Перезагружаем список инцидентов
-      const equipmentId2 = document.getElementById('incidentEquipmentId').value;
-      loadIncidents(equipmentId2, true);
+      loadIncidents(equipmentId);
     } catch (e) {
       alert('Ошибка: ' + e.message);
     }
   });
 
-  // Удаление
+  // Удаление инцидента
   async function deleteIncident(equipmentId, incidentId) {
     if (!confirm('Удалить запись о неисправности?')) return;
     try {
       const res = await fetch(`/api/incidents/${incidentId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Ошибка удаления');
-      loadIncidents(equipmentId, true);
+      loadIncidents(equipmentId);
     } catch (e) {
       alert('Ошибка: ' + e.message);
     }
   }
 
-  // Закрытие модалок
-  document.getElementById('btnCloseIncidentModal')?.addEventListener('click', () => {
-    document.getElementById('incidentModalOverlay').classList.add('hidden');
+  // Кнопки управления
+  document.getElementById('btnAddIncident').addEventListener('click', () => {
+    const equipmentId = document.getElementById('incidentEquipmentId').value;
+    if (equipmentId) openIncidentForm(equipmentId);
   });
-  document.getElementById('btnCancelIncidentForm')?.addEventListener('click', () => {
+  document.getElementById('btnCancelIncidentForm').addEventListener('click', () => {
     document.getElementById('incidentFormOverlay').classList.add('hidden');
   });
 
+  // Инициализация
+  loadEquipment();
 })();
