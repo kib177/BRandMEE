@@ -1,46 +1,46 @@
 /* Бургер-меню в шапке */
 .header-menu {
-  position: relative;
+    position: relative;
 }
 
 .btn-icon-menu {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0.3rem;
-  line-height: 1;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.3rem;
+    line-height: 1;
 }
 
 .dropdown-menu {
-  position: fixed;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow);
-  z-index: 150;
-  min-width: 200px;
-  max-width: calc(100vw - 20px);
-  padding: 0.5rem 0;
-  margin: 0;
-  /* Позиционирование будет задано в JS */
+    position: fixed;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    z-index: 150;
+    min-width: 200px;
+    max-width: calc(100vw - 20px);
+    padding: 0.5rem 0;
+    margin: 0;
+    /* Позиционирование будет задано в JS */
 }
 
 .dropdown-item {
-  display: block;
-  width: 100%;
-  padding: 0.5rem 1rem;
-  background: none;
-  border: none;
-  text-align: left;
-  font-size: 0.9rem;
-  cursor: pointer;
-  color: var(--text);
-  /* Убираем подчёркивание у ссылок в бургер-меню */
-  text-decoration: none;
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: var(--text);
+    /* Убираем подчёркивание у ссылок в бургер-меню */
+    text-decoration: none;
 }
 
 .dropdown-item:hover {
-  background: var(--accent-light);
+    background: var(--accent-light);
 }

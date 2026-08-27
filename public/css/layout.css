@@ -5,7 +5,7 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 .header-inner {
@@ -33,7 +33,7 @@
 .header-logo .icon {
     width: 38px;
     height: 38px;
-    background: rgba(255,255,255,0.15);
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -64,7 +64,8 @@
 }
 
 .header-auth .auth-dot {
-    width: 9px; height: 9px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background: #4caf50;
     display: inline-block;
@@ -90,6 +91,7 @@
     gap: 1rem;
     margin-bottom: 1.5rem;
 }
+
 .stat-card {
     background: var(--card-bg);
     border-radius: var(--radius);
@@ -100,13 +102,20 @@
     position: relative;
     overflow: hidden;
 }
-.stat-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+
+.stat-card:hover {
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+}
+
 .stat-card .stat-icon {
     position: absolute;
-    right: 0.8rem; top: 0.8rem;
+    right: 0.8rem;
+    top: 0.8rem;
     font-size: 1.8rem;
     opacity: 0.2;
 }
+
 .stat-card .stat-label {
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -115,14 +124,22 @@
     margin-bottom: 0.2rem;
     font-weight: 600;
 }
+
 .stat-card .stat-value {
     font-size: 1.9rem;
     font-weight: 700;
     color: var(--primary);
     line-height: 1.1;
 }
-.stat-card.warning .stat-value { color: #c0831a; }
-.stat-card.danger .stat-value { color: var(--danger); }
+
+.stat-card.warning .stat-value {
+    color: #c0831a;
+}
+
+.stat-card.danger .stat-value {
+    color: var(--danger);
+}
+
 .stat-card .stat-sub {
     font-size: 0.74rem;
     color: var(--text-secondary);
@@ -137,11 +154,13 @@
     align-items: center;
     margin-bottom: 1rem;
 }
+
 .search-wrapper {
     flex: 3 1 0%;
     min-width: 200px;
     position: relative;
 }
+
 .search-wrapper input {
     width: 100%;
     padding: 0.65rem 1rem 0.65rem 2.5rem;
@@ -153,18 +172,22 @@
     outline: none;
     color: var(--text);
 }
+
 .search-wrapper input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 4px rgba(46,134,193,0.1);
+    box-shadow: 0 0 0 4px rgba(46, 134, 193, 0.1);
 }
+
 .search-wrapper .search-icon {
     position: absolute;
-    left: 0.9rem; top: 50%;
+    left: 0.9rem;
+    top: 50%;
     transform: translateY(-50%);
     color: #999;
     pointer-events: none;
     font-size: 1rem;
 }
+
 .filter-select {
     padding: 0.6rem 2rem 0.6rem 0.9rem;
     border: 2px solid var(--border);
@@ -183,15 +206,17 @@
     flex: 1.2 1 0%;
     min-width: 100px;
 }
+
 .filter-select:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(46,134,193,0.08);
+    box-shadow: 0 0 0 3px rgba(46, 134, 193, 0.08);
 }
 
 /* Аккордеон статистики */
 .stats-accordion {
     margin-bottom: 1rem;
 }
+
 .stats-accordion-header {
     display: flex;
     justify-content: space-between;
@@ -205,16 +230,20 @@
     font-weight: 600;
     font-size: 0.8rem;
 }
+
 .stats-accordion-arrow {
     transition: transform 0.2s;
     display: inline-block;
 }
+
 .stats-accordion.collapsed .stats-accordion-body {
     display: none;
 }
+
 .stats-accordion:not(.collapsed) .stats-accordion-arrow {
     transform: rotate(0deg);
 }
+
 .stats-accordion.collapsed .stats-accordion-arrow {
     transform: rotate(-90deg);
 }
@@ -226,6 +255,7 @@
     margin-bottom: 1rem;
     overflow: hidden;
 }
+
 .accordion-header {
     background: #f8f9fb;
     padding: 0.7rem 1rem;
@@ -236,17 +266,21 @@
     justify-content: space-between;
     align-items: center;
 }
+
 .accordion-header::after {
     content: '▼';
     font-size: 0.7rem;
     transition: transform 0.2s;
 }
+
 .accordion.collapsed .accordion-body {
     display: none;
 }
+
 .accordion.collapsed .accordion-header::after {
     transform: rotate(-90deg);
 }
+
 .accordion-body {
     padding: 0.8rem;
 }

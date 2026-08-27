@@ -1,5 +1,7 @@
 /* Вспомогательные классы */
-.hidden { display: none !important; }
+.hidden {
+    display: none !important;
+}
 
 .import-hidden {
     position: absolute;
@@ -45,11 +47,36 @@
     font-size: 0.8rem;
     letter-spacing: 0.3px;
 }
-.qty-badge.normal { background: #e8f5e9; color: #2e7d32; }
-.qty-badge.low { background: #fff3cd; color: #856404; }
-.qty-badge.critical { background: #fdecea; color: #b71c1c; }
 
-.actions-cell { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.qty-badge.normal {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
 
-.empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); }
-.empty-state .empty-icon { font-size: 3rem; display: block; margin-bottom: 0.8rem; }
+.qty-badge.low {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.qty-badge.critical {
+    background: #fdecea;
+    color: #b71c1c;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+}
+
+.empty-state .empty-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 0.8rem;
+}

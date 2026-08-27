@@ -14,9 +14,9 @@
     --danger-light: #fdecea;
     --success: #1e8449;
     --success-light: #e8f8ef;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-    --shadow: 0 2px 8px rgba(0,0,0,0.08);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.15);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
     --radius: 10px;
     --radius-sm: 6px;
     --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -39,39 +39,49 @@
     --danger-light: #3e1a1a;
     --success: #66bb6a;
     --success-light: #1a3a1a;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-    --shadow: 0 2px 8px rgba(0,0,0,0.4);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
 /* Дополнительные переопределения для элементов, не использующих переменные */
 [data-theme="dark"] .header {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
 }
+
 [data-theme="dark"] thead th {
     background: #2a2a2a;
     color: #ccc;
 }
+
 [data-theme="dark"] tbody tr:hover {
     background: #2a2a2a;
 }
+
 [data-theme="dark"] tbody tr.low-stock {
     background: #2e2b1a;
     border-left-color: #f0c040;
 }
+
 [data-theme="dark"] .btn-outline {
     border-color: #555;
     color: #ddd;
 }
+
 [data-theme="dark"] .btn-outline:hover {
     background: #333;
 }
+
 [data-theme="dark"] .toast {
     background: #333;
     color: #fff;
 }
 
-* { margin:0; padding:0; box-sizing:border-box; }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
 body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -86,27 +96,32 @@ body {
 [data-theme="dark"] {
 
     /* 1. Убираем резкие разделители в таблице */
+
     tbody td {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);  /* почти незаметная линия */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06); /* почти незаметная линия */
     }
 
     /* 2. Кнопка «Войти» в шапке — делаем светлой и заметной */
+
     #btnLoginLogout {
         background: #3a3a3a;
         color: #ffffff;
         border: 2px solid #777777;
     }
+
     #btnLoginLogout:hover {
         background: #4a4a4a;
         border-color: #90caf9;
     }
 
     /* 3. Обычные контурные кнопки — тоже делаем контрастнее */
+
     .btn-outline {
         background: #2a2a2a;
         color: #e0e0e0;
         border-color: #555;
     }
+
     .btn-outline:hover {
         background: #3a3a3a;
         border-color: #90caf9;
@@ -117,7 +132,7 @@ body {
     --card-bg: #242424;
 }
 
- /* ===== Тёмная тема для модальных окон ===== */
+/* ===== Тёмная тема для модальных окон ===== */
 [data-theme="dark"] .modal {
     background: #1e1e1e;
     color: #e0e0e0;
@@ -153,6 +168,7 @@ body {
     color: #ddd;
     border-color: #555;
 }
+
 [data-theme="dark"] .modal .btn-outline:hover {
     background: #3a3a3a;
     border-color: #90caf9;
@@ -162,6 +178,7 @@ body {
     background: #42a5f5;
     color: #fff;
 }
+
 [data-theme="dark"] .modal .btn-primary:hover {
     background: #1e88e5;
 }
@@ -171,6 +188,7 @@ body {
     color: #ef5350;
     border-color: #b71c1c;
 }
+
 [data-theme="dark"] .modal .btn-danger:hover {
     background: #5c2828;
 }
@@ -180,6 +198,7 @@ body {
     background: #1e1e1e;
     color: #e0e0e0;
 }
+
 [data-theme="dark"] .confirm-box p {
     color: #b0b0b0;
 }
@@ -199,17 +218,20 @@ body {
     border-radius: 50%;
     transition: 0.2s;
 }
+
 .modal {
-    position: relative;  /* ← чтобы иконка держалась внутри */
+    position: relative; /* ← чтобы иконка держалась внутри */
 }
 
 .btn-icon-info:hover {
     background: #eee;
     color: #1a3c5e;
 }
+
 [data-theme="dark"] .btn-icon-info {
     color: #ccc;
 }
+
 [data-theme="dark"] .btn-icon-info:hover {
     background: #333;
     color: #90caf9;
