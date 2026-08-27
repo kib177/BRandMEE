@@ -13,59 +13,64 @@
     <link rel="stylesheet" href="/css/pages/reports_writeoffs.css">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1a3c5e">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
 <main class="report-page">
-    <div class="filters">
-        <label>С: <input type="date" id="dateFrom"></label>
-        <label>По: <input type="date" id="dateTo"></label>
-        <button class="btn btn-primary btn-sm" id="btnLoad">Загрузить</button>
-    </div>
+    <div id="reportContent">
+        <div class="filters">
+            <label>С: <input type="date" id="dateFrom"></label>
+            <label>По: <input type="date" id="dateTo"></label>
+            <button class="btn btn-outline btn-sm" id="btnDownloadPdf">📄 Скачать PDF</button>
+            <button class="btn btn-primary btn-sm" id="btnLoad">Загрузить</button>
+        </div>
 
-    <div class="card">
-        <h2>Списания по месяцам</h2>
-        <div class="chart-container">
-            <canvas id="chartMonthly"></canvas>
+        <div class="card">
+            <h2>Списания по месяцам</h2>
+            <div class="chart-container">
+                <canvas id="chartMonthly"></canvas>
+            </div>
         </div>
-    </div>
 
-    <div class="card">
-        <h2>Топ-20 списываемых позиций</h2>
-        <div class="chart-container">
-            <canvas id="chartTopItems"></canvas>
+        <div class="card">
+            <h2>Топ-20 списываемых позиций</h2>
+            <div class="chart-container">
+                <canvas id="chartTopItems"></canvas>
+            </div>
+            <div class="table-wrapper">
+                <table class="table-compact" id="topItemsTable">
+                    <thead>
+                    <tr>
+                        <th>Код</th>
+                        <th>Название</th>
+                        <th>Кол-во</th>
+                        <th>Заявок</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
-        <div class="table-wrapper">
-            <table class="table-compact" id="topItemsTable">
-                <thead>
-                <tr>
-                    <th>Код</th>
-                    <th>Название</th>
-                    <th>Кол-во</th>
-                    <th>Заявок</th>
-                </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
 
-    <div class="card">
-        <h2>По оборудованию</h2>
-        <div class="chart-container">
-            <canvas id="chartEquipment"></canvas>
-        </div>
-        <div class="table-wrapper">
-            <table class="table-compact" id="equipmentTable">
-                <thead>
-                <tr>
-                    <th>Оборудование</th>
-                    <th>Кол-во</th>
-                    <th>Заявок</th>
-                </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+        <div class="card">
+            <h2>По оборудованию</h2>
+            <div class="chart-container">
+                <canvas id="chartEquipment"></canvas>
+            </div>
+            <div class="table-wrapper">
+                <table class="table-compact" id="equipmentTable">
+                    <thead>
+                    <tr>
+                        <th>Оборудование</th>
+                        <th>Кол-во</th>
+                        <th>Заявок</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </main>

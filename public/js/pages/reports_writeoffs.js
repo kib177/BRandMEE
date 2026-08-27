@@ -93,3 +93,53 @@
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
   document.getElementById('dateFrom').valueAsDate = sixMonthsAgo;
 })();
+
+document.getElementById('btnDownloadPdf').addEventListener('click', async () => {
+  const element = document.getElementById('reportContent');
+  if (!element) return alert('Контент отчёта не найден');
+
+  // Показать индикатор загрузки
+  const btn = document.getElementById('btnDownloadPdf');
+  btn.textContent = '⏳ Генерация...';
+  btn.disabled = true;
+
+  try {
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      windowHeight: element.scrollHeight,
+      windowWidth: element.scrollWidth
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const imgWidth = pageWidth - 20;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 10;
+
+    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    pdf.save(`Отчёт_по_списаниям_${new Date().toISOString().slice(0,10)}.pdf`);
+  } catch (err) {
+    console.error('Ошибка генерации PDF:', err);
+    alert('Не удалось создать PDF: ' + err.message);
+  } finally {
+    btn.textContent = '📄 Скачать PDF';
+    btn.disabled = false;
+  }
+});
