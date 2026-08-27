@@ -150,10 +150,6 @@
         `).join('');
     }
 
-    // Обработчики
-    document.getElementById('btnLoad').addEventListener('click', loadReport);
-
-    // Инициализация
     loadDepartments();
     loadReport();
 })();
