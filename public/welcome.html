@@ -1,37 +1,36 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Склад электронных компонентов — Вход</title>
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/welcome.css">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#1a3c5e">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Склад электронных компонентов — Вход</title>
+    <meta name="theme-color" content="#1a3c5e">
 </head>
 <body>
-  <div class="welcome-card">
+<div class="welcome-card">
     <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📦</div>
     <h1>Склад компонентов</h1>
     <p>Управление запасами, учёт списаний, отслеживание оборудования</p>
     <form id="loginForm">
-      <div class="form-group">
-        <label for="username">Имя пользователя</label>
-        <input type="text" id="username" placeholder="Введите логин" required autocomplete="off">
-      </div>
-      <div class="form-group">
-        <label for="password">Пароль</label>
-        <input type="password" id="password" placeholder="Введите пароль" required>
-      </div>
-      <div class="error-msg" id="loginError">Неверное имя пользователя или пароль</div>
-      <button type="submit" class="btn-welcome">Войти в систему</button>
+        <div class="form-group">
+            <label for="username">Имя пользователя</label>
+            <input type="text" id="username" placeholder="Введите логин" required autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="password">Пароль</label>
+            <input type="password" id="password" placeholder="Введите пароль" required>
+        </div>
+        <div class="error-msg" id="loginError">Неверное имя пользователя или пароль</div>
+        <button type="submit" class="btn-welcome">Войти в систему</button>
     </form>
     <div class="features">
-      <span>🔍 Поиск и фильтрация запчастей</span>
-      <span>📊 Отчёты по списаниям</span>
-      <span>👥 Управление пользователями и отделами</span>
+        <span>🔍 Поиск и фильтрация запчастей</span>
+        <span>📊 Отчёты по списаниям</span>
+        <span>👥 Управление пользователями и отделами</span>
     </div>
-  </div>
-  <script src="js/welcome.js"></script>
+</div>
+
+<script src="js/components/load-styles.js"></script>
+<script src="js/pages/welcome.js"></script>
 </body>
 </html>

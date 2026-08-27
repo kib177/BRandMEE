@@ -1,56 +1,44 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Списание компонентов</title>
-  <link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/layout.css">
-<link rel="stylesheet" href="css/components.css">
-<link rel="stylesheet" href="css/utilities.css">
-<link rel="stylesheet" href="css/mobile.css">
-  <link rel="stylesheet" href="/css/burger.css">
-  <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#1a3c5e">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Списание компонентов</title>
+    <meta name="theme-color" content="#1a3c5e">
 </head>
 <body>
-  <header class="header">
-    <div class="header-inner">
-      <div class="header-logo">
-        <a href="/index.html" style="color:#fff; text-decoration:none;">📦 Склад</a>
-        <span style="margin-left:2rem; font-size:0.9rem;">→ Списание</span>
-      </div>
-    </div>
-  </header>
 
-  <div class="writeoff-form">
+<div class="writeoff-form">
     <h2>Заявка на списание</h2>
     <div class="form-group">
-      <label>Выбранная позиция</label>
-      <input type="text" id="selectedItem" readonly>
-      <input type="hidden" id="selectedCode">
+        <label>Выбранная позиция</label>
+        <input type="text" id="selectedItem" readonly>
+        <input type="hidden" id="selectedCode">
     </div>
     <div class="form-group">
-      <label>Количество для списания *</label>
-      <input type="number" id="quantity" step="0.01" min="0.01" required>
+        <label>Количество для списания *</label>
+        <input type="number" id="quantity" step="0.01" min="0.01" required>
     </div>
     <div class="form-group">
-      <label>На какое оборудование *</label>
-      <select id="equipment" required>
-        <option value="">— Выберите —</option>
-      </select>
+        <label>На какое оборудование *</label>
+        <select id="equipment" required>
+            <option value="">— Выберите —</option>
+        </select>
     </div>
     <div class="form-group">
-      <label>Комментарий</label>
-      <textarea id="comment" rows="2"></textarea>
+        <label>Комментарий</label>
+        <textarea id="comment" rows="2"></textarea>
     </div>
     <button class="btn btn-primary" id="submitWriteOff">Отправить заявку</button>
     <p id="message" style="margin-top:1rem;"></p>
-  </div>
+</div>
 
-  <script src="js/auth.js"></script>
-  <script src="js/writeoff.js"></script>
-  <script src="js/theme.js"></script>
-  <script src="/js/profile-ui.js"></script>
+<script src="js/components/load-styles.js"></script>
+<script src="js/utils/auth.js"></script>
+<script src="js/components/profile-ui.js"></script>
+<script src="js/components/layout.js"></script>
+<script src="js/pages/writeoff.js"></script>
+<script src="js/components/theme.js"></script>
+
 </body>
 </html>

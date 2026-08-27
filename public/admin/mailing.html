@@ -1,66 +1,53 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Рассылка писем</title>
-  <link rel="stylesheet" href="../css/base.css">
-  <link rel="stylesheet" href="../css/layout.css">
-  <link rel="stylesheet" href="../css/components.css">
-  <link rel="stylesheet" href="../css/utilities.css">
-  <link rel="stylesheet" href="../css/mobile.css">
-  <link rel="stylesheet" href="../css/admin_page.css">
-  <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="/css/burger.css">
-  <meta name="theme-color" content="#1a3c5e">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рассылка писем</title>
+    <meta name="theme-color" content="#1a3c5e">
 </head>
 <body>
-  <header class="header">
-    <div class="header-inner">
-      <div class="header-logo">
-        <a href="/index.html" style="color:#fff; text-decoration:none;">📦 Склад</a>
-        <span style="margin-left:2rem;">→ Рассылка</span>
-      </div>
-    </div>
-  </header>
 
-  <main class="mailing-page">
+<main class="mailing-page">
     <div class="card">
-      <h2>Рассылка писем</h2>
-      <form id="mailingForm">
-        <div class="form-group">
-          <label>Получатели</label>
-          <div class="recipient-options">
-            <label><input type="radio" name="recipientType" value="all" checked> Все пользователи</label>
-            <label><input type="radio" name="recipientType" value="emails"> Указать email'ы</label>
-            <label><input type="radio" name="recipientType" value="departments"> По отделам</label>
-          </div>
-          <div id="recipientInput" style="display: none; margin-top: 0.5rem;">
-            <input type="text" id="emailsInput" placeholder="email1@example.com, email2@example.com">
-            <select id="departmentsSelect" multiple style="height: auto; display: none;">
-              <!-- заполнится динамически -->
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="subject">Тема письма</label>
-          <input type="text" id="subject" required placeholder="Введите тему">
-        </div>
-        <div class="form-group">
-          <label for="messageText">Текст письма</label>
-          <textarea id="messageText" rows="6" placeholder="Введите сообщение (можно HTML)"></textarea>
-        </div>
-        <div class="btn-row">
-          <button type="submit" class="btn btn-primary">Отправить</button>
-          <span class="status" id="statusMsg"></span>
-        </div>
-      </form>
+        <h2>Рассылка писем</h2>
+        <form id="mailingForm">
+            <div class="form-group">
+                <label>Получатели</label>
+                <div class="recipient-options">
+                    <label><input type="radio" name="recipientType" value="all" checked> Все пользователи</label>
+                    <label><input type="radio" name="recipientType" value="emails"> Указать email'ы</label>
+                    <label><input type="radio" name="recipientType" value="departments"> По отделам</label>
+                </div>
+                <div id="recipientInput" style="display: none; margin-top: 0.5rem;">
+                    <input type="text" id="emailsInput" placeholder="email1@example.com, email2@example.com">
+                    <select id="departmentsSelect" multiple style="height: auto; display: none;">
+                        <!-- заполнится динамически -->
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="subject">Тема письма</label>
+                <input type="text" id="subject" required placeholder="Введите тему">
+            </div>
+            <div class="form-group">
+                <label for="messageText">Текст письма</label>
+                <textarea id="messageText" rows="6" placeholder="Введите сообщение (можно HTML)"></textarea>
+            </div>
+            <div class="btn-row">
+                <button type="submit" class="btn btn-primary">Отправить</button>
+                <span class="status" id="statusMsg"></span>
+            </div>
+        </form>
     </div>
-  </main>
+</main>
 
-  <script src="../js/auth.js"></script>
-  <script src="../js/theme.js"></script>
-  <script src="../js/admin/admin_mailing.js"></script>
-  <script src="/js/profile-ui.js"></script>
- </body>
+<script src="/js/components/load-styles.js"></script>
+<script src="/js/utils/auth.js"></script>
+<script src="/js/components/profile-ui.js"></script>
+<script src="/js/components/layout.js"></script>
+<script src="/js/components/theme.js"></script>
+<script src="/js/admin/admin_mailing.js"></script>
+
+</body>
 </html>

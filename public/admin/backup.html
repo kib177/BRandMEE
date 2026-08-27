@@ -1,54 +1,71 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Резервное копирование</title>
-  <link rel="stylesheet" href="/css/base.css">
-  <link rel="stylesheet" href="/css/components.css">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#1a3c5e">
-  <style>
-    .backup-page { max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
-    .card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 1.5rem; margin-bottom: 1.5rem; }
-    .btn-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 1rem; }
-    .status { margin-top: 0.5rem; font-weight: 500; }
-    input[type="file"] { margin-top: 0.5rem; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Резервное копирование</title>
+    <meta name="theme-color" content="#1a3c5e">
+    <style>
+        .backup-page {
+            max-width: 700px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .status {
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+
+        input[type="file"] {
+            margin-top: 0.5rem;
+        }
+    </style>
 </head>
 <body>
-  <header class="header">
-    <div class="header-inner">
-      <div class="header-logo">
-        <a href="/index.html" style="color:#fff; text-decoration:none;">📦 Склад</a>
-        <span style="margin-left:2rem;">→ Резервное копирование</span>
-      </div>
-    </div>
-  </header>
 
-  <main class="backup-page">
+
+<main class="backup-page">
     <div class="card">
-      <h2>Скачать дамп базы данных</h2>
-      <p>Создаёт полную резервную копию базы данных в формате SQL.</p>
-      <div class="btn-row">
-        <button class="btn btn-primary" id="btnDownload">📥 Скачать дамп</button>
-        <span class="status" id="downloadStatus"></span>
-      </div>
+        <h2>Скачать дамп базы данных</h2>
+        <p>Создаёт полную резервную копию базы данных в формате SQL.</p>
+        <div class="btn-row">
+            <button class="btn btn-primary" id="btnDownload">📥 Скачать дамп</button>
+            <span class="status" id="downloadStatus"></span>
+        </div>
     </div>
 
     <div class="card">
-      <h2>Восстановить из резервной копии</h2>
-      <p>Загрузите ранее сохранённый файл дампа (.sql) для восстановления данных.</p>
-      <input type="file" id="restoreFile" accept=".sql">
-      <div class="btn-row">
-        <button class="btn btn-danger" id="btnRestore" disabled>⚠️ Восстановить</button>
-        <span class="status" id="restoreStatus"></span>
-      </div>
+        <h2>Восстановить из резервной копии</h2>
+        <p>Загрузите ранее сохранённый файл дампа (.sql) для восстановления данных.</p>
+        <input type="file" id="restoreFile" accept=".sql">
+        <div class="btn-row">
+            <button class="btn btn-danger" id="btnRestore" disabled>⚠️ Восстановить</button>
+            <span class="status" id="restoreStatus"></span>
+        </div>
     </div>
-  </main>
+</main>
 
-  <script src="/js/utils.js"></script>
-  <script src="/js/auth.js"></script>
-  <script src="/js/admin/backup.js"></script>
+<script src="/js/components/load-styles.js"></script>
+<script src="/js/utils/dom.js"></script>
+<script src="/js/utils/auth.js"></script>
+<script src="/js/components/layout.js"></script>
+<script src="/js/modules/backup.js"></script>
 </body>
 </html>

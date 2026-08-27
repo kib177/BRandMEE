@@ -1,111 +1,110 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Управление пользователями и отделами</title>
-  <link rel="stylesheet" href="../css/base.css">
-  <link rel="stylesheet" href="../css/layout.css">
-  <link rel="stylesheet" href="../css/components.css">
-  <link rel="stylesheet" href="../css/utilities.css">
-  <link rel="stylesheet" href="../css/mobile.css">
-  <link rel="stylesheet" href="../css/admin_page.css">
-  <link rel="stylesheet" href="/css/burger.css">
-  <link rel="manifest" href="../manifest.json">
-  <meta name="theme-color" content="#1a3c5e">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление пользователями и отделами</title>
+    <meta name="theme-color" content="#1a3c5e">
 </head>
 <body>
-  <header class="header">
-    <div class="header-inner">
-      <div class="header-logo">
-        <a href="/index.html" style="color:#fff; text-decoration:none;">📦 Склад</a>
-        <span style="margin-left:2rem;">→ Управление пользователями</span>
-      </div>
-    </div>
-  </header>
 
-  <main class="admin-page">
+<main class="admin-page">
     <div class="section">
-      <h2>Пользователи</h2>
-      <div class="flex-row">
-        <button class="btn btn-primary" id="btnAddUser">+ Добавить пользователя</button>
-        <button class="btn btn-outline" id="btnRefreshUsers">🔄 Обновить</button>
-      </div>
-      <div class="table-wrapper">
-        <table class="table-users" id="usersTable">
-          <thead>
-            <tr>
-              <th>ID</th><th>Логин</th><th>Имя</th><th>Email</th><th>Роль</th><th>Отдел</th><th>Действия</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+        <h2>Пользователи</h2>
+        <div class="flex-row">
+            <button class="btn btn-primary" id="btnAddUser">+ Добавить пользователя</button>
+            <button class="btn btn-outline" id="btnRefreshUsers">🔄 Обновить</button>
+        </div>
+        <div class="table-wrapper">
+            <table class="table-users" id="usersTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Логин</th>
+                    <th>Имя</th>
+                    <th>Email</th>
+                    <th>Роль</th>
+                    <th>Отдел</th>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
     <div class="section">
-      <h2>Отделы</h2>
-      <div class="form-inline" id="addDeptForm">
-        <input type="text" id="newDeptName" placeholder="Название отдела">
-        <button class="btn btn-primary btn-sm" id="btnAddDept">Добавить</button>
-      </div>
-      <div class="table-wrapper" style="margin-top:1rem;">
-        <table class="table-users" id="deptsTable">
-          <thead><tr><th>ID</th><th>Название</th><th>Действия</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
+        <h2>Отделы</h2>
+        <div class="form-inline" id="addDeptForm">
+            <input type="text" id="newDeptName" placeholder="Название отдела">
+            <button class="btn btn-primary btn-sm" id="btnAddDept">Добавить</button>
+        </div>
+        <div class="table-wrapper" style="margin-top:1rem;">
+            <table class="table-users" id="deptsTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
-  </main>
+</main>
 
-  <!-- Модальное окно пользователя -->
-  <div class="modal-overlay hidden" id="userModalOverlay">
+<!-- Модальное окно пользователя -->
+<div class="modal-overlay hidden" id="userModalOverlay">
     <div class="modal">
-      <h2 id="userModalTitle">Добавить пользователя</h2>
-      <form id="userForm">
-        <input type="hidden" id="userId">
-        <div class="form-group">
-          <label for="username">Логин</label>
-          <input type="text" id="username" required maxlength="50">
-        </div>
-        <div class="form-group">
-          <label for="displayName">Имя</label>
-          <input type="text" id="displayName">
-        </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email">
-        </div>
-        <div class="form-group">
-          <label for="password">Пароль <small>(оставьте пустым при редактировании)</small></label>
-          <input type="password" id="password">
-        </div>
-        <div class="form-group">
-          <label for="role">Роль</label>
-          <select id="role">
-            <option value="user">Пользователь</option>
-            <option value="storekeeper">Кладовщик</option>
-            <option value="moderator">Модератор</option>
-            <option value="admin">Администратор</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="department">Отдел</label>
-          <select id="department">
-            <option value="">— Без отдела —</option>
-          </select>
-        </div>
-        <div class="form-actions">
-          <button type="button" class="btn btn-outline" id="btnCancelUser">Отмена</button>
-          <button type="submit" class="btn btn-primary">Сохранить</button>
-        </div>
-      </form>
+        <h2 id="userModalTitle">Добавить пользователя</h2>
+        <form id="userForm">
+            <input type="hidden" id="userId">
+            <div class="form-group">
+                <label for="username">Логин</label>
+                <input type="text" id="username" required maxlength="50">
+            </div>
+            <div class="form-group">
+                <label for="displayName">Имя</label>
+                <input type="text" id="displayName">
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email">
+            </div>
+            <div class="form-group">
+                <label for="password">Пароль <small>(оставьте пустым при редактировании)</small></label>
+                <input type="password" id="password">
+            </div>
+            <div class="form-group">
+                <label for="role">Роль</label>
+                <select id="role">
+                    <option value="user">Пользователь</option>
+                    <option value="storekeeper">Кладовщик</option>
+                    <option value="moderator">Модератор</option>
+                    <option value="admin">Администратор</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="department">Отдел</label>
+                <select id="department">
+                    <option value="">— Без отдела —</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="btnCancelUser">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </form>
     </div>
-  </div>
+</div>
 
-  <script src="../js/auth.js"></script>
-  <script src="../js/theme.js"></script>
-  <script src="../js/admin/admin_users.js"></script>
-  <script src="/js/profile-ui.js"></script>
+<script src="/js/components/load-styles.js"></script>
+<script src="/js/utils/auth.js"></script>
+<script src="/js/components/profile-ui.js"></script>
+<script src="/js/components/layout.js"></script>
+<script src="/js/components/theme.js"></script>
+<script src="/js/admin/admin_users.js"></script>
+
 </body>
 </html>

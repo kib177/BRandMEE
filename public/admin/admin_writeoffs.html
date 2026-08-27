@@ -1,72 +1,71 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Управление списаниями</title>
-  <link rel="stylesheet" href="../css/base.css">
-<link rel="stylesheet" href="../css/layout.css">
-<link rel="stylesheet" href="../css/components.css">
-<link rel="stylesheet" href="../css/utilities.css">
-<link rel="stylesheet" href="../css/mobile.css">
-  <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="/css/burger.css">
-<meta name="theme-color" content="#1a3c5e">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление списаниями</title>
+    <meta name="theme-color" content="#1a3c5e">
 </head>
 <body>
-  <header class="header">
-    <div class="header-inner">
-      <div class="header-logo">
-        <a href="/index.html" style="color:#fff; text-decoration:none;">📦 Склад</a>
-        <span style="margin-left:2rem;">→ Складское списание</span>
-      </div>
-    </div>
-  </header>
 
-  <main style="max-width:1200px; margin:2rem auto; padding:0 1rem;">
+<main style="max-width:1200px; margin:2rem auto; padding:0 1rem;">
     <div class="filters">
-      <select id="filterStatus">
-        <option value="">Все статусы</option>
-        <option value="pending" selected>Ожидают</option>
-        <option value="approved">Подтверждённые</option>
-        <option value="rejected">Отклонённые</option>
-      </select>
-      <select id="filterDepartment" class="filter-select admin-only">
-    <option value="">🏢 Все отделы</option>
-      </select>
-      <input type="date" id="filterFrom" placeholder="С">
-      <input type="date" id="filterTo" placeholder="По">
-      <input type="text" id="filterEquip" placeholder="Оборудование">
-      <button class="btn btn-primary btn-sm" id="applyFilter">Применить</button>
-      <!-- Новые кнопки экспорта -->
-      <button class="btn btn-outline btn-sm" id="exportExcel">📊 Excel</button>
-      <button class="btn btn-outline btn-sm" id="exportCSV">📄 CSV</button>
+        <select id="filterStatus">
+            <option value="">Все статусы</option>
+            <option value="pending" selected>Ожидают</option>
+            <option value="approved">Подтверждённые</option>
+            <option value="rejected">Отклонённые</option>
+        </select>
+        <select id="filterDepartment" class="filter-select admin-only">
+            <option value="">🏢 Все отделы</option>
+        </select>
+        <input type="date" id="filterFrom" placeholder="С">
+        <input type="date" id="filterTo" placeholder="По">
+        <input type="text" id="filterEquip" placeholder="Оборудование">
+        <button class="btn btn-primary btn-sm" id="applyFilter">Применить</button>
+        <!-- Новые кнопки экспорта -->
+        <button class="btn btn-outline btn-sm" id="exportExcel">📊 Excel</button>
+        <button class="btn btn-outline btn-sm" id="exportCSV">📄 CSV</button>
     </div>
 
     <div class="table-wrapper">
-  <table id="requestsTable">
-      <thead><tr>
-        <th>ID</th><th>Код</th><th>Название</th><th>Артикул</th><th>Кол-во</th><th>Ед.изм.</th><th>Оборудование</th>
-        <th>Запросил</th><th>Дата</th><th>Статус</th><th>Комментарий</th><th>Действие</th>
-      </tr></thead>
-      <tbody></tbody>
-     </table>
-</div>
+        <table id="requestsTable">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Код</th>
+                <th>Название</th>
+                <th>Артикул</th>
+                <th>Кол-во</th>
+                <th>Ед.изм.</th>
+                <th>Оборудование</th>
+                <th>Запросил</th>
+                <th>Дата</th>
+                <th>Статус</th>
+                <th>Комментарий</th>
+                <th>Действие</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
     <hr>
     <h2>Отчёт за год</h2>
     <select id="reportYear">
-      
-      <option value="2026">2026</option>
+
+        <option value="2026">2026</option>
     </select>
     <button class="btn btn-outline btn-sm" id="loadReport">Загрузить</button>
     <div id="reportArea" style="margin-top:1rem;"></div>
-  </main>
+</main>
 
-  <script src="../js/utils.js"></script>
-  <script src="../js/auth.js"></script>
-  <script src="../js/admin/admin_writeoffs.js"></script>
-  <script src="../js/theme.js"></script>
-  <script src="/js/profile-ui.js"></script>
+<script src="/js/components/load-styles.js"></script>
+<script src="/js/utils/dom.js"></script>
+<script src="/js/utils/auth.js"></script>
+<script src="/js/components/layout.js"></script>
+<script src="/js/admin/admin_writeoffs.js"></script>
+<script src="/js/components/theme.js"></script>
+<script src="/js/components/profile-ui.js"></script>
 </body>
 </html>
