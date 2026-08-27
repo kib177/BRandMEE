@@ -21,51 +21,60 @@
         <div class="filters">
             <label>С: <input type="date" id="dateFrom"></label>
             <label>По: <input type="date" id="dateTo"></label>
-            <button class="btn btn-outline btn-sm" id="btnDownloadPdf">📄 Скачать PDF</button>
+            <select id="filterDepartment" class="filter-select admin-only">
+                <option value="">Все отделы</option>
+            </select>
+            <select id="filterStatus" class="filter-select">
+                <option value="">Все статусы</option>
+                <option value="approved">Подтверждён</option>
+                <option value="rejected">Отклонён</option>
+                <option value="pending">Ожидает</option>
+            </select>
             <button class="btn btn-primary btn-sm" id="btnLoad">Загрузить</button>
+            <button class="btn btn-outline btn-sm" id="btnDownloadPdf">📄 PDF</button>
+            <button class="btn btn-outline btn-sm" id="btnDownloadPng">🖼️ PNG</button>
+            <button class="btn btn-outline btn-sm" id="btnDownloadExcel">📊 Excel</button>
+        </div>
+
+        <!-- Метрики -->
+        <div class="metrics-row" id="metricsRow">
+            <div class="metric-card"><span>Всего списаний</span><strong id="metricTotalCount">0</strong></div>
+            <div class="metric-card"><span>Списано единиц</span><strong id="metricTotalQty">0</strong></div>
+            <div class="metric-card"><span>Среднее в день</span><strong id="metricAvg">0</strong></div>
+        </div>
+
+        <!-- Графики -->
+        <div class="card">
+            <h2>Динамика по дням</h2>
+            <div class="chart-container"><canvas id="chartDaily"></canvas></div>
         </div>
 
         <div class="card">
             <h2>Списания по месяцам</h2>
-            <div class="chart-container">
-                <canvas id="chartMonthly"></canvas>
-            </div>
+            <div class="chart-container"><canvas id="chartMonthly"></canvas></div>
         </div>
 
         <div class="card">
-            <h2>Топ-20 списываемых позиций</h2>
-            <div class="chart-container">
-                <canvas id="chartTopItems"></canvas>
-            </div>
-            <div class="table-wrapper">
-                <table class="table-compact" id="topItemsTable">
-                    <thead>
-                    <tr>
-                        <th>Код</th>
-                        <th>Название</th>
-                        <th>Кол-во</th>
-                        <th>Заявок</th>
-                    </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+            <h2>Топ-10 позиций</h2>
+            <div class="chart-container"><canvas id="chartTopItems"></canvas></div>
         </div>
 
         <div class="card">
             <h2>По оборудованию</h2>
-            <div class="chart-container">
-                <canvas id="chartEquipment"></canvas>
-            </div>
+            <div class="chart-container"><canvas id="chartEquipment"></canvas></div>
+        </div>
+
+        <div class="card">
+            <h2>Распределение по статусам</h2>
+            <div class="chart-container"><canvas id="chartStatus"></canvas></div>
+        </div>
+
+        <!-- Таблица детализации -->
+        <div class="card">
+            <h2>Детализация</h2>
             <div class="table-wrapper">
-                <table class="table-compact" id="equipmentTable">
-                    <thead>
-                    <tr>
-                        <th>Оборудование</th>
-                        <th>Кол-во</th>
-                        <th>Заявок</th>
-                    </tr>
-                    </thead>
+                <table class="table-compact" id="detailsTable">
+                    <thead><tr><th>ID</th><th>Дата</th><th>Код</th><th>Наименование</th><th>Кол-во</th><th>Оборудование</th><th>Статус</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
