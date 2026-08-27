@@ -2,12 +2,12 @@
 (function() {
     // Массив CSS-файлов (порядок важен)
     const cssFiles = [
-        'public/css/base.css',
-        'public/css/layout.css',
-        'public/css/components.css',
-        'public/css/utilities.css',
-        'public/css/mobile.css',
-        'public/css/burger.css'
+        '/css/base.css',
+        '/css/layout.css',
+        '/css/components.css',
+        '/css/utilities.css',
+        '/css/mobile.css',
+        '/css/burger.css'
     ];
 
     // Добавляем манифест
