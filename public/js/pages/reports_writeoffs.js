@@ -94,6 +94,7 @@
   document.getElementById('dateFrom').valueAsDate = sixMonthsAgo;
 })();
 
+// Скрин отчета со страницы в pdf
 document.getElementById('btnDownloadPdf').addEventListener('click', async () => {
   const element = document.getElementById('reportContent');
   if (!element) return alert('Контент отчёта не найден');
@@ -142,4 +143,45 @@ document.getElementById('btnDownloadPdf').addEventListener('click', async () => 
     btn.textContent = '📄 Скачать PDF';
     btn.disabled = false;
   }
+});
+
+ // Создание отчета в Excel
+document.getElementById('btnDownloadExcel').addEventListener('click', async () => {
+  const from = document.getElementById('dateFrom').value;
+  const to = document.getElementById('dateTo').value;
+  if (!from || !to) return alert('Сначала загрузите данные');
+
+  const res = await fetch(`/api/reports/writeoffs-extended?from=${from}&to=${to}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await res.json();
+
+  const wb = XLSX.utils.book_new();
+
+  // Месяцы
+  const wsMonthly = XLSX.utils.json_to_sheet(data.monthly.map(m => ({
+    'Месяц': m.month,
+    'Заявок': m.count,
+    'Списано единиц': m.total_qty
+  })));
+  XLSX.utils.book_append_sheet(wb, wsMonthly, 'По месяцам');
+
+  // Топ позиций
+  const wsTop = XLSX.utils.json_to_sheet(data.topItems.map(i => ({
+    'Код': i.item_code,
+    'Наименование': i.item_name,
+    'Кол-во': i.total_qty,
+    'Заявок': i.count
+  })));
+  XLSX.utils.book_append_sheet(wb, wsTop, 'Топ позиций');
+
+  // По оборудованию
+  const wsEquip = XLSX.utils.json_to_sheet(data.byEquipment.map(e => ({
+    'Оборудование': e.equipment || 'Без оборудования',
+    'Кол-во': e.total_qty,
+    'Заявок': e.count
+  })));
+  XLSX.utils.book_append_sheet(wb, wsEquip, 'По оборудованию');
+
+  XLSX.writeFile(wb, `Отчёт_по_списаниям_${from}_${to}.xlsx`);
 });
