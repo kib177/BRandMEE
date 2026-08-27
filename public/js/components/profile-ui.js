@@ -71,6 +71,11 @@ function injectMenu() {
   document.getElementById('menuProfile').addEventListener('click', () => {
     openProfileModal();
   });
+
+  // Обновляем видимость пунктов сразу после создания меню
+  if (typeof updateMenuVisibility === 'function') {
+    updateMenuVisibility(!!currentUser, currentUser?.role);
+  }
 }
 
 function openProfileModal() {
