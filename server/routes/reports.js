@@ -92,13 +92,31 @@ router.get('/writeoffs-extended', authMiddleware, requireRole('admin', 'moderato
             GROUP BY status
         `, params);
 
+        // Детализация
+        const details = await pool.query(`
+            SELECT wo.id,
+                   wo.requested_at,
+                   wo.item_code,
+                   wo.item_name,
+                   wo.quantity,
+                   eq.name AS equipment_name,
+                   wo.status
+            FROM write_offs wo
+                     LEFT JOIN equipment eq ON wo.equipment_id = eq.id
+            WHERE wo.requested_at >= $1
+              AND wo.requested_at <= ($2::date + interval '1 day')
+                ${deptCondition} ${statusCondition}
+            ORDER BY wo.requested_at DESC
+        `, params);
+
         res.json({
             metrics: metrics.rows[0],
             monthly: monthly.rows,
             byDay: byDay.rows,
             topItems: topItems.rows,
             byEquipment: byEquipment.rows,
-            byStatus: byStatus.rows
+            byStatus: byStatus.rows,
+            details: details.rows
         });
     } catch (err) {
         console.error(err);
