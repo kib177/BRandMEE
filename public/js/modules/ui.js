@@ -223,4 +223,3 @@ function initStatsAccordion() {
 
     mediaQuery.addEventListener('change', updateAccordionState);
     updateAccordionState();
-}
