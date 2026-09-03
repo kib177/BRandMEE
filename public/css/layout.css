@@ -146,62 +146,7 @@
     margin-top: 0.1rem;
 }
 
-/* Тулбар */
-/* Десктопные стили для тулбара */
-.toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.7rem;
-    align-items: center;
-    margin-bottom: 1rem;
-}
 
-.search-wrapper {
-    flex: 3 1 0%;
-    min-width: 200px;
-    position: relative;
-}
-
-.search-wrapper input {
-    width: 100%;
-    padding: 0.65rem 1rem 0.65rem 2.5rem;
-    border: 2px solid var(--border);
-    border-radius: 50px;
-    font-size: 0.9rem;
-    background: var(--card-bg);
-    color: var(--text);
-}
-
-.search-wrapper .search-icon {
-    position: absolute;
-    left: 0.9rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #999;
-    font-size: 1rem;
-}
-
-.filter-select {
-    padding: 0.6rem 2rem 0.6rem 0.9rem;
-    border: 2px solid var(--border);
-    border-radius: 50px;
-    font-size: 0.85rem;
-    background: var(--card-bg);
-    color: var(--text);
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a5f72' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.7rem center;
-    flex: 1.2 1 0%;
-    min-width: 100px;
-}
-
-.filter-select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(46, 134, 193, 0.08);
-}
 
 /* Аккордеон статистики */
 .stats-accordion {
