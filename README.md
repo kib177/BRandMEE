@@ -128,3 +128,42 @@ For major changes, please open an issue first to discuss what you would like to 
 
 ## 📄 License
 This project is licensed under the MIT License. See the LICENSE file for details.
+
+```mermaid
+flowchart TB
+    subgraph Client["Клиент (браузер)"]
+        UI["HTML / CSS / JS"]
+        PWA["PWA (service worker)"]
+        UI --> PWA
+    end
+
+    subgraph Server["Сервер (Node.js + Express)"]
+        API["API Routes"]
+        Auth["Auth Middleware (JWT)"]
+        Controllers["Controllers / Services"]
+        Models["Models (PostgreSQL queries)"]
+        Cron["Cron Jobs (weekly reports, backups)"]
+        Mailer["Nodemailer"]
+        API --> Auth
+        Auth --> Controllers
+        Controllers --> Models
+        Cron --> Mailer
+    end
+
+    subgraph DB["База данных"]
+        PG[("PostgreSQL")]
+        Files[("Файлы (uploads/backups)")]
+        Models --> PG
+        Controllers --> Files
+    end
+
+    subgraph External["Внешние сервисы"]
+        SMTP["SMTP (Gmail, и т.д.)"]
+        ChartLibs["CDN (Chart.js, jsPDF, html2canvas)"]
+        Mailer --> SMTP
+        UI --> ChartLibs
+    end
+
+    Client -->|HTTPS| Server
+    Server --> DB
+```
