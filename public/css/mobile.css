@@ -62,15 +62,22 @@
     }
 
     /* ----- ТУЛБАР ----- */
-    .toolbar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.4rem;
-    }
+   .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+}
 
-    .search-wrapper, .filter-select {
-        width: 100%;
-    }
+.search-wrapper,
+.filter-select,
+#filterDepartment,
+#importDepartment,
+#filterType,
+#filterEquipment {
+    width: 100% !important;
+    min-width: auto !important;
+    max-width: 100% !important;
+}
 
     /* ----- ТАБЛИЦЫ (общие) ----- */
     .table-wrapper {
