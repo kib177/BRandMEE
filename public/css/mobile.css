@@ -251,9 +251,5 @@
         }
     }
 
-    @media (min-width: 769px) {
-        #statsAccordion {
-            display: none;
-        }
-    }
+   
 }
