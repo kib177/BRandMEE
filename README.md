@@ -167,3 +167,32 @@ flowchart TB
     Client -->|HTTPS| Server
     Server --> DB
 ```
+
+```mermaid
+graph TD
+    Root["/ (корень проекта)"] --> Server["server/"]
+    Root --> Public["public/"]
+    Root --> Backups["backups/"]
+    Root --> README["README.md"]
+
+    Server --> Routes["routes/"]
+    Server --> Models["models/"]
+    Server --> Services["services/"]
+    Server --> Controllers["controllers/"]
+    Server --> Middleware["middleware/"]
+    Server --> DBJS["db.js"]
+    Server --> Mailer["mailer.js"]
+    Server --> ServerJS["server.js"]
+
+    Public --> CSS["css/"]
+    Public --> JS["js/"]
+    Public --> Uploads["uploads/"]
+    Public --> Partials["partials/"]
+    Public --> IndexHTML["index.html"]
+
+    JS --> Utils["utils/"]
+    JS --> Components["components/"]
+    JS --> Pages["pages/"]
+    JS --> Admin["admin/"]
+    JS --> Modules["modules/"]
+```
