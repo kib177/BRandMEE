@@ -147,7 +147,7 @@
 }
 
 /* Тулбар */
-/* Десктопные стили для тулбара */
+/* ===== ТУЛБАР (десктоп) – широкие поля ===== */
 .toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -157,8 +157,8 @@
 }
 
 .search-wrapper {
-    flex: 3 1 0%;
-    min-width: 200px;
+    flex: 4 1 0%;          /* было 3 – шире */
+    min-width: 400px;      /* было 200px – в 2 раза шире */
     position: relative;
 }
 
@@ -170,6 +170,7 @@
     font-size: 0.9rem;
     background: var(--card-bg);
     color: var(--text);
+    outline: none;
 }
 
 .search-wrapper .search-icon {
@@ -178,6 +179,7 @@
     top: 50%;
     transform: translateY(-50%);
     color: #999;
+    pointer-events: none;
     font-size: 1rem;
 }
 
@@ -194,8 +196,8 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a5f72' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.7rem center;
-    flex: 1.2 1 0%;
-    min-width: 100px;
+    flex: 2 1 0%;          /* было 1.2 – шире */
+    min-width: 200px;      /* было 100px – в 2 раза шире */
 }
 
 .filter-select:focus {
