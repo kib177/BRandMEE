@@ -56,8 +56,12 @@ async function saveBulkItems(items) {
     });
 }
 
-async function deleteItem(code) {
-    await fetch(`${API_BASE}/${code}`, {
+async function deleteItem(code, departmentId) {
+    let url = `${API_BASE}/${code}`;
+    if (departmentId) {
+        url += `?department_id=${encodeURIComponent(departmentId)}`;
+    }
+    await fetch(url, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${getToken()}` }
     });
