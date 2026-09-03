@@ -130,69 +130,88 @@ For major changes, please open an issue first to discuss what you would like to 
 This project is licensed under the MIT License. See the LICENSE file for details.
 
 ```mermaid
-flowchart TB
-    subgraph Client["Клиент (браузер)"]
-        UI["HTML / CSS / JS"]
-        PWA["PWA (service worker)"]
-        UI --> PWA
-    end
+erDiagram
+    departments ||--o{ users : "has"
+    departments ||--o{ inventory : "contains"
+    equipment ||--o{ inventory_equipment : "linked to"
+    inventory ||--o{ inventory_equipment : "has"
+    part_types ||--o{ inventory : "classifies"
+    users ||--o{ write_offs : "requests"
+    inventory ||--o{ write_offs : "involves"
+    equipment ||--o{ write_offs : "used on"
+    equipment_incidents ||--o{ incident_parts : "uses"
+    inventory ||--o{ incident_parts : "provides"
+    equipment ||--o{ equipment_incidents : "has"
 
-    subgraph Server["Сервер (Node.js + Express)"]
-        API["API Routes"]
-        Auth["Auth Middleware (JWT)"]
-        Controllers["Controllers / Services"]
-        Models["Models (PostgreSQL queries)"]
-        Cron["Cron Jobs (weekly reports, backups)"]
-        Mailer["Nodemailer"]
-        API --> Auth
-        Auth --> Controllers
-        Controllers --> Models
-        Cron --> Mailer
-    end
-
-    subgraph DB["База данных"]
-        PG[("PostgreSQL")]
-        Files[("Файлы (uploads/backups)")]
-        Models --> PG
-        Controllers --> Files
-    end
-
-    subgraph External["Внешние сервисы"]
-        SMTP["SMTP (Gmail, и т.д.)"]
-        ChartLibs["CDN (Chart.js, jsPDF, html2canvas)"]
-        Mailer --> SMTP
-        UI --> ChartLibs
-    end
-
-    Client -->|HTTPS| Server
-    Server --> DB
-```
-
-```mermaid
-graph TD
-    Root["/ (корень проекта)"] --> Server["server/"]
-    Root --> Public["public/"]
-    Root --> Backups["backups/"]
-    Root --> README["README.md"]
-
-    Server --> Routes["routes/"]
-    Server --> Models["models/"]
-    Server --> Services["services/"]
-    Server --> Controllers["controllers/"]
-    Server --> Middleware["middleware/"]
-    Server --> DBJS["db.js"]
-    Server --> Mailer["mailer.js"]
-    Server --> ServerJS["server.js"]
-
-    Public --> CSS["css/"]
-    Public --> JS["js/"]
-    Public --> Uploads["uploads/"]
-    Public --> Partials["partials/"]
-    Public --> IndexHTML["index.html"]
-
-    JS --> Utils["utils/"]
-    JS --> Components["components/"]
-    JS --> Pages["pages/"]
-    JS --> Admin["admin/"]
-    JS --> Modules["modules/"]
+    departments {
+        int id PK
+        text name
+    }
+    users {
+        int id PK
+        text username
+        text password_hash
+        text role
+        int department_id FK
+        text display_name
+        text email
+    }
+    inventory {
+        text code PK
+        int department_id PK, FK
+        text name
+        text model
+        int type_id FK
+        text location
+        text unit
+        real quantity
+        date date
+    }
+    part_types {
+        int id PK
+        text name
+    }
+    equipment {
+        int id PK
+        text name
+    }
+    inventory_equipment {
+        text inventory_code PK, FK
+        int department_id PK, FK
+        int equipment_id PK, FK
+    }
+    write_offs {
+        int id PK
+        text item_code FK
+        int department_id FK
+        text item_name
+        int equipment_id FK
+        real quantity
+        text unit
+        text requested_by
+        text status
+        timestamp requested_at
+        timestamp resolved_at
+        text comment
+    }
+    equipment_incidents {
+        int id PK
+        int equipment_id FK
+        text title
+        text description
+        text root_cause
+        text solution
+        text status
+        int reported_by FK
+        boolean is_private
+        timestamp reported_at
+        timestamp resolved_at
+    }
+    incident_parts {
+        int incident_id PK, FK
+        text inventory_code PK, FK
+        int department_id PK, FK
+        real quantity
+        text unit
+    }
 ```
