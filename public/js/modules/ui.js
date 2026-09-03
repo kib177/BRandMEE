@@ -207,21 +207,19 @@ function initStatsAccordion() {
     const header = document.getElementById('statsHeader');
     if (!accordion || !header) return;
 
-    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    // Статистика всегда свёрнута при загрузке
+    accordion.classList.add('collapsed');
 
-    function updateAccordionState() {
-        if (mediaQuery.matches) {
-            accordion.classList.add('collapsed');
-        } else {
-            accordion.classList.remove('collapsed');
-        }
-    }
-
+    // Клик по заголовку переключает состояние на всех экранах
     header.addEventListener('click', () => {
-        if (mediaQuery.matches) {
-            accordion.classList.toggle('collapsed');
-        }
+        accordion.classList.toggle('collapsed');
     });
+
+    // При изменении размера окна сбрасываем к свёрнутому состоянию
+    window.addEventListener('resize', () => {
+        accordion.classList.add('collapsed');
+    });
+}
 
     mediaQuery.addEventListener('change', updateAccordionState);
     updateAccordionState();
