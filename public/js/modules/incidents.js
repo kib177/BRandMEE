@@ -42,18 +42,20 @@
       });
 
       select.addEventListener('change', async () => {
-        const equipmentId = select.value;
-        if (!equipmentId) {
-          document.getElementById('incidentList').innerHTML = '<p>Выберите оборудование для просмотра истории.</p>';
-          document.getElementById('btnAddIncident').style.display = 'none';
-          return;
-        }
-        const equipmentName = select.options[select.selectedIndex].text;
-        document.getElementById('incidentEquipmentId').value = equipmentId;
-        document.getElementById('incidentEquipmentName').value = equipmentName;
-        document.getElementById('btnAddIncident').style.display = canManage() ? 'inline-flex' : 'none';
-        await loadIncidents(equipmentId);
-      });
+    const equipmentId = select.value;
+    if (!equipmentId) {
+        document.getElementById('incidentList').innerHTML = '<p>Выберите оборудование для просмотра истории.</p>';
+        document.getElementById('btnAddIncident').style.display = 'none';
+        document.getElementById('selectedEquipment').textContent = '';
+        return;
+    }
+    const equipmentName = select.options[select.selectedIndex].text;
+    document.getElementById('incidentEquipmentId').value = equipmentId;
+    document.getElementById('incidentEquipmentName').value = equipmentName;
+    document.getElementById('btnAddIncident').style.display = canManage() ? 'inline-flex' : 'none';
+    document.getElementById('selectedEquipment').textContent = 'Оборудование: ' + equipmentName;
+    await loadIncidents(equipmentId);
+});
     } catch (e) {
       console.error(e);
       document.getElementById('incidentList').innerHTML = '<p style="color:red;">Ошибка загрузки оборудования</p>';
