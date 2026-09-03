@@ -350,7 +350,8 @@ function openConfirmDelete(code) {
 
 async function executeDelete() {
     if (pendingDeleteCode) {
-        await deleteItem(pendingDeleteCode);
+        const item = inventory.find(i => i.code === pendingDeleteCode);
+        await deleteItem(pendingDeleteCode, item?.department_id);
         pendingDeleteCode = null;
         await loadData();
         showToast('Удалено');
