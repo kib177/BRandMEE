@@ -85,14 +85,16 @@
 </div>
 
 <!-- Модалка просмотра неисправности -->
-<div class="modal modal-md">
+<div class="modal-overlay hidden" id="incidentViewOverlay">
+  <div class="modal modal-md">
     <div class="incident-meta" style="position:absolute; top:10px; right:40px; font-size:0.75rem; color: var(--text-secondary); text-align:right;">
-        <span id="incidentAuthor"></span><br>
-        <span id="incidentDate"></span>
+      <span id="incidentAuthor"></span><br>
+      <span id="incidentDate"></span>
     </div>
     <button class="btn-icon-info" id="btnCloseIncidentView" style="position:absolute; top:10px; right:10px;">✕</button>
     <h2>Детали неисправности</h2>
     <div id="incidentDetailContent" class="incident-detail"></div>
+  </div>
 </div>
 
 <script src="/js/utils/dom.js"></script>
