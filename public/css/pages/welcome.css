@@ -5,17 +5,20 @@ body.welcome-page {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    margin: 0;
+    padding: 1rem;
+    box-sizing: border-box;
 }
 
 .welcome-card {
     background: #fff;
     border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     padding: 2rem 2.5rem;
     max-width: 420px;
     width: 100%;
     text-align: center;
+    margin: auto;
 }
 
 .welcome-card h1 {
