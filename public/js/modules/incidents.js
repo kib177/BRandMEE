@@ -92,7 +92,7 @@ async function loadIncidents(equipmentId) {
                 <td>`;
             if (canEdit()) {
                 html += `<button class="btn-icon incident-edit-btn" data-id="${inc.id}">✏️</button>
-                         ${canDelete() ? `<button class="btn-icon incident-delete-btn" data-id="${inc.id}">🗑️</button>`: ''};
+                         ${canDelete() ? `<button class="btn-icon incident-delete-btn" data-id="${inc.id}">🗑️</button>`: ''}`;
             } else {
                 html += `<button class="btn-icon incident-view-btn" data-id="${inc.id}">👁️</button>`;
             }        
