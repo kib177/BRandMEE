@@ -222,7 +222,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // DELETE /api/incidents/:id – только админ
-router.delete('/:id', requireRole('admin'), async (req, res) => {
+router.delete('/:id', requireRole('admin', 'moderator'), async (req, res) => {
     try {
         const result = await pool.query('DELETE FROM equipment_incidents WHERE id = $1 RETURNING id', [req.params.id]);
         if (result.rowCount === 0) {
