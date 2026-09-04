@@ -113,7 +113,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/incidents – создание (роли: admin, moderator, storekeeper)
-router.post('/', requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const {equipment_id, title, description, root_cause, solution, status, parts} = req.body;
         if (!equipment_id || !title) {
@@ -167,7 +167,7 @@ router.post('/', requireRole('admin', 'moderator', 'storekeeper'), async (req, r
 });
 
 // PATCH /api/incidents/:id – обновление
-router.patch('/:id', requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
+router.patch('/:id', async (req, res) => {
     try {
         const id = req.params.id;
         const {title, description, root_cause, solution, status, resolved_at} = req.body;
