@@ -11,13 +11,15 @@ router.get('/', async (req, res) => {
     try {
         const {equipment_id, status, search} = req.query;
         let query = `
-            SELECT ei.*,
-                   e.name                                AS equipment_name,
-                   COALESCE(COUNT(ip.inventory_code), 0) AS parts_count
-            FROM equipment_incidents ei
-                     LEFT JOIN equipment e ON ei.equipment_id = e.id
-                     LEFT JOIN incident_parts ip ON ip.incident_id = ei.id
-            WHERE 1 = 1
+            SELECT ei.*, e.name AS equipment_name,
+       u.username AS reported_by_username,
+       u.display_name AS reported_by_name,
+       COALESCE(COUNT(ip.inventory_code), 0) AS parts_count
+FROM equipment_incidents ei
+LEFT JOIN equipment e ON ei.equipment_id = e.id
+LEFT JOIN users u ON ei.reported_by = u.id
+LEFT JOIN incident_parts ip ON ip.incident_id = ei.id
+WHERE 1=1
         `;
         const params = [];
 
@@ -83,13 +85,15 @@ router.get('/stats', async (req, res) => {
 // GET /api/incidents/:id – подробности с запчастями
 router.get('/:id', async (req, res) => {
     try {
-        const id = req.params.id;
         const incidentRes = await pool.query(`
-            SELECT ei.*, e.name AS equipment_name
-            FROM equipment_incidents ei
-                     JOIN equipment e ON ei.equipment_id = e.id
-            WHERE ei.id = $1
-        `, [id]);
+  SELECT ei.*, e.name AS equipment_name,
+         u.username AS reported_by_username,
+         u.display_name AS reported_by_name
+  FROM equipment_incidents ei
+  JOIN equipment e ON ei.equipment_id = e.id
+  LEFT JOIN users u ON ei.reported_by = u.id
+  WHERE ei.id = $1
+`, [id]);
 
         if (incidentRes.rows.length === 0) {
             return res.status(404).json({error: 'Инцидент не найден'});
