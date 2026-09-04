@@ -139,7 +139,7 @@ async function loadIncidents(equipmentId) {
         const data = await res.json();
 
         // Заполняем метаданные в шапке
-        const author = data.reported_by_name || data.reported_by_username || 'Неизвестный';
+        const author = data.reported_by_username || data.reported_by_name || 'Неизвестный';
         const date = data.reported_at ? new Date(data.reported_at).toLocaleString('ru') : '';
         document.getElementById('incidentAuthor').textContent = author;
         document.getElementById('incidentDate').textContent = date;
