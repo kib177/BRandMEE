@@ -144,6 +144,12 @@ async function loadIncidents(equipmentId) {
         partsHtml = '<p>Запчасти не указаны</p>';
       }
 
+      // Заполняем метаданные
+document.getElementById('incidentAuthor').textContent =
+    data.reported_by_name || data.reported_by_username || '—';
+document.getElementById('incidentDate').textContent =
+    data.reported_at ? new Date(data.reported_at).toLocaleString('ru-RU') : '';
+
       content.innerHTML = `
         <p><strong>Оборудование:</strong> ${data.equipment_name}</p>
         <p><strong>Заголовок:</strong> ${data.title}</p>
