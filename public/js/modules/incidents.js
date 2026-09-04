@@ -6,9 +6,13 @@
   let allParts = [];
   let selectedPartsCodes = [];
 
-  function canManage() {
-    return currentUser;
-  }
+  function canEdit() {
+    return !!currentUser; // все авторизованные
+}
+
+function canDelete() {
+    return currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+}
 
    function statusLabel(status) {
                 const map = {
@@ -52,7 +56,7 @@
     const equipmentName = select.options[select.selectedIndex].text;
     document.getElementById('incidentEquipmentId').value = equipmentId;
     document.getElementById('incidentEquipmentName').value = equipmentName;
-    document.getElementById('btnAddIncident').style.display = canManage() ? 'inline-flex' : 'none';
+    document.getElementById('btnAddIncident').style.display = canEdit() ? 'inline-flex' : 'none';
     document.getElementById('selectedEquipment').textContent = 'Оборудование: ' + equipmentName;
     await loadIncidents(equipmentId);
 });
@@ -86,10 +90,9 @@ async function loadIncidents(equipmentId) {
                 <td>${statusLabel(inc.status).text}</td>
                 <td>${inc.parts_count}</td>
                 <td>`;
-            if (canManage()) {
-                html += `<button class="btn-icon incident-view-btn" data-id="${inc.id}">👁️</button>
-                         <button class="btn-icon incident-edit-btn" data-id="${inc.id}">✏️</button>
-                         <button class="btn-icon incident-delete-btn" data-id="${inc.id}">🗑️</button>`;
+            if (canEdit()) {
+                html += `<button class="btn-icon incident-edit-btn" data-id="${inc.id}">✏️</button>
+                         ${canDelete() ? `<button class="btn-icon incident-delete-btn" data-id="${inc.id}">🗑️</button>`: ''};
             } else {
                 html += `<button class="btn-icon incident-view-btn" data-id="${inc.id}">👁️</button>`;
             }        
@@ -107,16 +110,14 @@ async function loadIncidents(equipmentId) {
             });
         });
 
-        // Обработчики кнопок
-        container.querySelectorAll('.incident-view-btn').forEach(btn => {
-            btn.addEventListener('click', () => viewIncident(btn.dataset.id));
-        });
+        // Обработчики
         container.querySelectorAll('.incident-edit-btn').forEach(btn => {
             btn.addEventListener('click', () => openIncidentForm(equipmentId, btn.dataset.id));
         });
+      if(canDelete()){
         container.querySelectorAll('.incident-delete-btn').forEach(btn => {
             btn.addEventListener('click', () => deleteIncident(equipmentId, btn.dataset.id));
-        });
+        });}
     } catch (e) {
         container.innerHTML = '<p style="color:red;">Ошибка загрузки.</p>';
     }
