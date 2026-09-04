@@ -11,15 +11,16 @@ router.get('/', async (req, res) => {
     try {
         const {equipment_id, status, search} = req.query;
         let query = `
-            SELECT ei.*, e.name AS equipment_name,
-       u.username AS reported_by_username,
-       u.display_name AS reported_by_name,
-       COALESCE(COUNT(ip.inventory_code), 0) AS parts_count
-FROM equipment_incidents ei
-LEFT JOIN equipment e ON ei.equipment_id = e.id
-LEFT JOIN users u ON ei.reported_by = u.id
-LEFT JOIN incident_parts ip ON ip.incident_id = ei.id
-WHERE 1=1
+            SELECT ei.id, ei.equipment_id, ei.title, ei.description, ei.root_cause, ei.solution,
+                   ei.status, ei.reported_by, ei.reported_at, ei.resolved_at, ei.is_private,
+                   e.name AS equipment_name,
+                   u.username AS reported_by_username,
+                   u.display_name AS reported_by_name,
+                   (SELECT COUNT(*) FROM incident_parts ip WHERE ip.incident_id = ei.id) AS parts_count
+            FROM equipment_incidents ei
+            LEFT JOIN equipment e ON ei.equipment_id = e.id
+            LEFT JOIN users u ON ei.reported_by = u.id
+            WHERE 1=1
         `;
         const params = [];
 
@@ -36,7 +37,7 @@ WHERE 1=1
             params.push('%' + search + '%');
         }
 
-        query += ' GROUP BY ei.id, e.name ORDER BY ei.reported_at DESC';
+        query += ' ORDER BY ei.reported_at DESC';
 
         const result = await pool.query(query, params);
         res.json(result.rows);
