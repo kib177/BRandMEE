@@ -7,7 +7,7 @@
   let selectedPartsCodes = [];
 
   function canManage() {
-    return currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator' || currentUser.role === 'storekeeper');
+    return currentUser;
   }
 
    function statusLabel(status) {
