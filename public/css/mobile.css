@@ -249,6 +249,13 @@
         #inventoryTable {
             font-size: 0.65rem;
         }
+        .modal.modal-md {
+        padding-top: 2.5rem;
+    }
+    .modal.modal-md h2 {
+        padding-right: 80px;
+        font-size: 1.1rem;
+    }
     }
 
    
