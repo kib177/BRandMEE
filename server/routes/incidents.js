@@ -86,24 +86,25 @@ router.get('/stats', async (req, res) => {
 // GET /api/incidents/:id – подробности с запчастями
 router.get('/:id', async (req, res) => {
     try {
+        const id = req.params.id;   // ← добавьте эту строку
         const incidentRes = await pool.query(`
-  SELECT ei.*, e.name AS equipment_name,
-         u.username AS reported_by_username,
-         u.display_name AS reported_by_name
-  FROM equipment_incidents ei
-  JOIN equipment e ON ei.equipment_id = e.id
-  LEFT JOIN users u ON ei.reported_by = u.id
-  WHERE ei.id = $1
-`, [id]);
+            SELECT ei.*, e.name AS equipment_name,
+                   u.username AS reported_by_username,
+                   u.display_name AS reported_by_name
+            FROM equipment_incidents ei
+            JOIN equipment e ON ei.equipment_id = e.id
+            LEFT JOIN users u ON ei.reported_by = u.id
+            WHERE ei.id = $1
+        `, [id]);
 
         if (incidentRes.rows.length === 0) {
-            return res.status(404).json({error: 'Инцидент не найден'});
+            return res.status(404).json({ error: 'Инцидент не найден' });
         }
 
         const partsRes = await pool.query(`
             SELECT ip.inventory_code, ip.department_id, ip.quantity, ip.unit, i.name, i.model
             FROM incident_parts ip
-                     JOIN inventory i ON ip.inventory_code = i.code AND ip.department_id = i.department_id
+            JOIN inventory i ON ip.inventory_code = i.code AND ip.department_id = i.department_id
             WHERE ip.incident_id = $1
         `, [id]);
 
@@ -113,7 +114,7 @@ router.get('/:id', async (req, res) => {
         res.json(incident);
     } catch (err) {
         console.error('Ошибка получения инцидента:', err);
-        res.status(500).json({error: 'Ошибка получения инцидента'});
+        res.status(500).json({ error: 'Ошибка получения инцидента' });
     }
 });
 
