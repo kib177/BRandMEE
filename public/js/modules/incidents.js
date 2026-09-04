@@ -124,49 +124,56 @@ async function loadIncidents(equipmentId) {
 }
 
   // Просмотр инцидента
-  async function viewIncident(incidentId) {
+ async function viewIncident(incidentId) {
     try {
-      const res = await fetch(`/api/incidents/${incidentId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Ошибка загрузки');
-      const data = await res.json();
-
-      const content = document.getElementById('incidentDetailContent');
-      let partsHtml = '';
-      if (data.parts && data.parts.length) {
-        partsHtml = '<ul>';
-        data.parts.forEach(p => {
-          partsHtml += `<li>${p.inventory_code} – ${p.name} [${p.model || ''}] (${p.quantity} ${p.unit})</li>`;
+        const res = await fetch(`/api/incidents/${incidentId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-        partsHtml += '</ul>';
-      } else {
-        partsHtml = '<p>Запчасти не указаны</p>';
-      }
+        if (!res.ok) {
+            if (res.status === 403) {
+                alert('Нет доступа к этой записи');
+                return;
+            }
+            throw new Error('Ошибка загрузки');
+        }
+        const data = await res.json();
 
-      // Заполняем метаданные
-document.getElementById('incidentAuthor').textContent =
-    data.reported_by_name || data.reported_by_username || '—';
-document.getElementById('incidentDate').textContent =
-    data.reported_at ? new Date(data.reported_at).toLocaleString('ru-RU') : '';
+        // Заполняем метаданные в шапке
+        const author = data.reported_by_name || data.reported_by_username || 'Неизвестный';
+        const date = data.reported_at ? new Date(data.reported_at).toLocaleString('ru') : '';
+        document.getElementById('incidentAuthor').textContent = author;
+        document.getElementById('incidentDate').textContent = date;
 
-      content.innerHTML = `
-        <p><strong>Оборудование:</strong> ${data.equipment_name}</p>
-        <p><strong>Заголовок:</strong> ${data.title}</p>
-        <p><strong>Статус:</strong> <span class="badge" style="background:${statusLabel(data.status).color}">${statusLabel(data.status).text}</span></p>
-        <p><strong>Дата:</strong> ${new Date(data.reported_at).toLocaleString('ru')}</p>
-        <p><strong>Описание:</strong><br>${data.description || '—'}</p>
-        <p><strong>Причина:</strong><br>${data.root_cause || '—'}</p>
-        <p><strong>Решение:</strong><br>${data.solution || '—'}</p>
-        <p><strong>Использованные запчасти:</strong></p>
-        ${partsHtml}
-      `;
+        const content = document.getElementById('incidentDetailContent');
+        let partsHtml = '';
+        if (data.parts && data.parts.length) {
+            partsHtml = '<ul>';
+            data.parts.forEach(p => {
+                partsHtml += `<li>${p.inventory_code} – ${p.name} [${p.model || ''}] (${p.quantity} ${p.unit})</li>`;
+            });
+            partsHtml += '</ul>';
+        } else {
+            partsHtml = '<p>Запчасти не указаны</p>';
+        }
 
-      document.getElementById('incidentViewOverlay').classList.remove('hidden');
+        // Убираем старую строку с датой из основной информации
+        content.innerHTML = `
+            <p><strong>Оборудование:</strong> ${data.equipment_name}</p>
+            <p><strong>Заголовок:</strong> ${data.title}</p>
+            <p><strong>Статус:</strong> <span class="badge" style="background:${statusLabel(data.status).color}">${statusLabel(data.status).text}</span></p>
+            <p><strong>Приватность:</strong> ${data.is_private ? 'Личная' : 'Общая'}</p>
+            <p><strong>Описание:</strong><br>${data.description || '—'}</p>
+            <p><strong>Причина:</strong><br>${data.root_cause || '—'}</p>
+            <p><strong>Решение:</strong><br>${data.solution || '—'}</p>
+            <p><strong>Использованные запчасти:</strong></p>
+            ${partsHtml}
+        `;
+
+        document.getElementById('incidentViewOverlay').classList.remove('hidden');
     } catch (e) {
-      alert('Ошибка просмотра: ' + e.message);
+        alert('Ошибка просмотра: ' + e.message);
     }
-  }
+}
 
   // Открытие формы
   function openIncidentForm(equipmentId, incidentId = null) {
