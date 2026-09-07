@@ -364,10 +364,11 @@ tbody tr.low-stock:hover {
 
 /* Компактная таблица справочников */
 .compact-table {
-    width: 100%;
-    font-size: 0.85rem;
-    table-layout: fixed;
+    width: auto !important;
+    max-width: 100%;
+    table-layout: auto !important;
     border-collapse: collapse;
+    font-size: 0.85rem;
 }
 
 .compact-table th,
@@ -381,19 +382,19 @@ tbody tr.low-stock:hover {
 .compact-table th:first-child,
 .compact-table td:first-child {
     width: 50px;
+    min-width: 50px;
     text-align: center;
 }
 
 .compact-table th:nth-child(2),
 .compact-table td:nth-child(2) {
-    width: auto;
-    max-width: 200px;
+    max-width: 300px;
     white-space: normal;
 }
 
 .compact-table th:nth-child(3),
 .compact-table td:nth-child(3) {
-    width: 90px;
+    width: 120px;
     white-space: nowrap;
     text-align: center;
 }
@@ -523,50 +524,3 @@ tbody tr.low-stock:hover {
     color: var(--text-secondary);
     font-style: italic;
 }
-
-/* Компактные таблицы справочников */
-#typesTable,
-#equipTable {
-    width: auto;               /* ширина по содержимому */
-    max-width: 100%;           /* не выходить за пределы */
-    table-layout: auto;        /* автоматическое распределение ширины */
-    margin: 0;                 /* убрать возможные внешние отступы */
-}
-
-#typesTable th,
-#typesTable td,
-#equipTable th,
-#equipTable td {
-    padding: 0.4rem 0.6rem;    /* компактные отступы */
-}
-
-/* ID – узкий столбец */
-#typesTable th:first-child,
-#typesTable td:first-child,
-#equipTable th:first-child,
-#equipTable td:first-child {
-    width: 50px;
-    min-width: 50px;
-    text-align: center;
-}
-
-/* Название – занимает остальное, но не более 300px */
-#typesTable th:nth-child(2),
-#typesTable td:nth-child(2),
-#equipTable th:nth-child(2),
-#equipTable td:nth-child(2) {
-    max-width: 300px;
-    white-space: normal;
-    word-break: break-word;
-}
-
-/* Действия – компактная колонка */
-#typesTable th:nth-child(3),
-#typesTable td:nth-child(3),
-#equipTable th:nth-child(3),
-#equipTable td:nth-child(3) {
-    width: 120px;
-    white-space: nowrap;
-    text-align: center;
-}
-
