@@ -524,3 +524,49 @@ tbody tr.low-stock:hover {
     font-style: italic;
 }
 
+/* Компактные таблицы справочников */
+#typesTable,
+#equipTable {
+    width: auto;               /* ширина по содержимому */
+    max-width: 100%;           /* не выходить за пределы */
+    table-layout: auto;        /* автоматическое распределение ширины */
+    margin: 0;                 /* убрать возможные внешние отступы */
+}
+
+#typesTable th,
+#typesTable td,
+#equipTable th,
+#equipTable td {
+    padding: 0.4rem 0.6rem;    /* компактные отступы */
+}
+
+/* ID – узкий столбец */
+#typesTable th:first-child,
+#typesTable td:first-child,
+#equipTable th:first-child,
+#equipTable td:first-child {
+    width: 50px;
+    min-width: 50px;
+    text-align: center;
+}
+
+/* Название – занимает остальное, но не более 300px */
+#typesTable th:nth-child(2),
+#typesTable td:nth-child(2),
+#equipTable th:nth-child(2),
+#equipTable td:nth-child(2) {
+    max-width: 300px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Действия – компактная колонка */
+#typesTable th:nth-child(3),
+#typesTable td:nth-child(3),
+#equipTable th:nth-child(3),
+#equipTable td:nth-child(3) {
+    width: 120px;
+    white-space: nowrap;
+    text-align: center;
+}
+
