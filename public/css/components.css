@@ -381,40 +381,41 @@ tbody tr.low-stock:hover {
 
 /* Компактная таблица справочников */
 
+/* Таблицы справочников – на всю ширину аккордеона */
 .compact-table {
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    table-layout: auto !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse;
+    font-size: 0.85rem;
 }
 
 .compact-table th,
 .compact-table td {
     padding: 0.5rem 0.7rem !important;
-    white-space: nowrap !important;
+    white-space: nowrap;
 }
 
 .compact-table th:first-child,
 .compact-table td:first-child {
     width: 60px !important;
-    min-width: 60px !important;
-    text-align: center !important;
+    min-width: 60px;
+    max-width: 60px;
+    text-align: center;
 }
 
 .compact-table th:nth-child(2),
 .compact-table td:nth-child(2) {
-    width: 280px !important;         
-    min-width: 220px !important;
-    max-width: 320px !important;
-    white-space: normal !important;
-    word-break: break-word !important;
+    width: calc(100% - 200px) !important;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .compact-table th:nth-child(3),
 .compact-table td:nth-child(3) {
     width: 140px !important;
-    min-width: 140px !important;
-    text-align: center !important;
+    min-width: 140px;
+    max-width: 140px;
+    text-align: center;
 }
 
 /* Кнопка сканера внутри строки поиска */
