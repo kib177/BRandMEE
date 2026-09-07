@@ -382,39 +382,35 @@ tbody tr.low-stock:hover {
 /* Компактная таблица справочников */
 
 /* Таблицы справочников – на всю ширину аккордеона */
+/* Финальные стили таблиц справочников */
 .compact-table {
-    width: 100% !important;
-    table-layout: fixed !important;
+    width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
     font-size: 0.85rem;
 }
 
 .compact-table th,
 .compact-table td {
-    padding: 0.5rem 0.7rem !important;
-    white-space: nowrap;
+    padding: 0.5rem 0.7rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .compact-table th:first-child,
 .compact-table td:first-child {
-    width: 60px !important;
-    min-width: 60px;
-    max-width: 60px;
+    width: 10%;
     text-align: center;
 }
 
 .compact-table th:nth-child(2),
 .compact-table td:nth-child(2) {
-     width: 100% !important;
-    white-space: normal;
-    word-break: break-word;
+    width: 70%;
 }
 
 .compact-table th:nth-child(3),
 .compact-table td:nth-child(3) {
-     width: 100% !important;
-    min-width: 140px;
-    max-width: 140px;
+    width: 20%;
     text-align: center;
 }
 
