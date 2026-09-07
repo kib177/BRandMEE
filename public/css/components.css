@@ -362,6 +362,23 @@ tbody tr.low-stock:hover {
     flex-wrap: wrap;
 }
 
+/* Страница справочников */
+.directories-page {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+/* Отступ для строк с полем и кнопкой */
+.flex-row.mb-1 {
+    margin-bottom: 1rem;
+}
+
+/* Поле ввода занимает всю доступную ширину */
+.flex-grow {
+    flex: 1 1 auto;
+}
+
 /* Компактная таблица справочников */
 .compact-table {
     width: auto !important;
