@@ -80,15 +80,9 @@
 }
 
     /* ----- ТАБЛИЦЫ (общие) ----- */
-    table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.87rem;
-    min-width: 40px;
-} 
     .table-wrapper {
         display: block;
-        max-width: 100%;
+        max-width: 60%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
