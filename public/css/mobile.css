@@ -82,7 +82,7 @@
     /* ----- ТАБЛИЦЫ (общие) ----- */
     .table-wrapper {
         display: block;
-        max-width: 60%;
+        max-width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
