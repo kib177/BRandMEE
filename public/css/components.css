@@ -79,7 +79,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.87rem;
-    min-width: 1200px;
+    min-width: 100px;
 }
 
 thead th {
