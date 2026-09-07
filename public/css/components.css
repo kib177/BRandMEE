@@ -380,40 +380,37 @@ tbody tr.low-stock:hover {
 }
 
 /* Компактная таблица справочников */
+/* Исправляем ширину колонок в таблицах справочников */
 .compact-table {
     width: auto !important;
-    max-width: 100%;
+    max-width: 100% !important;
     table-layout: auto !important;
-    border-collapse: collapse;
-    font-size: 0.85rem;
 }
 
 .compact-table th,
 .compact-table td {
-    padding: 0.4rem 0.5rem;
-    vertical-align: middle;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    padding: 0.4rem 0.6rem !important;
 }
 
 .compact-table th:first-child,
 .compact-table td:first-child {
-    width: 50px;
-    min-width: 50px;
-    text-align: center;
+    width: 50px !important;
+    min-width: 50px !important;
+    text-align: center !important;
 }
 
 .compact-table th:nth-child(2),
 .compact-table td:nth-child(2) {
-    max-width: 300px;
-    white-space: normal;
+    max-width: 250px !important;
+    white-space: normal !important;
+    word-break: break-word !important;
 }
 
 .compact-table th:nth-child(3),
 .compact-table td:nth-child(3) {
-    width: 120px;
-    white-space: nowrap;
-    text-align: center;
+    width: 120px !important;
+    white-space: nowrap !important;
+    text-align: center !important;
 }
 
 /* Кнопка сканера внутри строки поиска */
