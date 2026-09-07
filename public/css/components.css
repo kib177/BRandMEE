@@ -381,8 +381,10 @@ tbody tr.low-stock:hover {
 
 /* Компактная таблица справочников */
 /* Исправляем ширину колонок в таблицах справочников */
+/* Финальное исправление компактных таблиц справочников */
 .compact-table {
     width: auto !important;
+    min-width: 0 !important;      
     max-width: 100% !important;
     table-layout: auto !important;
 }
@@ -390,6 +392,7 @@ tbody tr.low-stock:hover {
 .compact-table th,
 .compact-table td {
     padding: 0.4rem 0.6rem !important;
+    white-space: nowrap !important;
 }
 
 .compact-table th:first-child,
@@ -401,6 +404,8 @@ tbody tr.low-stock:hover {
 
 .compact-table th:nth-child(2),
 .compact-table td:nth-child(2) {
+    width: 200px !important;         
+    min-width: 150px !important;
     max-width: 250px !important;
     white-space: normal !important;
     word-break: break-word !important;
@@ -409,7 +414,7 @@ tbody tr.low-stock:hover {
 .compact-table th:nth-child(3),
 .compact-table td:nth-child(3) {
     width: 120px !important;
-    white-space: nowrap !important;
+    min-width: 120px !important;
     text-align: center !important;
 }
 
