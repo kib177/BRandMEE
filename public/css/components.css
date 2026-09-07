@@ -405,14 +405,14 @@ tbody tr.low-stock:hover {
 
 .compact-table th:nth-child(2),
 .compact-table td:nth-child(2) {
-    width: calc(100% - 200px) !important;
+     width: 100% !important;
     white-space: normal;
     word-break: break-word;
 }
 
 .compact-table th:nth-child(3),
 .compact-table td:nth-child(3) {
-    width: 140px !important;
+     width: 100% !important;
     min-width: 140px;
     max-width: 140px;
     text-align: center;
