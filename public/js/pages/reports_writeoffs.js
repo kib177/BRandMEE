@@ -11,20 +11,19 @@
     let currentData = null;
     let charts = {};
 
-    // Универсальная функция формирования строки YYYY-MM-DD из локального времени
-function toLocalDateStr(d) {
+   function toLocalDateStr(d) {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
 }
 
-const now = new Date();
+const today = new Date();
 const dateToEl = document.getElementById('dateTo');
 const dateFromEl = document.getElementById('dateFrom');
-if (dateToEl) dateToEl.value = toLocalDateStr(now);
+if (dateToEl) dateToEl.value = toLocalDateStr(today);
 if (dateFromEl) {
-    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+    const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, 1);
     dateFromEl.value = toLocalDateStr(sixMonthsAgo);
 }
 
