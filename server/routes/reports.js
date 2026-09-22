@@ -122,17 +122,13 @@ router.get('/writeoffs-extended', authMiddleware, requireRole('admin', 'moderato
     `, params);
 
     // 7. Детализация (для таблицы на странице)
-    const details = await pool.query(`
-      SELECT wo.id, wo.requested_at, wo.item_code, wo.item_name,
-             wo.quantity, eq.name AS equipment_name, wo.status
-      FROM write_offs wo
-      LEFT JOIN equipment eq ON wo.equipment_id = eq.id
-      WHERE wo.requested_at >= $1
-        AND wo.requested_at <= ($2::date + interval '1 day')
-        ${deptCondition} ${statusCondition}
-        ${excludeConsumables}
-      ORDER BY wo.requested_at DESC
-    `, params);
+   const details = await pool.query(`
+    SELECT id, requested_at FROM write_offs
+    WHERE requested_at >= $1
+    ORDER BY requested_at DESC
+    LIMIT 20
+`, [from]);
+console.log('Проверка дат:', details.rows);
 
     res.json({
       metrics,
