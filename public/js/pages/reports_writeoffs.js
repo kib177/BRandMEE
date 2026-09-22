@@ -151,7 +151,6 @@
     }
 
     loadDepartments();
-    loadReport();
 })();
 
 // Скрин отчета со страницы в pdf
