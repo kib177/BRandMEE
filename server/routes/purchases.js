@@ -174,17 +174,16 @@ router.get('/:id', async (req, res) => {
 router.post('/', upload.single('file'), async (req, res) => {
     try {
         const {
-            item_name, quantity, unit, justification,
+            item_name, article, quantity, unit, justification,
             priority, planned_date, link, equipment_id
         } = req.body;
 
-        if (!item_name || !quantity || Number(quantity) <= 0) {
-            return res.status(400).json({ error: 'Наименование и количество обязательны' });
+        if (!item_name || !article || !quantity || Number(quantity) <= 0) {
+            return res.status(400).json({ error: 'Наименование, артикул и количество обязательны' });
         }
 
         let departmentId = req.user.department_id;
-        if ((req.user.role === 'admin' || req.user.role === 'moderator')
-            && req.body.department_id) {
+        if ((req.user.role === 'admin' || req.user.role === 'moderator') && req.body.department_id) {
             departmentId = req.body.department_id;
         }
         if (!departmentId) departmentId = 1;
@@ -193,12 +192,12 @@ router.post('/', upload.single('file'), async (req, res) => {
 
         const result = await pool.query(`
             INSERT INTO purchase_requests
-                (requested_by, department_id, item_name, quantity, unit,
+                (requested_by, department_id, item_name, article, quantity, unit,
                  justification, priority, planned_date, link, equipment_id, file_path)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             RETURNING *
         `, [
-            req.user.id, departmentId, item_name, Number(quantity),
+            req.user.id, departmentId, item_name, article, Number(quantity),
             unit || 'ШТ', justification || null,
             priority || 'normal', planned_date || null,
             link || null, equipment_id || null, fileName
@@ -325,7 +324,7 @@ router.put('/:id', requireRole('admin', 'moderator', 'storekeeper'), async (req,
         }
 
         const {
-            item_name, quantity, unit, priority, planned_date,
+            item_name, article, quantity, unit, priority, planned_date,
             justification, link, supplier, price, comment, equipment_id
         } = req.body;
 
@@ -341,6 +340,7 @@ router.put('/:id', requireRole('admin', 'moderator', 'storekeeper'), async (req,
         };
 
         addField('item_name', item_name);
+        addField('article', article); 
         addField('quantity', quantity);
         addField('unit', unit);
         addField('priority', priority);
@@ -354,6 +354,9 @@ router.put('/:id', requireRole('admin', 'moderator', 'storekeeper'), async (req,
 
         if (updates.length === 0) {
             return res.status(400).json({ error: 'Нет данных для обновления' });
+        }
+        if (article !== undefined && (!article || !article.trim())) {
+        return res.status(400).json({ error: 'Артикул обязателен' });
         }
 
         values.push(id);
