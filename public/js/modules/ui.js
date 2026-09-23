@@ -215,6 +215,4 @@ function initStatsAccordion() {
         accordion.classList.toggle('collapsed');
     });
 }
-
-    mediaQuery.addEventListener('change', updateAccordionState);
     updateAccordionState();
