@@ -217,20 +217,30 @@ router.post('/', upload.single('file'), async (req, res) => {
 router.patch('/:id', requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
     try {
         const { id } = req.params;
-        const {
-            status, comment, supplier, price, quantity_received, actual_date
-        } = req.body;
+        const { status, comment, supplier, price, quantity_received, actual_date } = req.body;
 
-        const allowed = ['pending', 'approved', 'done', 'rejected'];
+        const allowed = ['pending', 'in_progress', 'approved', 'done', 'rejected'];
         if (status && !allowed.includes(status)) {
             return res.status(400).json({ error: 'Недопустимый статус' });
         }
 
-        const existing = await pool.query(
-            'SELECT * FROM purchase_requests WHERE id = $1', [id]
-        );
+        const existing = await pool.query('SELECT * FROM purchase_requests WHERE id = $1', [id]);
         if (existing.rows.length === 0) {
             return res.status(404).json({ error: 'Заявка не найдена' });
+        }
+
+        const current = existing.rows[0];
+
+        // Статусные правила
+        if (status !== undefined) {
+            // Нельзя менять статус у завершённой заявки
+            if (current.status === 'done') {
+                return res.status(400).json({ error: 'Заявка уже выполнена, статус изменить нельзя' });
+            }
+            // Нельзя вернуть «Ожидает», если он уже был изменён
+            if (status === 'pending' && current.status !== 'pending') {
+                return res.status(400).json({ error: 'Нельзя вернуть статус «Ожидает»' });
+            }
         }
 
         const updates = [];
@@ -298,6 +308,63 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
     } catch (err) {
         console.error('Ошибка удаления:', err);
         res.status(500).json({ error: 'Ошибка удаления' });
+    }
+});
+
+// ---------- PUT /api/purchases/:id (редактирование полей) ----------
+router.put('/:id', requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const existing = await pool.query('SELECT * FROM purchase_requests WHERE id = $1', [id]);
+        if (existing.rows.length === 0) {
+            return res.status(404).json({ error: 'Заявка не найдена' });
+        }
+        if (existing.rows[0].status === 'done') {
+            return res.status(400).json({ error: 'Заявка выполнена, редактирование запрещено' });
+        }
+
+        const {
+            item_name, quantity, unit, priority, planned_date,
+            justification, link, supplier, price, comment, equipment_id
+        } = req.body;
+
+        const updates = [];
+        const values = [];
+        let p = 1;
+
+        const addField = (col, val) => {
+            if (val !== undefined) {
+                updates.push(`${col} = $${p++}`);
+                values.push(val);
+            }
+        };
+
+        addField('item_name', item_name);
+        addField('quantity', quantity);
+        addField('unit', unit);
+        addField('priority', priority);
+        addField('planned_date', planned_date);
+        addField('justification', justification);
+        addField('link', link);
+        addField('supplier', supplier);
+        addField('price', price);
+        addField('comment', comment);
+        addField('equipment_id', equipment_id);
+
+        if (updates.length === 0) {
+            return res.status(400).json({ error: 'Нет данных для обновления' });
+        }
+
+        values.push(id);
+        await pool.query(
+            `UPDATE purchase_requests SET ${updates.join(', ')} WHERE id = $${p}`,
+            values
+        );
+
+        res.json({ ok: true });
+    } catch (err) {
+        console.error('Ошибка редактирования заявки:', err);
+        res.status(500).json({ error: 'Ошибка редактирования заявки' });
     }
 });
 
