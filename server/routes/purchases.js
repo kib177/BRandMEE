@@ -233,16 +233,16 @@ router.patch('/:id', requireRole('admin', 'moderator', 'storekeeper'), async (re
         const current = existing.rows[0];
 
         // Статусные правила
-        if (status !== undefined) {
-            // Нельзя менять статус у завершённой заявки
-            if (current.status === 'done') {
-                return res.status(400).json({ error: 'Заявка уже выполнена, статус изменить нельзя' });
-            }
-            // Нельзя вернуть «Ожидает», если он уже был изменён
-            if (status === 'pending' && current.status !== 'pending') {
-                return res.status(400).json({ error: 'Нельзя вернуть статус «Ожидает»' });
-            }
-        }
+       if (status !== undefined) {
+    // Нельзя менять статус у завершённых заявок
+    if (current.status === 'done' || current.status === 'rejected') {
+        return res.status(400).json({ error: 'Статус завершённой заявки изменить нельзя' });
+    }
+    // Нельзя вернуть «Ожидает», если он уже был изменён
+    if (status === 'pending' && current.status !== 'pending') {
+        return res.status(400).json({ error: 'Нельзя вернуть статус «Ожидает»' });
+    }
+}
 
         const updates = [];
         const values = [];
