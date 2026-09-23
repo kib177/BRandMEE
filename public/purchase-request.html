@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заявка на закупку</title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/utilities.css">
+    <link rel="stylesheet" href="/css/mobile.css">
+    <link rel="stylesheet" href="/css/burger.css">
+    <link rel="stylesheet" href="/css/pages/purchases.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a3c5e">
+</head>
+<body>
+
+<main class="purchases-page">
+    <div class="card">
+        <h2>Новая заявка на закупку</h2>
+        <form id="purchaseForm" enctype="multipart/form-data">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Наименование *</label>
+                    <input type="text" id="itemName" required maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label>Количество *</label>
+                    <input type="number" id="quantity" step="0.01" min="0.01" required>
+                </div>
+            </div>
+
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label>Ед. измерения</label>
+                    <select id="unit">
+                        <option value="ШТ">ШТ</option>
+                        <option value="М">М</option>
+                        <option value="КГ">КГ</option>
+                        <option value="КОМПЛ">КОМПЛ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Приоритет</label>
+                    <select id="priority">
+                        <option value="normal">Обычный</option>
+                        <option value="high">Высокий</option>
+                        <option value="low">Низкий</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Планируемая дата</label>
+                    <input type="date" id="plannedDate">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Оборудование (если требуется)</label>
+                <select id="equipment"><option value="">— Не выбрано —</option></select>
+            </div>
+
+            <div class="form-group">
+                <label>Ссылка на каталог / прайс</label>
+                <input type="url" id="link" placeholder="https://...">
+            </div>
+
+            <div class="form-group">
+                <label>Обоснование</label>
+                <textarea id="justification" rows="4"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Файл / фото (необязательно)</label>
+                <input type="file" id="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Отправить заявку</button>
+            </div>
+        </form>
+        <div id="message" class="status" style="margin-top:1rem;"></div>
+    </div>
+</main>
+
+<script src="/js/utils/dom.js"></script>
+<script src="/js/utils/auth.js"></script>
+<script src="/js/components/profile-ui.js"></script>
+<script src="/js/components/layout.js"></script>
+<script src="/js/pages/purchase-request.js"></script>
+</body>
+</html>
