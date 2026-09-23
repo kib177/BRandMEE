@@ -164,6 +164,8 @@ function updateAuthUI() {
 // Показ/скрытие пунктов меню в зависимости от роли
 function updateMenuVisibility(isLoggedIn, role) {
     const items = [
+        { id: 'menuPurchaseRequest', visible: isLoggedIn},
+        { id: 'menuPurchasesAdmin' visible: isLoggedIn && (role === 'admin' || role === 'moderator' || role === 'storekeeper') },
         { id: 'menuIncidents', visible: isLoggedIn },
         { id: 'menuReportsWriteoffs', visible: isLoggedIn && (role === 'admin' || role === 'moderator' || role === 'storekeeper') },
         { id: 'menuBackup', visible: isLoggedIn && role === 'admin' },
