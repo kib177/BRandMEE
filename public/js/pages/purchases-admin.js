@@ -190,6 +190,7 @@
 
         document.getElementById('editId').value = r.id;
         document.getElementById('editItemName').value = r.item_name || '';
+        document.getElementById('editArticle').value = r.article || '';
         document.getElementById('editQuantity').value = r.quantity || '';
         document.getElementById('editUnit').value = r.unit || 'ШТ';
         document.getElementById('editPriority').value = r.priority || 'normal';
