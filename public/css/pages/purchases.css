@@ -133,6 +133,20 @@ tr.status-rejected    { background: #fdecea; color: #888; }
     cursor: pointer;
 }
 
+.bulk-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1rem;
+    margin-bottom: 1rem;
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+.bulk-actions #selectedCount { color: var(--accent); }
+
 /* Мобильная версия */
 @media (max-width: 768px) {
     .summary-row { grid-template-columns: repeat(2, 1fr); }
