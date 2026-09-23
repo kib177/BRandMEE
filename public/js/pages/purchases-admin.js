@@ -319,6 +319,12 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
         loadRequests();
         loadSummary();
     });
+    document.getElementById('btnCloseEdit').addEventListener('click', () => {
+    document.getElementById('editOverlay').classList.add('hidden');
+});
+document.getElementById('btnEditCancel').addEventListener('click', () => {
+    document.getElementById('editOverlay').classList.add('hidden');
+});
 
     document.getElementById('btnExportExcel').addEventListener('click', exportExcel);
 
