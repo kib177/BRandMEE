@@ -103,17 +103,17 @@
         }).join('');
 
         const selectHtml = isLocked
-    ? `<span class="status-badge ${r.status}">${statusLabel(r.status)}</span>`
-    : `<select class="status-select" data-id="${r.id}">${options}</select>`;
+        ? `<span class="status-badge ${r.status}">${statusLabel(r.status)}</span>`
+        : `<select class="status-select" data-id="${r.id}">${options}</select>`;
         const canSelect = r.status === 'approved';
-const checkboxHtml = canSelect
-    ? `<input type="checkbox" class="row-check" data-id="${r.id}"
+        const checkboxHtml = canSelect
+         ? `<input type="checkbox" class="row-check" data-id="${r.id}"
          ${selectedPurchaseIds.has(String(r.id)) ? 'checked' : ''}>`
     : '';
 
         return `
              <tr class="status-${r.status}" data-id="${r.id}" style="cursor:pointer;">
-        <td>${checkboxHtml}</td>
+                <td>${checkboxHtml}</td>
                 <td>${r.id}</td>
                 <td>${new Date(r.created_at).toLocaleDateString('ru')}</td>
                 <td>${escapeHtml(r.item_name)}</td>
@@ -133,6 +133,14 @@ const checkboxHtml = canSelect
             </tr>
         `;
     }).join('');
+
+       tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+    tr.addEventListener('click', (e) => {
+        // не открывать карточку, если клик был по интерактивному элементу
+        if (e.target.closest('button, a, input, select, textarea, label')) return;
+        openCard(tr.dataset.id);
+    });
+});
        
        tbody.querySelectorAll('.row-check').forEach(cb => {
     cb.addEventListener('change', () => {
