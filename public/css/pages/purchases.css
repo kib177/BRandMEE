@@ -147,6 +147,49 @@ tr.status-rejected    { background: #fdecea; color: #888; }
 }
 .bulk-actions #selectedCount { color: var(--accent); }
 
+/* Аккуратные textarea в заявках */
+.purchases-page textarea,
+.modal textarea {
+    width: 100%;
+    min-height: 90px;
+    max-height: 260px;
+    padding: 0.65rem 0.8rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: var(--text);
+    background: #fafbfc;
+    resize: vertical;
+    transition: var(--transition);
+    outline: none;
+    box-sizing: border-box;
+}
+
+.purchases-page textarea:focus,
+.modal textarea:focus {
+    border-color: var(--accent);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(46, 134, 193, 0.08);
+}
+
+.purchases-page textarea::placeholder,
+.modal textarea::placeholder {
+    color: #9aa3b2;
+    font-style: italic;
+}
+
+/* В тёмной теме */
+[data-theme="dark"] .modal textarea {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border-color: #555;
+}
+[data-theme="dark"] .modal textarea:focus {
+    border-color: #90caf9;
+}
+
 /* Мобильная версия */
 @media (max-width: 768px) {
     .summary-row { grid-template-columns: repeat(2, 1fr); }
