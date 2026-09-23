@@ -110,6 +110,7 @@
                 <td>${r.id}</td>
                 <td>${new Date(r.created_at).toLocaleDateString('ru')}</td>
                 <td>${escapeHtml(r.item_name)}</td>
+                <td>${escapeHtml(r.article || '—')}</td> 
                 <td>${r.quantity}</td>
                 <td>${r.unit || '—'}</td>
                 <td>${escapeHtml(r.department_name || '—')}</td>
@@ -213,6 +214,7 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
     const id = document.getElementById('editId').value;
     const payload = {
         item_name:     document.getElementById('editItemName').value.trim(),
+        article:       document.getElementById('editArticle').value.trim(),
         quantity:      parseFloat(document.getElementById('editQuantity').value),
         unit:          document.getElementById('editUnit').value,
         priority:      document.getElementById('editPriority').value,
@@ -265,6 +267,7 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
                 <p><b>Заявитель:</b> ${r.requested_by_name || r.requested_by_username || '—'}</p>
                 <p><b>Отдел:</b> ${r.department_name || '—'}</p>
                 <p><b>Наименование:</b> ${r.item_name}</p>
+                <p><b>Артикул:</b> ${r.article || '—'}</p>
                 <p><b>Количество:</b> ${r.quantity} ${r.unit || ''}</p>
                 <p><b>Приоритет:</b> ${priorityLabel(r.priority)}</p>
                 <p><b>Планируемая дата:</b> ${r.planned_date ? new Date(r.planned_date).toLocaleDateString('ru') : '—'}</p>
@@ -288,6 +291,7 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
             'ID': r.id,
             'Дата': new Date(r.created_at).toLocaleDateString('ru'),
             'Наименование': r.item_name,
+            'Артикул': r.article || '',
             'Количество': r.quantity,
             'Ед.': r.unit || '',
             'Отдел': r.department_name || '',
