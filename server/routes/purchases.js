@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { sendMail } = require('../mailer');
+const ExcelJS = require('exceljs');
 
 // ---------- Загрузка файлов ----------
 const storage = multer.diskStorage({
@@ -52,6 +53,173 @@ async function notifyAdmins(request) {
         html
     }).catch(err => console.error('Ошибка email:', err.message));
 }
+
+// ---------- POST /api/purchases/export ----------
+// Формирует Excel-заявку для ОМТС или ВЭД и переводит заявки в статус «В работе»
+router.post('/export', requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
+    try {
+        const { ids, department } = req.body;
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ error: 'Не выбраны заявки' });
+        }
+        if (!['OMTS', 'VED'].includes(department)) {
+            return res.status(400).json({ error: 'Отдел должен быть OMTS или VED' });
+        }
+
+        const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+        const result = await pool.query(`
+            SELECT pr.*, e.name AS equipment_name
+            FROM purchase_requests pr
+            LEFT JOIN equipment e ON pr.equipment_id = e.id
+            WHERE pr.id IN (${placeholders})
+              AND pr.status = 'approved'
+            ORDER BY pr.id
+        `, ids);
+
+        if (result.rows.length === 0) {
+            return res.status(400).json({ error: 'Нет одобренных заявок для выгрузки' });
+        }
+
+        // Переводим выгруженные заявки в статус «В работе»
+        const updatePlaceholders = ids.map((_, i) => `$${i + 2}`).join(',');
+        await pool.query(`
+            UPDATE purchase_requests
+            SET status = 'in_progress',
+                resolved_at = CURRENT_TIMESTAMP,
+                resolved_by = $1
+            WHERE id IN (${updatePlaceholders})
+              AND status = 'approved'
+        `, [req.user.id, ...ids]);
+
+        // ---- Формируем Excel ----
+        const isOMTS = department === 'OMTS';
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet(isOMTS ? 'Лист1' : 'Заявка');
+
+        const widths = isOMTS
+            ? [8, 45, 18, 22, 10, 8, 14, 22, 16, 22, 20, 32]
+            : [8, 45, 18, 22, 10, 8, 14, 22, 16, 22, 20];
+        widths.forEach((w, i) => { ws.getColumn(i + 1).width = w; });
+
+        const bold = { bold: true };
+        const centerWrap = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
+        // Заголовок
+        ws.mergeCells('A1:L1');
+        ws.getCell('A1').value = 'ЗАЯВКА НА ЗАКУПКУ';
+        ws.getCell('A1').font = { bold: true, size: 14 };
+        ws.getCell('A1').alignment = { horizontal: 'center' };
+
+        ws.getCell('A3').value = 'УТВЕРЖДЕНО';
+        ws.getCell('A3').font = bold;
+        ws.getCell('G3').value = 'ПРИНЯТО К ИСПОЛНЕНИЮ';
+        ws.getCell('G3').font = bold;
+
+        ws.getCell('G4').value = isOMTS ? 'Начальник ОМТС и ВК' : 'Начальник ОВЭД';
+        ws.getCell('G5').value = isOMTS ? 'Лешкевич Ю.А.' : 'Лойко К.Ю.';
+        ws.getCell('A5').value = '__________________________________';
+        ws.getCell('A6').value = 'Директор                          С.И.Советников';
+        ws.getCell('G6').value = 'Исполнитель';
+
+        ws.getCell('A8').value = 'исходящие';
+        ws.getCell('G8').value = 'входящие';
+        ws.getCell('A9').value = 'Номер заявки подразделения';
+        ws.getCell('G9').value = `Номер заявки согласно регистрации ${isOMTS ? 'ОМТС и ВК' : 'ОВЭД'}`;
+        ws.getCell('A10').value = 'Дата создания заявки';
+        ws.getCell('D10').value = new Date();
+        ws.getCell('D10').numFmt = 'dd.mm.yyyy';
+        ws.getCell('G10').value = `Дата регистрации заявки в ${isOMTS ? 'ОМТС и ВК' : 'ОВЭД'}`;
+
+        ws.getCell('A12').value = 'Подразделение инициатора                              БРиОЭО          СГИ';
+
+        // Шапка таблицы
+        const headers = isOMTS
+            ? ['№ п/п','Наименование','Потенциальные производители','Артикул производителя',
+               'Ед. изм.','Кол-во','Стоимость   р/шт.','Наличие закупаемых позиций в бюджете подразделения',
+               'Желаемая дата прихода на склад','Крайняя (критически необходимая)дата прихода на склад',
+               'Цель закупки','']
+            : ['№ п/п','Наименование','Потенциальные производители','Артикул производителя',
+               'Ед. изм.','Кол-во','Цена   € всего','Наличие закупаемых позиций в бюджете подразделения',
+               'Желаемая дата прихода на склад','Крайняя (критически необходимая)дата прихода на склад',
+               'Цель закупки'];
+
+        const headerRow = ws.getRow(14);
+        headers.forEach((h, i) => {
+            const cell = headerRow.getCell(i + 1);
+            cell.value = h;
+            cell.font = bold;
+            cell.alignment = centerWrap;
+            cell.border = {
+                top:    { style: 'thin' },
+                left:   { style: 'thin' },
+                bottom: { style: 'thin' },
+                right:  { style: 'thin' }
+            };
+        });
+        headerRow.height = 42;
+
+        // Данные
+        let rowIdx = 15;
+        result.rows.forEach((r, i) => {
+            const row = ws.getRow(rowIdx++);
+            const priceVal = r.price != null && r.price !== '' ? Number(r.price) : 'По запросу';
+            const data = [
+                i + 1,
+                r.item_name || '',
+                r.supplier || '',
+                r.article || '',
+                r.unit || 'шт.',
+                r.quantity || '',
+                priceVal,
+                'да',
+                r.planned_date ? new Date(r.planned_date) : '',
+                '',
+                r.equipment_name || ''
+            ];
+            if (isOMTS) data.push(r.link || '');
+
+            data.forEach((v, j) => {
+                const cell = row.getCell(j + 1);
+                cell.value = v;
+                cell.alignment = { vertical: 'middle', wrapText: true };
+                cell.border = {
+                    top:    { style: 'thin' },
+                    left:   { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right:  { style: 'thin' }
+                };
+            });
+            if (r.planned_date) row.getCell(9).numFmt = 'dd.mm.yyyy';
+        });
+
+        // Пропуск строки
+        rowIdx++;
+
+        // Подписи
+        ws.getCell(`A${rowIdx}`).value = 'Начальник БРиОЭО';
+        ws.getCell(`D${rowIdx}`).value = '_______________________________';
+        ws.getCell(`G${rowIdx}`).value = 'Белецкий В.Н.';
+        rowIdx++;
+        ws.getCell(`D${rowIdx}`).value = 'подпись';
+        rowIdx += 2;
+        ws.getCell(`A${rowIdx}`).value = 'Заместитель директора – главный инженер';
+        ws.getCell(`D${rowIdx}`).value = '_______________________';
+        ws.getCell(`G${rowIdx}`).value = 'Сороко А.И.';
+        rowIdx++;
+        ws.getCell(`D${rowIdx}`).value = 'подпись';
+
+        const filename = `zayavka_${department}_${new Date().toISOString().slice(0,10)}.xlsx`;
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        await wb.xlsx.write(res);
+        res.end();
+    } catch (err) {
+        console.error('Ошибка выгрузки заявок:', err);
+        res.status(500).json({ error: 'Ошибка выгрузки заявок' });
+    }
+});
 
 // ---------- GET /api/purchases ----------
 router.get('/', async (req, res) => {
