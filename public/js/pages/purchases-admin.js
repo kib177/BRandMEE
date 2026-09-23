@@ -82,14 +82,29 @@
     }
 
     // ---------- Рендер таблицы ----------
-    function renderTable(rows) {
-        const tbody = document.querySelector('#purchasesTable tbody');
-        if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:2rem;">Нет заявок</td></tr>';
-            return;
-        }
+   function renderTable(rows) {
+    const tbody = document.querySelector('#purchasesTable tbody');
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:2rem;">Нет заявок</td></tr>';
+        return;
+    }
 
-        tbody.innerHTML = rows.map(r => `
+    tbody.innerHTML = rows.map(r => {
+        const isDone = r.status === 'done';
+        // Собираем опции с учётом правил
+        const statuses = ['pending', 'in_progress', 'approved', 'done', 'rejected'];
+        const options = statuses.map(s => {
+            // «Ожидает» показываем только если заявка ещё pending
+            if (s === 'pending' && r.status !== 'pending') return '';
+            const sel = r.status === s ? 'selected' : '';
+            return `<option value="${s}" ${sel}>${statusLabel(s)}</option>`;
+        }).join('');
+
+        const selectHtml = isDone
+            ? `<span class="status-badge done">${statusLabel('done')}</span>`
+            : `<select class="status-select" data-id="${r.id}">${options}</select>`;
+
+        return `
             <tr class="status-${r.status}">
                 <td>${r.id}</td>
                 <td>${new Date(r.created_at).toLocaleDateString('ru')}</td>
@@ -100,73 +115,134 @@
                 <td>${escapeHtml(r.requested_by_name || r.requested_by_username || '—')}</td>
                 <td>${priorityLabel(r.priority)}</td>
                 <td>${r.planned_date ? new Date(r.planned_date).toLocaleDateString('ru') : '—'}</td>
-                <td>
-                    <select class="status-select" data-id="${r.id}">
-                        <option value="pending"  ${r.status==='pending' ?'selected':''}>Ожидает</option>
-                        <option value="approved" ${r.status==='approved'?'selected':''}>Одобрена</option>
-                        <option value="done"     ${r.status==='done'    ?'selected':''}>Выполнена</option>
-                        <option value="rejected" ${r.status==='rejected'?'selected':''}>Отклонена</option>
-                    </select>
-                </td>
+                <td>${selectHtml}</td>
                 <td>
                     <button class="btn-icon js-view" data-id="${r.id}" title="Открыть">👁️</button>
+                    ${!isDone ? `<button class="btn-icon js-edit" data-id="${r.id}" title="Редактировать">✏️</button>` : ''}
                     <button class="btn-icon js-delete" data-id="${r.id}" title="Удалить" style="color:red;">🗑️</button>
                 </td>
             </tr>
-        `).join('');
+        `;
+    }).join('');
 
-        // Смена статуса прямо в строке
-        tbody.querySelectorAll('.status-select').forEach(sel => {
-            sel.addEventListener('change', async () => {
-                const id = sel.dataset.id;
-                const status = sel.value;
-                try {
-                    const res = await fetch(`${API}/${id}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ status })
-                    });
-                    if (!res.ok) {
-                        const err = await res.json();
-                        throw new Error(err.error || 'Ошибка');
-                    }
-                    loadRequests();
-                    loadSummary();
-                } catch (e) {
-                    alert(e.message);
-                    loadRequests();
+    // Смена статуса
+    tbody.querySelectorAll('.status-select').forEach(sel => {
+        sel.addEventListener('change', async () => {
+            const id = sel.dataset.id;
+            const status = sel.value;
+            try {
+                const res = await fetch(`${API}/${id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Ошибка');
                 }
-            });
+                loadRequests();
+                loadSummary();
+            } catch (e) {
+                alert(e.message);
+                loadRequests();
+            }
         });
+    });
 
-        // Просмотр
-        tbody.querySelectorAll('.js-view').forEach(btn => {
-            btn.addEventListener('click', () => openCard(btn.dataset.id));
-        });
+    tbody.querySelectorAll('.js-view').forEach(btn => {
+        btn.addEventListener('click', () => openCard(btn.dataset.id));
+    });
 
-        // Удаление
-        tbody.querySelectorAll('.js-delete').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                if (!confirm('Удалить заявку?')) return;
-                try {
-                    const res = await fetch(`${API}/${btn.dataset.id}`, {
-                        method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (!res.ok) {
-                        const err = await res.json();
-                        throw new Error(err.error || 'Ошибка');
-                    }
-                    loadRequests();
-                    loadSummary();
-                } catch (e) { alert(e.message); }
-            });
+    tbody.querySelectorAll('.js-edit').forEach(btn => {
+        btn.addEventListener('click', () => openEdit(btn.dataset.id));
+    });
+
+    tbody.querySelectorAll('.js-delete').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('Удалить заявку?')) return;
+            try {
+                const res = await fetch(`${API}/${btn.dataset.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Ошибка');
+                }
+                loadRequests();
+                loadSummary();
+            } catch (e) { alert(e.message); }
         });
+    });
+}
+
+    async function openEdit(id) {
+    try {
+        const res = await fetch(`${API}/${id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Не удалось загрузить заявку');
+        const r = await res.json();
+
+        document.getElementById('editId').value = r.id;
+        document.getElementById('editItemName').value = r.item_name || '';
+        document.getElementById('editQuantity').value = r.quantity || '';
+        document.getElementById('editUnit').value = r.unit || 'ШТ';
+        document.getElementById('editPriority').value = r.priority || 'normal';
+        document.getElementById('editPlannedDate').value =
+            r.planned_date ? r.planned_date.slice(0, 10) : '';
+        document.getElementById('editJustification').value = r.justification || '';
+        document.getElementById('editLink').value = r.link || '';
+        document.getElementById('editSupplier').value = r.supplier || '';
+        document.getElementById('editPrice').value = r.price || '';
+        document.getElementById('editComment').value = r.comment || '';
+
+        document.getElementById('editOverlay').classList.remove('hidden');
+    } catch (e) {
+        alert(e.message);
     }
+}
 
+document.getElementById('editForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editId').value;
+    const payload = {
+        item_name:     document.getElementById('editItemName').value.trim(),
+        quantity:      parseFloat(document.getElementById('editQuantity').value),
+        unit:          document.getElementById('editUnit').value,
+        priority:      document.getElementById('editPriority').value,
+        planned_date:  document.getElementById('editPlannedDate').value || null,
+        justification: document.getElementById('editJustification').value.trim(),
+        link:          document.getElementById('editLink').value.trim(),
+        supplier:      document.getElementById('editSupplier').value.trim(),
+        price:         document.getElementById('editPrice').value || null,
+        comment:       document.getElementById('editComment').value.trim()
+    };
+
+    try {
+        const res = await fetch(`${API}/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Ошибка сохранения');
+        }
+        document.getElementById('editOverlay').classList.add('hidden');
+        loadRequests();
+        loadSummary();
+    } catch (e) {
+        alert(e.message);
+    }
+});
+    
     // ---------- Просмотр карточки ----------
     async function openCard(id) {
         try {
