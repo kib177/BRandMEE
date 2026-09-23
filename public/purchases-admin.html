@@ -18,25 +18,27 @@
 
 <main class="purchases-page">
 
+
     <!-- Сводка -->
-    <div class="summary-row" id="summaryRow">
-        <div class="summary-card"><span>Всего</span><strong id="sumTotal">0</strong></div>
-        <div class="summary-card pending"><span>Ожидают</span><strong id="sumPending">0</strong></div>
-         <div class="summary-card in_progress"><span>В работе</span><strong id="sumInProgress">0</strong>
-        <div class="summary-card approved"><span>Одобрены</span><strong id="sumApproved">0</strong></div>
-        <div class="summary-card done"><span>Выполнены</span><strong id="sumDone">0</strong></div>
-        <div class="summary-card rejected"><span>Отклонены</span><strong id="sumRejected">0</strong></div>
-    </div>
+<div class="summary-row" id="summaryRow">
+    <div class="summary-card"><span>Всего</span><strong id="sumTotal">0</strong></div>
+    <div class="summary-card pending"><span>Ожидают</span><strong id="sumPending">0</strong></div>
+    <div class="summary-card in_progress"><span>В работе</span><strong id="sumInProgress">0</strong></div>
+    <div class="summary-card approved"><span>Одобрены</span><strong id="sumApproved">0</strong></div>
+    <div class="summary-card done"><span>Выполнены</span><strong id="sumDone">0</strong></div>
+    <div class="summary-card rejected"><span>Отклонены</span><strong id="sumRejected">0</strong></div>
+</div>
 
     <!-- Фильтры -->
     <div class="filters">
         <select id="filterStatus" class="filter-select">
-            <option value="">Все статусы</option>
-            <option value="pending">Ожидают</option>
-            <option value="approved">Одобрены</option>
-            <option value="done">Выполнены</option>
-            <option value="rejected">Отклонены</option>
-        </select>
+    <option value="">Все статусы</option>
+    <option value="pending">Ожидают</option>
+    <option value="in_progress">В работе</option>
+    <option value="approved">Одобрены</option>
+    <option value="done">Выполнены</option>
+    <option value="rejected">Отклонены</option>
+</select>
         <select id="filterDepartment" class="filter-select admin-only">
             <option value="">Все отделы</option>
         </select>
