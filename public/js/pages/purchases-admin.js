@@ -112,8 +112,8 @@ const checkboxHtml = canSelect
     : '';
 
         return `
-            <tr class="status-${r.status}">
-            <td>${checkboxHtml}</td>
+             <tr class="status-${r.status}" data-id="${r.id}" style="cursor:pointer;">
+        <td>${checkboxHtml}</td>
                 <td>${r.id}</td>
                 <td>${new Date(r.created_at).toLocaleDateString('ru')}</td>
                 <td>${escapeHtml(r.item_name)}</td>
