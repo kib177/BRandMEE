@@ -119,7 +119,7 @@
                 <td>${selectHtml}</td>
                 <td>
                     <button class="btn-icon js-view" data-id="${r.id}" title="Открыть">👁️</button>
-                    ${!isDone ? `<button class="btn-icon js-edit" data-id="${r.id}" title="Редактировать">✏️</button>` : ''}
+                    ${!isLocked ? `<button class="btn-icon js-edit" data-id="${r.id}" title="Редактировать">✏️</button>` : ''}
                     <button class="btn-icon js-delete" data-id="${r.id}" title="Удалить" style="color:red;">🗑️</button>
                 </td>
             </tr>
