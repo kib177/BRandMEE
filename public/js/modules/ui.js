@@ -207,17 +207,12 @@ function initStatsAccordion() {
     const header = document.getElementById('statsHeader');
     if (!accordion || !header) return;
 
-    // Статистика всегда свёрнута при загрузке
+    // Статистика свёрнута при загрузке
     accordion.classList.add('collapsed');
 
     // Клик по заголовку переключает состояние на всех экранах
     header.addEventListener('click', () => {
         accordion.classList.toggle('collapsed');
-    });
-
-    // При изменении размера окна сбрасываем к свёрнутому состоянию
-    window.addEventListener('resize', () => {
-        accordion.classList.add('collapsed');
     });
 }
 
