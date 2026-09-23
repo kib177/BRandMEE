@@ -5,6 +5,7 @@
 
     const API = '/api/purchases';
     let currentData = [];
+    let selectedPurchaseIds = new Set();
 
    function statusLabel(status) {
     const map = {
@@ -86,7 +87,7 @@
    function renderTable(rows) {
     const tbody = document.querySelector('#purchasesTable tbody');
     if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:2rem;">Нет заявок</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="13" style="text-align:center; padding:2rem;">Нет заявок</td></tr>';
         return;
     }
 
@@ -104,9 +105,15 @@
         const selectHtml = isLocked
     ? `<span class="status-badge ${r.status}">${statusLabel(r.status)}</span>`
     : `<select class="status-select" data-id="${r.id}">${options}</select>`;
+        const canSelect = r.status === 'approved';
+const checkboxHtml = canSelect
+    ? `<input type="checkbox" class="row-check" data-id="${r.id}"
+         ${selectedPurchaseIds.has(String(r.id)) ? 'checked' : ''}>`
+    : '';
 
         return `
             <tr class="status-${r.status}">
+            <td>${checkboxHtml}</td>
                 <td>${r.id}</td>
                 <td>${new Date(r.created_at).toLocaleDateString('ru')}</td>
                 <td>${escapeHtml(r.item_name)}</td>
@@ -126,6 +133,17 @@
             </tr>
         `;
     }).join('');
+       
+       tbody.querySelectorAll('.row-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+        const id = String(cb.dataset.id);
+        if (cb.checked) selectedPurchaseIds.add(id);
+        else selectedPurchaseIds.delete(id);
+        updateBulkActions();
+    });
+});
+
+updateBulkActions();
 
     // Смена статуса
     tbody.querySelectorAll('.status-select').forEach(sel => {
@@ -180,6 +198,78 @@
         });
     });
 }
+    function updateBulkActions() {
+    const bar = document.getElementById('bulkActions');
+    const countEl = document.getElementById('selectedCount');
+    if (!bar || !countEl) return;
+    countEl.textContent = selectedPurchaseIds.size;
+    bar.style.display = selectedPurchaseIds.size > 0 ? 'flex' : 'none';
+}
+
+document.getElementById('selectAllApproved')?.addEventListener('change', (e) => {
+    const checked = e.target.checked;
+    document.querySelectorAll('.row-check').forEach(cb => {
+        cb.checked = checked;
+        const id = String(cb.dataset.id);
+        if (checked) selectedPurchaseIds.add(id);
+        else selectedPurchaseIds.delete(id);
+    });
+    updateBulkActions();
+});
+
+document.getElementById('btnClearSelection')?.addEventListener('click', () => {
+    selectedPurchaseIds.clear();
+    document.querySelectorAll('.row-check').forEach(cb => cb.checked = false);
+    const all = document.getElementById('selectAllApproved');
+    if (all) all.checked = false;
+    updateBulkActions();
+});
+
+    async function exportDepartment(department) {
+    if (selectedPurchaseIds.size === 0) return;
+
+    const label = department === 'OMTS' ? 'ОМТС' : 'ВЭД';
+    if (!confirm(`Выгрузить ${selectedPurchaseIds.size} заявок в ${label}? После выгрузки они получат статус «В работе».`)) return;
+
+    try {
+        const res = await fetch(`${API}/export`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                ids: Array.from(selectedPurchaseIds),
+                department
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Ошибка выгрузки');
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `zayavka_${department}_${new Date().toISOString().slice(0,10)}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        selectedPurchaseIds.clear();
+        updateBulkActions();
+        loadRequests();
+        loadSummary();
+    } catch (e) {
+        alert(e.message);
+    }
+}
+
+document.getElementById('btnExportOMTS')?.addEventListener('click', () => exportDepartment('OMTS'));
+document.getElementById('btnExportVED')?.addEventListener('click',  () => exportDepartment('VED'));
 
     async function openEdit(id) {
     try {
