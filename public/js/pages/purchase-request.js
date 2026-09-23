@@ -22,6 +22,7 @@
 
         const formData = new FormData();
         formData.append('item_name', document.getElementById('itemName').value.trim());
+        formData.append('article',   document.getElementById('article').value.trim());
         formData.append('quantity', document.getElementById('quantity').value);
         formData.append('unit', document.getElementById('unit').value);
         formData.append('priority', document.getElementById('priority').value);
