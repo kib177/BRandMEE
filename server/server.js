@@ -55,6 +55,7 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/labels', require('./routes/labels'));
 app.use('/api/backup', require('./routes/backup'));
 app.use('/api/incidents', require('./routes/incidents'));
+app.use('/api/purchases', require('./routes/purchases'));
 
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), {
   setHeaders: (res, filePath) => {
