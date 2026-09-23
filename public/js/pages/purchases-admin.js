@@ -91,7 +91,7 @@
     }
 
     tbody.innerHTML = rows.map(r => {
-        const isDone = r.status === 'done';
+        const isLocked = r.status === 'done' || r.status === 'rejected';
         // Собираем опции с учётом правил
         const statuses = ['pending', 'in_progress', 'approved', 'done', 'rejected'];
         const options = statuses.map(s => {
@@ -101,9 +101,9 @@
             return `<option value="${s}" ${sel}>${statusLabel(s)}</option>`;
         }).join('');
 
-        const selectHtml = isDone
-            ? `<span class="status-badge done">${statusLabel('done')}</span>`
-            : `<select class="status-select" data-id="${r.id}">${options}</select>`;
+        const selectHtml = isLocked
+    ? `<span class="status-badge ${r.status}">${statusLabel(r.status)}</span>`
+    : `<select class="status-select" data-id="${r.id}">${options}</select>`;
 
         return `
             <tr class="status-${r.status}">
