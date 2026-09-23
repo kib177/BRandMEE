@@ -49,20 +49,20 @@
     }
 
     // ---------- Сводка ----------
-    async function loadSummary() {
-        try {
-            const res = await fetch(`${API}/summary`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!res.ok) return;
-            const s = await res.json();
-            document.getElementById('sumTotal').textContent    = s.total    || 0;
-            document.getElementById('sumPending').textContent  = s.pending  || 0;
-            document.getElementById('sumApproved').textContent = s.approved || 0;
-            document.getElementById('sumDone').textContent     = s.done     || 0;
-            document.getElementById('sumRejected').textContent = s.rejected || 0;
-        } catch (e) { console.error(e); }
-    }
+   async function loadSummary() {
+    try {
+        const res = await fetch(`${API}/summary`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const s = await res.json();
+        document.getElementById('sumTotal').textContent    = s.total    || 0;
+        document.getElementById('sumPending').textContent  = s.pending  || 0;
+        document.getElementById('sumApproved').textContent = s.approved || 0;
+        document.getElementById('sumDone').textContent     = s.done     || 0;
+        document.getElementById('sumRejected').textContent = s.rejected || 0;
+    } catch (e) { console.error(e); }
+}
 
     // ---------- Загрузка заявок ----------
     async function loadRequests() {
