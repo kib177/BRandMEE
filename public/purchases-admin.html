@@ -48,7 +48,14 @@
         <button class="btn btn-primary btn-sm" id="btnApply">Применить</button>
         <button class="btn btn-outline btn-sm" id="btnReset">Сброс</button>
         <button class="btn btn-outline btn-sm" id="btnExportExcel">📊 Excel</button>
+        
     </div>
+    <div class="bulk-actions" id="bulkActions" style="display:none;">
+    <span><b id="selectedCount">0</b> выбрано:</span>
+    <button class="btn btn-primary btn-sm" id="btnExportOMTS">📊 Выгрузить в ОМТС</button>
+    <button class="btn btn-primary btn-sm" id="btnExportVED">📊 Выгрузить в ВЭД</button>
+    <button class="btn btn-outline btn-sm" id="btnClearSelection">✖ Снять выделение</button>
+</div>
 
     <!-- Таблица -->
     <div class="table-wrapper">
