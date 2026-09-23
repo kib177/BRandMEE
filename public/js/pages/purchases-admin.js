@@ -6,15 +6,16 @@
     const API = '/api/purchases';
     let currentData = [];
 
-    function statusLabel(status) {
-        const map = {
-            'pending':  'Ожидает',
-            'approved': 'Одобрена',
-            'done':     'Выполнена',
-            'rejected': 'Отклонена'
-        };
-        return map[status] || status;
-    }
+   function statusLabel(status) {
+    const map = {
+        'pending':     'Ожидает',
+        'in_progress': 'В работе',
+        'approved':    'Одобрена',
+        'done':        'Выполнена',
+        'rejected':    'Отклонена'
+    };
+    return map[status] || status;
+}
 
     function priorityLabel(p) {
         const map = { 'low': 'Низкий', 'normal': 'Обычный', 'high': 'Высокий' };
