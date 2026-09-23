@@ -190,6 +190,16 @@ tr.status-rejected    { background: #fdecea; color: #888; }
     border-color: #90caf9;
 }
 
+.purchases-table tbody tr {
+    transition: background 0.15s ease;
+}
+.purchases-table tbody tr:hover {
+    background: rgba(46, 134, 193, 0.06);
+}
+[data-theme="dark"] .purchases-table tbody tr:hover {
+    background: rgba(144, 202, 249, 0.08);
+}
+
 /* Мобильная версия */
 @media (max-width: 768px) {
     .summary-row { grid-template-columns: repeat(2, 1fr); }
