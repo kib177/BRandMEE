@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление заявками на закупку</title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/utilities.css">
+    <link rel="stylesheet" href="/css/mobile.css">
+    <link rel="stylesheet" href="/css/burger.css">
+    <link rel="stylesheet" href="/css/pages/purchases.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a3c5e">
+</head>
+<body>
+
+<main class="purchases-page">
+
+    <!-- Сводка -->
+    <div class="summary-row" id="summaryRow">
+        <div class="summary-card"><span>Всего</span><strong id="sumTotal">0</strong></div>
+        <div class="summary-card pending"><span>Ожидают</span><strong id="sumPending">0</strong></div>
+        <div class="summary-card approved"><span>Одобрены</span><strong id="sumApproved">0</strong></div>
+        <div class="summary-card done"><span>Выполнены</span><strong id="sumDone">0</strong></div>
+        <div class="summary-card rejected"><span>Отклонены</span><strong id="sumRejected">0</strong></div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="filters">
+        <select id="filterStatus" class="filter-select">
+            <option value="">Все статусы</option>
+            <option value="pending">Ожидают</option>
+            <option value="approved">Одобрены</option>
+            <option value="done">Выполнены</option>
+            <option value="rejected">Отклонены</option>
+        </select>
+        <select id="filterDepartment" class="filter-select admin-only">
+            <option value="">Все отделы</option>
+        </select>
+        <input type="date" id="filterFrom" class="filter-select" placeholder="С">
+        <input type="date" id="filterTo" class="filter-select" placeholder="По">
+        <input type="text" id="searchInput" class="filter-select" placeholder="Поиск по названию, обоснованию, поставщику">
+        <button class="btn btn-primary btn-sm" id="btnApply">Применить</button>
+        <button class="btn btn-outline btn-sm" id="btnReset">Сброс</button>
+        <button class="btn btn-outline btn-sm" id="btnExportExcel">📊 Excel</button>
+    </div>
+
+    <!-- Таблица -->
+    <div class="table-wrapper">
+        <table id="purchasesTable" class="purchases-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Дата</th>
+                    <th>Наименование</th>
+                    <th>Кол-во</th>
+                    <th>Ед.</th>
+                    <th>Отдел</th>
+                    <th>Заявитель</th>
+                    <th>Приоритет</th>
+                    <th>Планируемая</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</main>
+
+<!-- Модалка просмотра заявки -->
+<div class="modal-overlay hidden" id="viewOverlay">
+    <div class="modal" style="max-width: 640px;">
+        <button class="btn-icon-info" id="btnCloseView" style="position:absolute; top:10px; right:10px;">✕</button>
+        <h2>Заявка на закупку</h2>
+        <div id="viewContent"></div>
+    </div>
+</div>
+
+<script src="/js/utils/dom.js"></script>
+<script src="/js/utils/auth.js"></script>
+<script src="/js/components/profile-ui.js"></script>
+<script src="/js/components/layout.js"></script>
+<script src="/js/library/xlsx.full.min.js"></script>
+<script src="/js/pages/purchases-admin.js"></script>
+</body>
+</html>
