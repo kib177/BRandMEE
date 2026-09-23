@@ -119,10 +119,11 @@ router.get('/summary', async (req, res) => {
 
         const result = await pool.query(`
             SELECT
-                COUNT(*) FILTER (WHERE status = 'pending')  AS pending,
-                COUNT(*) FILTER (WHERE status = 'approved') AS approved,
-                COUNT(*) FILTER (WHERE status = 'done')     AS done,
-                COUNT(*) FILTER (WHERE status = 'rejected') AS rejected,
+                COUNT(*) FILTER (WHERE status = 'pending')     AS pending,
+                COUNT(*) FILTER (WHERE status = 'in_progress') AS in_progress,
+                COUNT(*) FILTER (WHERE status = 'approved')    AS approved,
+                COUNT(*) FILTER (WHERE status = 'done')        AS done,
+                COUNT(*) FILTER (WHERE status = 'rejected')    AS rejected,
                 COUNT(*) AS total
             FROM purchase_requests
             ${baseWhere}
