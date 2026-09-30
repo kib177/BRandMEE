@@ -93,20 +93,24 @@ function openProfileModal() {
       <h2>Настройки профиля</h2>
       <form id="profileForm">
         <div class="form-group">
-          <label>Текущий пароль *</label>
-          <input type="password" id="currentPassword" required autocomplete="off">
-        </div>
-        <div class="form-group">
           <label>Новый логин (оставьте пустым, чтобы не менять)</label>
           <input type="text" id="newUsername" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="newEmail">
+        </div>
+        <div class="form-group">
+          <label>Текущий пароль *</label>
+          <input type="password" id="currentPassword" required autocomplete="off">
         </div>
         <div class="form-group">
           <label>Новый пароль (оставьте пустым, чтобы не менять)</label>
           <input type="password" id="newPassword" autocomplete="off">
         </div>
         <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="newEmail">
+          <label>Подтверждение нового пароля</label>
+          <input type="password" id="newPasswordConfirm" autocomplete="off">
         </div>
         <div class="form-error" id="profileError" style="display:none;"></div>
         <div class="form-actions">
@@ -131,13 +135,28 @@ function openProfileModal() {
   // Отправка формы
   overlay.querySelector('#profileForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const currentPassword = overlay.querySelector('#currentPassword').value;
-    const newUsername = overlay.querySelector('#newUsername').value.trim();
-    const newPassword = overlay.querySelector('#newPassword').value;
-    const newEmail = overlay.querySelector('#newEmail').value.trim();
+    const currentPassword     = overlay.querySelector('#currentPassword').value;
+    const newUsername         = overlay.querySelector('#newUsername').value.trim();
+    const newPassword         = overlay.querySelector('#newPassword').value;
+    const newPasswordConfirm  = overlay.querySelector('#newPasswordConfirm').value;
+    const newEmail            = overlay.querySelector('#newEmail').value.trim();
 
     const errEl = overlay.querySelector('#profileError');
     errEl.style.display = 'none';
+
+    // Проверка совпадения паролей
+    if (newPassword || newPasswordConfirm) {
+        if (newPassword !== newPasswordConfirm) {
+            errEl.textContent = 'Пароли не совпадают';
+            errEl.style.display = 'block';
+            return;
+        }
+        if (newPassword.length < 4) {
+            errEl.textContent = 'Новый пароль слишком короткий';
+            errEl.style.display = 'block';
+            return;
+        }
+    }
 
     try {
       const res = await fetch('/api/auth/update-profile', {
@@ -160,7 +179,6 @@ function openProfileModal() {
         return;
       }
       if (data.user) {
-        // обновляем currentUser (глобальная переменная из auth.js)
         if (typeof currentUser !== 'undefined') {
           currentUser.username = data.user.username;
           currentUser.email = data.user.email;
@@ -174,7 +192,7 @@ function openProfileModal() {
       errEl.textContent = 'Ошибка сети';
       errEl.style.display = 'block';
     }
-  });
+});
 }
 
 if (document.readyState === 'loading') {
