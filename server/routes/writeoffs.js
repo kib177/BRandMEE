@@ -123,6 +123,76 @@ router.get('/', authMiddleware, requireRole('admin', 'moderator', 'storekeeper')
   }
 });
 
+// ---------- GET /api/write-offs/item/:code ----------
+// Статистика списаний по конкретной позиции — доступно всем авторизованным
+router.get('/item/:code', authMiddleware, async (req, res) => {
+    try {
+        const code = req.params.code;
+
+        const totals = await pool.query(`
+            SELECT
+                COUNT(*) AS total_count,
+                COUNT(*) FILTER (WHERE status = 'approved') AS approved_count,
+                COUNT(*) FILTER (WHERE status = 'pending')  AS pending_count,
+                COUNT(*) FILTER (WHERE status = 'rejected') AS rejected_count,
+                COALESCE(SUM(quantity) FILTER (WHERE status = 'approved'), 0) AS total_qty_approved,
+                COALESCE(SUM(quantity) FILTER (WHERE status = 'pending'),  0) AS total_qty_pending
+            FROM write_offs
+            WHERE item_code = $1
+        `, [code]);
+
+        const byEquipment = await pool.query(`
+            SELECT eq.name AS equipment,
+                   SUM(wo.quantity) AS total_qty,
+                   COUNT(*) AS count
+            FROM write_offs wo
+            LEFT JOIN equipment eq ON wo.equipment_id = eq.id
+            WHERE wo.item_code = $1 AND wo.status = 'approved'
+            GROUP BY eq.name
+            ORDER BY total_qty DESC
+            LIMIT 10
+        `, [code]);
+
+        const byMonth = await pool.query(`
+            SELECT TO_CHAR(requested_at, 'YYYY-MM') AS month,
+                   SUM(quantity) AS total_qty,
+                   COUNT(*) AS count
+            FROM write_offs
+            WHERE item_code = $1 AND status = 'approved'
+              AND requested_at >= NOW() - INTERVAL '12 months'
+            GROUP BY month
+            ORDER BY month
+        `, [code]);
+
+        const last = await pool.query(`
+            SELECT wo.id, wo.requested_at, wo.quantity, wo.unit, wo.status,
+                   wo.requested_by, wo.comment,
+                   eq.name AS equipment_name
+            FROM write_offs wo
+            LEFT JOIN equipment eq ON wo.equipment_id = eq.id
+            WHERE wo.item_code = $1
+            ORDER BY wo.requested_at DESC
+            LIMIT 20
+        `, [code]);
+
+        const item = await pool.query(
+            'SELECT code, name, model, unit, quantity FROM inventory WHERE code = $1 LIMIT 1',
+            [code]
+        );
+
+        res.json({
+            item: item.rows[0] || null,
+            totals: totals.rows[0],
+            byEquipment: byEquipment.rows,
+            byMonth: byMonth.rows,
+            last: last.rows
+        });
+    } catch (err) {
+        console.error('Ошибка получения статистики списаний:', err);
+        res.status(500).json({ error: 'Ошибка получения статистики' });
+    }
+});
+
 // Изменение статуса (админ, модератор, кладовщик)
 router.patch('/:id', authMiddleware, requireRole('admin', 'moderator', 'storekeeper'), async (req, res) => {
   try {
