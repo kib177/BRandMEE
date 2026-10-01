@@ -55,6 +55,9 @@ searchInput.oninput = debounce(() => {
         filterTypeValue = document.getElementById('filterType').value;
         applyFilterAndRender();
     };
+    document.getElementById('btnItemStats').onclick = () => {
+    if (selectedRowCode) showItemStats(selectedRowCode);
+};
     document.getElementById('filterEquipment').onchange = () => {
         filterEquipmentValue = document.getElementById('filterEquipment').value;
         applyFilterAndRender();
@@ -173,6 +176,9 @@ searchInput.oninput = debounce(() => {
         }
     };
 
+    document.getElementById('btnCloseItemStats')?.addEventListener('click', () => {
+    document.getElementById('itemStatsOverlay').classList.add('hidden');
+});
     document.getElementById('btnSubmit').onclick = submitForm;
     document.getElementById('btnCancel').onclick = () => document.getElementById('modalOverlay').classList.add('hidden');
     document.getElementById('btnCloseView').onclick = () => document.getElementById('viewModalOverlay').classList.add('hidden');
@@ -184,6 +190,7 @@ searchInput.oninput = debounce(() => {
     // Закрытие модалок и сканера по Escape
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
+            document.getElementById('itemStatsOverlay')?.classList.add('hidden');
             document.getElementById('modalOverlay').classList.add('hidden');
             document.getElementById('viewModalOverlay').classList.add('hidden');
             document.getElementById('confirmOverlay').classList.add('hidden');
