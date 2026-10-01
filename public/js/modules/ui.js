@@ -161,7 +161,7 @@ document.querySelectorAll('.code-link').forEach(el => {
 
 function updateActionButtons() {
     const hasSelection = selectedRowCode !== null;
-    ['btnEdit', 'btnWriteOff', 'btnDeleteSelected'].forEach(id => {
+    ['btnEdit', 'btnWriteOff', 'btnDeleteSelected', 'btnItemStats'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
             btn.disabled = !hasSelection;
