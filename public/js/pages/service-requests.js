@@ -99,7 +99,6 @@
                 <td><span class="sr-badge ${sr.status}">${statusLabel(sr.status)}</span></td>
                 <td>
     <div class="sr-actions">
-        <button class="btn-icon js-view" data-id="${sr.id}" title="Открыть">👁️</button>
         ${canManage() && sr.status !== 'done'
             ? `<button class="btn-icon js-edit" data-id="${sr.id}" title="Редактировать">✏️</button>`
             : ''}
