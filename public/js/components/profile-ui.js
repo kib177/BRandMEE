@@ -20,6 +20,7 @@ function injectMenu() {
       <a href="/incidents.html" class="dropdown-item" id="menuIncidents" style="display:none;">🔧 Журнал неисправностей</a>
       <a href="/purchase-request.html" class="dropdown-item" id="menuPurchaseRequest">📝 Заявка на закупку</a>
       <a href="/purchases-admin.html" class="dropdown-item" id="menuPurchasesAdmin" style="display:none;">📦 Управление закупками</a>
+      <a href="/service-requests.html" class="dropdown-item" id="menuServiceRequests" style="display:none;">📝 Докладные записки</a>
     </div>
   `;
   headerInner.appendChild(menuContainer);
