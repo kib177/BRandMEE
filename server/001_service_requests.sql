@@ -32,4 +32,4 @@ CREATE TABLE IF NOT EXISTS service_request_parts (
 
 CREATE INDEX IF NOT EXISTS idx_sr_status ON service_requests(status);
 CREATE INDEX IF NOT EXISTS idx_sr_parts_req ON service_request_parts(request_id);
-SQL
+
