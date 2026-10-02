@@ -19,7 +19,7 @@
         submitted: 'Подана',
         approved: 'Согласована',
         in_progress: 'В работе',
-        done: 'Закрыта',
+        done: 'Выполнено',
         rejected: 'Отклонена',
         cancelled: 'Отменена'
     }[s] || s);
