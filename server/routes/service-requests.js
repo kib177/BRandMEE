@@ -170,7 +170,9 @@ router.put('/:id', requireRole(...MANAGER_ROLES), async (req, res) => {
 });
 
 // ============================================================
-// PATCH /api/service-requests/:id/status — смена статуса + автосписание при done
+// PATCH /api/service-requests/:id/status — смена статуса
+// При переводе в done → создаются ЗАЯВКИ на списание со статусом pending,
+// остатки на складе НЕ меняются (списание подтверждается вручную).
 // ============================================================
 router.patch('/:id/status', requireRole(...MANAGER_ROLES), async (req, res) => {
     const { status } = req.body;
@@ -194,51 +196,32 @@ router.patch('/:id/status', requireRole(...MANAGER_ROLES), async (req, res) => {
 
         const closingNow = CLOSING.includes(status);
 
-        // --- Проверка остатков перед закрытием ---
-        let writeoffsCreated = 0;
-if (closingNow) {
-    const parts = await client.query(`
-        SELECT p.*, i.name AS item_name, i.unit AS inv_unit
-        FROM service_request_parts p
-        LEFT JOIN inventory i
-          ON i.code = p.inventory_code AND i.department_id = p.department_id
-        WHERE p.request_id = $1
-    `, [req.params.id]);
+        // --- Проверка наличия позиций на складе перед закрытием ---
+        if (closingNow) {
+            const check = await client.query(`
+                SELECT p.inventory_code, p.quantity, i.name AS item_name, i.quantity AS stock
+                FROM service_request_parts p
+                LEFT JOIN inventory i ON i.code = p.inventory_code AND i.department_id = p.department_id
+                WHERE p.request_id = $1
+            `, [req.params.id]);
 
-    const author = await client.query(
-        'SELECT username, display_name FROM users WHERE id = $1', [sr.author_id]
-    );
-    const authorName = author.rows[0]?.display_name || author.rows[0]?.username || 'система';
-    const comment = `ДЗ №${sr.number || sr.id} от ${new Date(sr.created_at).toLocaleDateString('ru')}: ${sr.title}`;
-
-    for (const p of parts.rows) {
-        if (!p.item_name) {
-            console.warn(`[SR close] пропуск ${p.inventory_code} — нет на складе (dept ${p.department_id})`);
-            continue;
+            for (const p of check.rows) {
+                if (!p.item_name) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({
+                        error: `Запчасть ${p.inventory_code} отсутствует на складе — уберите её из ДЗ`
+                    });
+                }
+                const stock = Number(p.stock);
+                const need  = Number(p.quantity);
+                if (need > stock) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({
+                        error: `Недостаточно «${p.item_name}» на складе: нужно ${need}, доступно ${stock}`
+                    });
+                }
+            }
         }
-
-        // Создаём заявку на списание в статусе pending — БЕЗ уменьшения остатка
-        await client.query(`
-            INSERT INTO write_offs
-                (item_code, department_id, item_name, equipment_id, quantity, unit,
-                 requested_by, comment, status, requested_at)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending', CURRENT_TIMESTAMP)
-        `, [
-            p.inventory_code,
-            p.department_id,
-            p.item_name,
-            sr.equipment_id || null,
-            p.quantity,
-            p.unit || p.inv_unit || 'ШТ',
-            authorName,
-            comment
-        ]);
-
-        // НЕ обновляем inventory.quantity и не создаём inventory_equipment —
-        // это произойдёт при подтверждении в admin_writeoffs.html.
-        writeoffsCreated++;
-    }
-}
 
         // --- Обновляем статус ---
         await client.query(`
@@ -248,13 +231,14 @@ if (closingNow) {
             WHERE id = $3
         `, [status, closingNow, req.params.id]);
 
-        // --- Создаём списания и уменьшаем остатки ---
+        // --- Создаём ЗАЯВКИ на списание (pending), остатки не трогаем ---
         let writeoffsCreated = 0;
         if (closingNow) {
             const parts = await client.query(`
                 SELECT p.*, i.name AS item_name, i.unit AS inv_unit
                 FROM service_request_parts p
-                LEFT JOIN inventory i ON i.code = p.inventory_code AND i.department_id = p.department_id
+                LEFT JOIN inventory i
+                  ON i.code = p.inventory_code AND i.department_id = p.department_id
                 WHERE p.request_id = $1
             `, [req.params.id]);
 
@@ -262,32 +246,30 @@ if (closingNow) {
                 'SELECT username, display_name FROM users WHERE id = $1', [sr.author_id]
             );
             const authorName = author.rows[0]?.display_name || author.rows[0]?.username || 'система';
-            const comment = `Списание по ДЗ №${sr.number || sr.id} от ${new Date(sr.created_at).toLocaleDateString('ru')}: ${sr.title}`;
+            const comment = `ДЗ №${sr.number || sr.id} от ${new Date(sr.created_at).toLocaleDateString('ru')}: ${sr.title}`;
 
             for (const p of parts.rows) {
+                if (!p.item_name) {
+                    console.warn(`[SR close] пропуск ${p.inventory_code} — нет на складе (dept ${p.department_id})`);
+                    continue;
+                }
+
                 await client.query(`
                     INSERT INTO write_offs
                         (item_code, department_id, item_name, equipment_id, quantity, unit,
-                         requested_by, comment, status, requested_at, resolved_at)
-                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'approved', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                         requested_by, comment, status, requested_at)
+                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending', CURRENT_TIMESTAMP)
                 `, [
-                    p.inventory_code, p.department_id, p.item_name,
-                    sr.equipment_id || null, p.quantity, p.unit || p.inv_unit || 'ШТ',
-                    authorName, comment
+                    p.inventory_code,
+                    p.department_id,
+                    p.item_name,
+                    sr.equipment_id || null,
+                    p.quantity,
+                    p.unit || p.inv_unit || 'ШТ',
+                    authorName,
+                    comment
                 ]);
 
-                await client.query(`
-                    UPDATE inventory
-                    SET quantity = GREATEST(quantity - $1, 0), updated_at = CURRENT_TIMESTAMP
-                    WHERE code = $2 AND department_id = $3
-                `, [p.quantity, p.inventory_code, p.department_id]);
-
-                if (sr.equipment_id) {
-                    await client.query(`
-                        INSERT INTO inventory_equipment (inventory_code, department_id, equipment_id)
-                        VALUES ($1,$2,$3) ON CONFLICT DO NOTHING
-                    `, [p.inventory_code, p.department_id, sr.equipment_id]);
-                }
                 writeoffsCreated++;
             }
         }
@@ -304,7 +286,7 @@ if (closingNow) {
 });
 
 // ============================================================
-// DELETE /api/service-requests/:id — удаление
+// DELETE /api/service-requests/:id
 // ============================================================
 router.delete('/:id', requireRole('admin', 'moderator'), async (req, res) => {
     try {
@@ -322,7 +304,7 @@ router.delete('/:id', requireRole('admin', 'moderator'), async (req, res) => {
 });
 
 // ============================================================
-// POST /api/service-requests/:id/parts — добавить запчасть (с проверкой остатка)
+// POST /api/service-requests/:id/parts
 // ============================================================
 router.post('/:id/parts', requireRole(...MANAGER_ROLES), async (req, res) => {
     const { inventory_code, department_id, quantity, unit, note } = req.body;
@@ -370,7 +352,7 @@ router.post('/:id/parts', requireRole(...MANAGER_ROLES), async (req, res) => {
 });
 
 // ============================================================
-// DELETE /api/service-requests/:id/parts/:partId — удалить запчасть
+// DELETE /api/service-requests/:id/parts/:partId
 // ============================================================
 router.delete('/:id/parts/:partId', requireRole(...MANAGER_ROLES), async (req, res) => {
     try {
@@ -391,7 +373,7 @@ router.delete('/:id/parts/:partId', requireRole(...MANAGER_ROLES), async (req, r
 });
 
 // ============================================================
-// GET /api/service-requests/:id/files — список файлов
+// GET /api/service-requests/:id/files
 // ============================================================
 router.get('/:id/files', async (req, res) => {
     try {
@@ -409,7 +391,7 @@ router.get('/:id/files', async (req, res) => {
 });
 
 // ============================================================
-// POST /api/service-requests/:id/files — загрузить файлы
+// POST /api/service-requests/:id/files
 // ============================================================
 router.post('/:id/files', requireRole(...MANAGER_ROLES), srUpload.array('files', 10), async (req, res) => {
     try {
@@ -435,7 +417,7 @@ router.post('/:id/files', requireRole(...MANAGER_ROLES), srUpload.array('files',
 });
 
 // ============================================================
-// DELETE /api/service-requests/:id/files/:fileId — удалить файл
+// DELETE /api/service-requests/:id/files/:fileId
 // ============================================================
 router.delete('/:id/files/:fileId', requireRole(...MANAGER_ROLES), async (req, res) => {
     try {
