@@ -244,16 +244,20 @@ router.patch('/:id/status', requireRole(...MANAGER_ROLES), async (req, res) => {
 });
 
 // ---------- DELETE /api/service-requests/:id ----------
-router.delete('/:id', requireRole('admin', 'moderator'), async (req, res) => {
+router.delete('/:id/parts/:partId', requireRole(...MANAGER_ROLES), async (req, res) => {
     try {
-        const cur = await pool.query('SELECT status FROM service_requests WHERE id = $1', [req.params.id]);
-        if (!cur.rows.length) return res.status(404).json({ error: 'ДЗ не найдена' });
-        if (cur.rows[0].status === 'done')
-            return res.status(400).json({ error: 'Закрытую ДЗ удалять нельзя' });
-        await pool.query('DELETE FROM service_requests WHERE id = $1', [req.params.id]);
+        const sr = await pool.query('SELECT status FROM service_requests WHERE id = $1', [req.params.id]);
+        if (!sr.rows.length) return res.status(404).json({ error: 'ДЗ не найдена' });
+        if (sr.rows[0].status === 'done')
+            return res.status(400).json({ error: 'ДЗ закрыта, запчасти удалять нельзя' });
+
+        await pool.query(
+            'DELETE FROM service_request_parts WHERE id = $1 AND request_id = $2',
+            [req.params.partId, req.params.id]
+        );
         res.json({ ok: true });
     } catch (e) {
-        console.error('SR delete:', e);
+        console.error('SR del part:', e);
         res.status(500).json({ error: 'Ошибка удаления' });
     }
 });
