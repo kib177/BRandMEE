@@ -45,7 +45,16 @@
     </div>
 
     <div class="sr-filters">
-        <select id="srFilterStatus" class="filter-select"> ... </select>
+        <select id="srFilterStatus" class="filter-select">
+            <option value="">Все статусы</option>
+            <option value="draft">Черновик</option>
+            <option value="submitted">Подана</option>
+            <option value="approved">Согласована</option>
+            <option value="in_progress">В работе</option>
+            <option value="done">Закрыта</option>
+            <option value="rejected">Отклонена</option>
+            <option value="cancelled">Отменена</option>
+        </select>
         <input type="text" id="srSearch" placeholder="Поиск по №, заголовку, описанию">
         <button class="btn btn-primary btn-sm" id="srBtnApply">Применить</button>
         <button class="btn btn-outline btn-sm" id="srBtnReset">Сброс</button>
@@ -53,7 +62,7 @@
     </div>
 
     <div class="table-wrapper">
-        <table class="purchases-table" id="srTable">
+        <table class="sr-table" id="srTable">
             <thead>
                 <tr>
                     <th>ID</th>
