@@ -98,14 +98,16 @@
                 <td>${sr.needed_by ? new Date(sr.needed_by).toLocaleDateString('ru') : '—'}</td>
                 <td><span class="sr-badge ${sr.status}">${statusLabel(sr.status)}</span></td>
                 <td>
-                    <button class="btn-icon js-view" data-id="${sr.id}" title="Открыть">👁️</button>
-                    ${canManage() && sr.status !== 'done'
-                        ? `<button class="btn-icon js-edit" data-id="${sr.id}" title="Редактировать">✏️</button>`
-                        : ''}
-                    ${canManage() && sr.status !== 'done'
-                        ? `<button class="btn-icon js-delete" data-id="${sr.id}" title="Удалить" style="color:red;">🗑️</button>`
-                        : ''}
-                </td>
+    <div class="sr-actions">
+        <button class="btn-icon js-view" data-id="${sr.id}" title="Открыть">👁️</button>
+        ${canManage() && sr.status !== 'done'
+            ? `<button class="btn-icon js-edit" data-id="${sr.id}" title="Редактировать">✏️</button>`
+            : ''}
+        ${canManage() && sr.status !== 'done'
+            ? `<button class="btn-icon js-delete" data-id="${sr.id}" title="Удалить" style="color:red;">🗑️</button>`
+            : ''}
+    </div>
+</td>
             </tr>
         `).join('');
 
@@ -259,60 +261,117 @@
     }
 
     function renderView(sr) {
-        const t = document.getElementById('srViewTitle');
-        t.textContent = `ДЗ ${sr.number ? '№' + sr.number : '#' + sr.id}: ${sr.title}`;
+    const t = document.getElementById('srViewTitle');
+    t.textContent = `ДЗ ${sr.number ? '№' + sr.number : '#' + sr.id}: ${sr.title}`;
 
-        const statuses = ['draft','submitted','approved','in_progress','done','rejected','cancelled'];
-        const statusSel = canManage() && sr.status !== 'done'
-            ? `<select id="srStatusSelect" class="status-select">
-                   ${statuses.map(s => `<option value="${s}" ${sr.status === s ? 'selected' : ''}>${statusLabel(s)}</option>`).join('')}
-               </select>
-               <button class="btn btn-primary btn-sm" id="srStatusApply" style="margin-left:0.5rem;">Применить</button>`
-            : `<span class="sr-badge ${sr.status}">${statusLabel(sr.status)}</span>`;
+    const statuses = ['draft','submitted','approved','in_progress','done','rejected','cancelled'];
+    const statusSel = canManage() && sr.status !== 'done'
+        ? `<select id="srStatusSelect" class="status-select">
+               ${statuses.map(s => `<option value="${s}" ${sr.status === s ? 'selected' : ''}>${statusLabel(s)}</option>`).join('')}
+           </select>
+           <button class="btn btn-primary btn-sm" id="srStatusApply" style="margin-left:0.5rem;">Применить</button>`
+        : `<span class="sr-badge ${sr.status}">${statusLabel(sr.status)}</span>`;
 
-        document.getElementById('srViewContent').innerHTML = `
-            <p><b>Статус:</b> ${statusSel}</p>
-            <p><b>Дата создания:</b> ${new Date(sr.created_at).toLocaleString('ru')}</p>
-            <p><b>Автор:</b> ${escapeHtml(sr.author_name || sr.author_username || '—')}</p>
-            <p><b>Вид работ:</b> ${escapeHtml(sr.work_type || '—')}</p>
-            <p><b>Место, участок:</b> ${escapeHtml(sr.location || '—')}</p>
-            <p><b>Оборудование:</b> ${escapeHtml(sr.equipment_name || '—')}</p>
-            <p><b>Содержание работы:</b><br>${escapeHtml(sr.description || '—')}</p>
-            <p><b>Ответственный:</b> ${escapeHtml(sr.responsible || '—')}</p>
-            <p><b>Нужно к:</b> ${sr.needed_by ? new Date(sr.needed_by).toLocaleDateString('ru') : '—'}</p>
+    const filesHtml = selectedFiles.length
+        ? selectedFiles.map(f => `
+            <div class="sr-file-row">
+                <a class="sr-file-link" href="/uploads/sr/${encodeURIComponent(f.filename)}" target="_blank">
+                    ${escapeHtml(f.original_name)}
+                </a>
+                <span class="sr-file-size">${formatSize(f.size)}</span>
+                ${canManage() && sr.status !== 'done'
+                    ? `<button class="btn-icon js-del-sr-file" data-file-id="${f.id}" style="color:red;">🗑️</button>`
+                    : ''}
+            </div>
+        `).join('')
+        : '<p style="color:var(--text-secondary); font-size:0.85rem;">Файлы не прикреплены</p>';
 
-            <hr style="margin:1rem 0;">
-            <h3 style="font-size:1rem;">Запчасти (${selectedParts.length})</h3>
-            <div id="srPartsList"></div>
-            ${canManage() && sr.status !== 'done' ? `
-                <div style="margin-top:0.8rem; padding:0.8rem; background:var(--bg); border-radius:var(--radius-sm);">
-                    <label style="font-size:0.8rem; font-weight:600;">Добавить запчасть:</label>
-                    <input type="text" id="srPartSearch" placeholder="Поиск по коду/названию/артикулу"
-                           style="width:100%; padding:0.4rem; margin:0.4rem 0;">
-                    <div id="srPartResults"
-                         style="max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; background:#fafbfc;"></div>
+    document.getElementById('srViewContent').innerHTML = `
+        <div class="sr-view">
+
+            <div class="sr-view-section">
+                <h3>Общие сведения</h3>
+                <div class="sr-view-row">
+                    <div class="sr-key">Статус</div>
+                    <div class="sr-val">${statusSel}</div>
                 </div>
-            ` : ''}
-
-            <hr style="margin:1rem 0;">
-            <h3 style="font-size:1rem;">Прикреплённые фото (${selectedFiles.length})</h3>
-            <div id="srFilesList">${renderFilesHtml(sr)}</div>
-            ${canManage() && sr.status !== 'done' ? `
-                <div style="margin-top:0.6rem;">
-                    <label class="btn btn-sm btn-outline" style="cursor:pointer;">
-                        📎 Прикрепить файл
-                        <input type="file" id="srFileInput" multiple style="display:none;">
-                    </label>
-                    <span id="srFileStatus" style="margin-left:0.5rem; font-size:0.85rem;"></span>
+                <div class="sr-view-row">
+                    <div class="sr-key">Дата создания</div>
+                    <div class="sr-val">${new Date(sr.created_at).toLocaleString('ru')}</div>
                 </div>
-            ` : ''}
-        `;
+                <div class="sr-view-row">
+                    <div class="sr-key">Автор</div>
+                    <div class="sr-val">${escapeHtml(sr.author_name || sr.author_username || '—')}</div>
+                </div>
+                <div class="sr-view-row">
+                    <div class="sr-key">Вид работ</div>
+                    <div class="sr-val">${escapeHtml(sr.work_type || '—')}</div>
+                </div>
+            </div>
 
-        renderPartsList();
-        bindStatusHandler(sr);
-        bindPartSearch();
-        bindFilesHandlers(sr);
-    }
+            <div class="sr-view-section">
+                <h3>Место и оборудование</h3>
+                <div class="sr-view-row">
+                    <div class="sr-key">Место, участок</div>
+                    <div class="sr-val">${escapeHtml(sr.location || '—')}</div>
+                </div>
+                <div class="sr-view-row">
+                    <div class="sr-key">Оборудование</div>
+                    <div class="sr-val">${escapeHtml(sr.equipment_name || '—')}</div>
+                </div>
+            </div>
+
+            <div class="sr-view-section">
+                <h3>Содержание работы</h3>
+                <div style="font-size:0.88rem; white-space:pre-wrap;">${escapeHtml(sr.description || '—')}</div>
+            </div>
+
+            <div class="sr-view-section">
+                <h3>Ответственные и сроки</h3>
+                <div class="sr-view-row">
+                    <div class="sr-key">Ответственный</div>
+                    <div class="sr-val">${escapeHtml(sr.responsible || '—')}</div>
+                </div>
+                <div class="sr-view-row">
+                    <div class="sr-key">Нужно к</div>
+                    <div class="sr-val">${sr.needed_by ? new Date(sr.needed_by).toLocaleDateString('ru') : '—'}</div>
+                </div>
+            </div>
+
+            <div class="sr-view-section">
+                <h3>Запчасти (${selectedParts.length})</h3>
+                <div class="sr-parts-list" id="srPartsList"></div>
+                ${canManage() && sr.status !== 'done' ? `
+                    <div class="sr-add-part">
+                        <label>Добавить запчасть</label>
+                        <input type="text" id="srPartSearch" placeholder="Поиск по коду / названию / артикулу">
+                        <div class="sr-part-results" id="srPartResults"></div>
+                    </div>
+                ` : ''}
+            </div>
+
+            <div class="sr-view-section">
+                <h3>Прикреплённые файлы (${selectedFiles.length})</h3>
+                <div class="sr-files-list">${filesHtml}</div>
+                ${canManage() && sr.status !== 'done' ? `
+                    <div style="margin-top:0.6rem;">
+                        <label class="sr-file-input-label">
+                            📎 Прикрепить файл
+                            <input type="file" id="srFileInput" multiple style="display:none;">
+                        </label>
+                        <span id="srFileStatus" style="margin-left:0.5rem; font-size:0.85rem;"></span>
+                    </div>
+                ` : ''}
+            </div>
+
+        </div>
+    `;
+
+    renderPartsList();
+    bindStatusHandler(sr);
+    bindPartSearch();
+    bindFilesHandlers(sr);
+}
 
     // ---------- Обработчик смены статуса ----------
     function bindStatusHandler(sr) {
@@ -361,16 +420,15 @@
             ).slice(0, 30);
 
             partResults.innerHTML = list.map(i => `
-                <div class="sr-part-item"
-                     data-code="${escapeHtml(i.code)}"
-                     data-dept="${i.department_id}"
-                     data-name="${escapeHtml(i.name)}"
-                     data-unit="${escapeHtml(i.unit || '')}"
-                     style="padding:0.4rem 0.6rem; cursor:pointer; border-bottom:1px solid var(--border);">
-                    <b>${escapeHtml(i.code)}</b> — ${escapeHtml(i.name)}
-                    ${i.model ? `<span style="color:var(--text-secondary);">[${escapeHtml(i.model)}]</span>` : ''}
-                </div>
-            `).join('') || '<div style="padding:0.6rem; color:#888;">Ничего не найдено</div>';
+    <div class="sr-part-item"
+         data-code="${escapeHtml(i.code)}"
+         data-dept="${i.department_id}"
+         data-name="${escapeHtml(i.name)}"
+         data-unit="${escapeHtml(i.unit || '')}">
+        <b>${escapeHtml(i.code)}</b> — ${escapeHtml(i.name)}
+        ${i.model ? `<span class="sr-muted">[${escapeHtml(i.model)}]</span>` : ''}
+    </div>
+`).join('') || '<div style="padding:0.6rem; color:#888;">Ничего не найдено</div>';
 
             partResults.querySelectorAll('.sr-part-item').forEach(el => {
                 el.addEventListener('click', () => addPartFromElement(el));
@@ -382,49 +440,49 @@
     }
 
     // ---------- Список запчастей ----------
-    function renderPartsList() {
-        const container = document.getElementById('srPartsList');
-        if (!container) return;
-        if (!selectedParts.length) {
-            container.innerHTML = '<p style="color:var(--text-secondary);">Запчасти не добавлены</p>';
-            return;
-        }
-        container.innerHTML = selectedParts.map((p, idx) => `
-            <div style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0; border-bottom:1px solid var(--border);">
-                <div style="flex:1;">
-                    <b>${escapeHtml(p.inventory_code)}</b> — ${escapeHtml(p.item_name || '')}
-                    ${p.note ? `<div style="font-size:0.78rem; color:var(--text-secondary);">${escapeHtml(p.note)}</div>` : ''}
-                </div>
-                <input type="number" class="sr-part-qty" data-idx="${idx}"
-                       value="${p.quantity}" step="0.01" min="0.01"
-                       style="width:80px; padding:0.2rem; text-align:right;">
-                <span style="width:50px; font-size:0.8rem;">${escapeHtml(p.unit || '')}</span>
-                <button class="btn-icon js-del-part" data-idx="${idx}" style="color:red;">🗑️</button>
-            </div>
-        `).join('');
-
-        container.querySelectorAll('.sr-part-qty').forEach(inp => {
-            inp.addEventListener('change', () => {
-                const i = +inp.dataset.idx;
-                selectedParts[i].quantity = parseFloat(inp.value) || 1;
-            });
-        });
-
-        container.querySelectorAll('.js-del-part').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const i = +btn.dataset.idx;
-                const p = selectedParts[i];
-                if (p.id && currentViewId) {
-                    await fetch(`${API}/${currentViewId}/parts/${p.id}`, {
-                        method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                }
-                selectedParts.splice(i, 1);
-                if (currentViewId) openView(currentViewId);
-            });
-        });
+   function renderPartsList() {
+    const container = document.getElementById('srPartsList');
+    if (!container) return;
+    if (!selectedParts.length) {
+        container.innerHTML = '<p style="color:var(--text-secondary); font-size:0.85rem;">Запчасти не добавлены</p>';
+        return;
     }
+    container.innerHTML = selectedParts.map((p, idx) => `
+        <div class="sr-part-row">
+            <div class="sr-part-info">
+                <span class="sr-part-code">${escapeHtml(p.inventory_code)}</span> —
+                ${escapeHtml(p.item_name || '')}
+                ${p.note ? `<div class="sr-part-note">${escapeHtml(p.note)}</div>` : ''}
+            </div>
+            <input type="number" class="sr-part-qty" data-idx="${idx}"
+                   value="${p.quantity}" step="0.01" min="0.01">
+            <span class="sr-part-unit">${escapeHtml(p.unit || '')}</span>
+            <button class="btn-icon js-del-part" data-idx="${idx}" style="color:red;">🗑️</button>
+        </div>
+    `).join('');
+
+    container.querySelectorAll('.sr-part-qty').forEach(inp => {
+        inp.addEventListener('change', () => {
+            const i = +inp.dataset.idx;
+            selectedParts[i].quantity = parseFloat(inp.value) || 1;
+        });
+    });
+
+    container.querySelectorAll('.js-del-part').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const i = +btn.dataset.idx;
+            const p = selectedParts[i];
+            if (p.id && currentViewId) {
+                await fetch(`${API}/${currentViewId}/parts/${p.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            }
+            selectedParts.splice(i, 1);
+            if (currentViewId) openView(currentViewId);
+        });
+    });
+}
 
     async function addPartFromElement(el) {
         const code = el.dataset.code;
@@ -474,32 +532,7 @@
         openView(currentViewId);
     }
 
-    // ---------- Файлы ----------
-    function renderFilesHtml(sr) {
-        if (!selectedFiles.length) {
-            return '<p style="color:var(--text-secondary);">Файлы не прикреплены</p>';
-        }
-        const canDelete = canManage() && sr.status !== 'done';
-        return selectedFiles.map(f => {
-            const url = `/uploads/sr/${encodeURIComponent(f.filename)}`;
-            return `
-                <div style="display:flex; align-items:center; gap:0.5rem; padding:0.35rem 0; border-bottom:1px solid var(--border);">
-                    <a href="${url}" target="_blank"
-                       style="flex:1; color:var(--accent); text-decoration:underline;">
-                        ${escapeHtml(f.original_name)}
-                    </a>
-                    <span style="font-size:0.78rem; color:var(--text-secondary);">
-                        ${formatSize(f.size)}
-                    </span>
-                    ${canDelete
-                        ? `<button class="btn-icon js-del-sr-file" data-file-id="${f.id}" style="color:red;">🗑️</button>`
-                        : ''}
-                </div>
-            `;
-        }).join('');
-    }
-
-    function formatSize(bytes) {
+   function formatSize(bytes) {
         if (!bytes) return '';
         const kb = bytes / 1024;
         return kb < 1024
