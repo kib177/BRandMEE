@@ -419,21 +419,37 @@
                 (i.model || '').toLowerCase().includes(query)
             ).slice(0, 30);
 
-            partResults.innerHTML = list.map(i => `
-                <div class="sr-part-item"
-                     data-code="${escapeHtml(i.code)}"
-                     data-dept="${i.department_id}"
-                     data-name="${escapeHtml(i.name)}"
-                     data-unit="${escapeHtml(i.unit || '')}">
-                    <b>${escapeHtml(i.code)}</b> — ${escapeHtml(i.name)}
-                    ${i.model ? `<span class="sr-muted">[${escapeHtml(i.model)}]</span>` : ''}
-                </div>
-            `).join('') || '<div style="padding:0.6rem; color:#888;">Ничего не найдено</div>';
+            partResults.innerHTML = list.map(i => {
+    const already = selectedParts
+        .filter(p => p.inventory_code === i.code && p.department_id === i.department_id)
+        .reduce((s, p) => s + Number(p.quantity || 0), 0);
+    const stock = Number(i.quantity) || 0;
+    const available = stock - already;
+    const cls = available <= 0 ? 'sr-part-item disabled' : 'sr-part-item';
+    const availLabel = available <= 0
+        ? `<span class="sr-muted" style="color:#c0392b;"> — нет в наличии</span>`
+        : `<span class="sr-muted"> — доступно: ${available} ${escapeHtml(i.unit || '')}</span>`;
+
+    return `
+        <div class="${cls}"
+             data-code="${escapeHtml(i.code)}"
+             data-dept="${i.department_id}"
+             data-name="${escapeHtml(i.name)}"
+             data-unit="${escapeHtml(i.unit || '')}"
+             ${available <= 0 ? 'data-disabled="1"' : ''}>
+            <b>${escapeHtml(i.code)}</b> — ${escapeHtml(i.name)}
+            ${i.model ? `<span class="sr-muted">[${escapeHtml(i.model)}]</span>` : ''}
+            ${availLabel}
+        </div>
+    `;
+}).join('') || '<div style="padding:0.6rem; color:#888;">Ничего не найдено</div>';
 
             partResults.querySelectorAll('.sr-part-item').forEach(el => {
-                el.addEventListener('click', () => addPartFromElement(el));
-            });
-        };
+    el.addEventListener('click', () => {
+        if (el.dataset.disabled === '1') return;
+        addPartFromElement(el);
+    });
+});
 
         renderResults('');
         partSearch.addEventListener('input', e => renderResults(e.target.value));
