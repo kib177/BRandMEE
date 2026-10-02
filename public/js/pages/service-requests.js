@@ -7,6 +7,7 @@
     let currentData = [];
     let allInventory = [];
     let selectedParts = []; // {inventory_code, department_id, quantity, unit, note, item_name}
+    let currentViewId = null;
 
     const canManage = () => currentUser && ['admin','moderator','storekeeper'].includes(currentUser.role);
 
@@ -176,13 +177,19 @@
     });
 
     // ---------- Просмотр ----------
-    document.getElementById('srViewClose').addEventListener('click', () =>
-        document.getElementById('srViewOverlay').classList.add('hidden'));
+        document.getElementById('srViewClose').addEventListener('click', () => {
+        document.getElementById('srViewOverlay').classList.add('hidden');
+        currentViewId = null;
+        selectedParts = [];
+    });
 
     async function openView(id) {
+        currentViewId = id;   // ← запоминаем, что открыта именно эта ДЗ
+
         const r = await fetch(`${API}/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (!r.ok) { alert('Не удалось загрузить'); return; }
         const sr = await r.json();
+
         await loadInventory();
         selectedParts = (sr.parts || []).map(p => ({
             id: p.id,
@@ -193,6 +200,7 @@
             note: p.note || '',
             item_name: p.item_name || p.inventory_code
         }));
+
         renderView(sr);
         document.getElementById('srViewOverlay').classList.remove('hidden');
     }
@@ -362,14 +370,6 @@
         });
         openView(currentViewId);
     }
-
-    // Текущий открытый id (нужен при работе с запчастями)
-    let currentViewId = null;
-    const origOpenView = openView;
-    openView = async function(id) {
-        currentViewId = id;
-        return origOpenView(id);
-    };
 
     // ---------- Фильтры ----------
     document.getElementById('srBtnApply').addEventListener('click', loadList);
