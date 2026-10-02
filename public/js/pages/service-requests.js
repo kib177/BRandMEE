@@ -139,11 +139,8 @@
             document.getElementById('srDescription').value   = sr.description || '';
             document.getElementById('srLocation').value      = sr.location || '';
             document.getElementById('srEquipment').value     = sr.equipment_id || '';
-            document.getElementById('srJustification').value = sr.justification || '';
-            document.getElementById('srTechTask').value      = sr.tech_task || '';
             document.getElementById('srResponsible').value   = sr.responsible || '';
             document.getElementById('srNeededBy').value      = sr.needed_by ? sr.needed_by.slice(0,10) : '';
-            document.getElementById('srPhotoPath').value     = sr.photo_path || '';
         }
         document.getElementById('srFormOverlay').classList.remove('hidden');
     }
@@ -152,18 +149,18 @@
         e.preventDefault();
         const id = document.getElementById('srId').value;
         const payload = {
-            number:        document.getElementById('srNumber').value.trim(),
-            title:         document.getElementById('srTitle').value.trim(),
-            work_type:     document.getElementById('srWorkType').value.trim(),
-            description:   document.getElementById('srDescription').value.trim(),
-            location:      document.getElementById('srLocation').value.trim(),
-            equipment_id:  document.getElementById('srEquipment').value || null,
-            justification: document.getElementById('srJustification').value.trim(),
-            tech_task:     document.getElementById('srTechTask').value.trim(),
-            responsible:   document.getElementById('srResponsible').value.trim(),
-            needed_by:     document.getElementById('srNeededBy').value || null,
-            photo_path:    document.getElementById('srPhotoPath').value.trim()
-        };
+    number:        document.getElementById('srNumber').value.trim(),
+    title:         document.getElementById('srTitle').value.trim(),
+    work_type:     document.getElementById('srWorkType').value,
+    description:   document.getElementById('srDescription').value.trim(),
+    location:      document.getElementById('srLocation').value.trim(),
+    equipment_id:  document.getElementById('srEquipment').value || null,
+    responsible:   document.getElementById('srResponsible').value.trim(),
+    needed_by:     document.getElementById('srNeededBy').value || null
+};
+
+if (!payload.number) { alert('Введите номер ДЗ'); return; }
+if (!payload.work_type) { alert('Выберите вид работ'); return; }
         const method = id ? 'PUT' : 'POST';
         const url = id ? `${API}/${id}` : API;
         const r = await fetch(url, {
@@ -198,14 +195,19 @@
             quantity: Number(p.quantity),
             unit: p.unit || '',
             note: p.note || '',
-            item_name: p.item_name || p.inventory_code
+            item_name: p.item_name || p.inventory_code,
+            let srFiles = [];
+try {
+    const fr = await fetch(`${API}/${id}/files`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (fr.ok) srFiles = await fr.json();
+} catch {}
         }));
 
         renderView(sr);
         document.getElementById('srViewOverlay').classList.remove('hidden');
     }
 
-    function renderView(sr) {
+    function renderView(sr, srFiles) {
         const t = document.getElementById('srViewTitle');
         t.textContent = `ДЗ ${sr.number ? '№' + sr.number : '#' + sr.id}: ${sr.title}`;
 
