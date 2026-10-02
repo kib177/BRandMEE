@@ -21,8 +21,6 @@
         approved: 'Согласована',
         in_progress: 'В работе',
         done: 'Выполнено',
-        rejected: 'Отклонена',
-        cancelled: 'Отменена'
     }[s] || s);
 
     async function loadEquipment() {
@@ -74,7 +72,6 @@
         document.getElementById('srSumInProgress').textContent = s.in_progress;
         document.getElementById('srSumApproved').textContent   = s.approved;
         document.getElementById('srSumDone').textContent       = s.done;
-        document.getElementById('srSumRejected').textContent   = s.rejected;
     }
 
     function renderTable() {
