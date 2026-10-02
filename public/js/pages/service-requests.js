@@ -439,13 +439,18 @@
     }
 
     // ---------- Список запчастей ----------
-   function renderPartsList() {
+  function renderPartsList() {
     const container = document.getElementById('srPartsList');
     if (!container) return;
+
+    const sr = currentViewData;                    // см. правку ниже
+    const locked = sr && sr.status === 'done';
+
     if (!selectedParts.length) {
         container.innerHTML = '<p style="color:var(--text-secondary); font-size:0.85rem;">Запчасти не добавлены</p>';
         return;
     }
+
     container.innerHTML = selectedParts.map((p, idx) => `
         <div class="sr-part-row">
             <div class="sr-part-info">
@@ -454,11 +459,16 @@
                 ${p.note ? `<div class="sr-part-note">${escapeHtml(p.note)}</div>` : ''}
             </div>
             <input type="number" class="sr-part-qty" data-idx="${idx}"
-                   value="${p.quantity}" step="0.01" min="0.01">
+                   value="${p.quantity}" step="0.01" min="0.01"
+                   ${locked ? 'readonly' : ''}>
             <span class="sr-part-unit">${escapeHtml(p.unit || '')}</span>
-            <button class="btn-icon js-del-part" data-idx="${idx}" style="color:red;">🗑️</button>
+            ${!locked
+                ? `<button class="btn-icon js-del-part" data-idx="${idx}" style="color:red;">🗑️</button>`
+                : ''}
         </div>
     `).join('');
+
+    if (locked) return;   // обработчики не нужны
 
     container.querySelectorAll('.sr-part-qty').forEach(inp => {
         inp.addEventListener('change', () => {
@@ -472,10 +482,15 @@
             const i = +btn.dataset.idx;
             const p = selectedParts[i];
             if (p.id && currentViewId) {
-                await fetch(`${API}/${currentViewId}/parts/${p.id}`, {
+                const r = await fetch(`${API}/${currentViewId}/parts/${p.id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                if (!r.ok) {
+                    const err = await r.json().catch(() => ({}));
+                    alert(err.error || 'Ошибка удаления');
+                    return;
+                }
             }
             selectedParts.splice(i, 1);
             if (currentViewId) openView(currentViewId);
