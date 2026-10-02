@@ -295,7 +295,7 @@
             ` : ''}
 
             <hr style="margin:1rem 0;">
-            <h3 style="font-size:1rem;">Прикреплённые файлы (${selectedFiles.length})</h3>
+            <h3 style="font-size:1rem;">Прикреплённые фото (${selectedFiles.length})</h3>
             <div id="srFilesList">${renderFilesHtml(sr)}</div>
             ${canManage() && sr.status !== 'done' ? `
                 <div style="margin-top:0.6rem;">
