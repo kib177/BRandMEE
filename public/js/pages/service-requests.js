@@ -10,6 +10,7 @@
     let selectedParts = [];     // {id?, inventory_code, department_id, quantity, unit, note, item_name}
     let selectedFiles = [];     // {id, filename, original_name, mime_type, size}
     let currentViewId = null;
+    let currentViewData = null; // снимок открытой ДЗ (для проверки статуса)
 
     const canManage = () =>
         currentUser && ['admin', 'moderator', 'storekeeper'].includes(currentUser.role);
@@ -98,15 +99,15 @@
                 <td>${sr.needed_by ? new Date(sr.needed_by).toLocaleDateString('ru') : '—'}</td>
                 <td><span class="sr-badge ${sr.status}">${statusLabel(sr.status)}</span></td>
                 <td>
-    <div class="sr-actions">
-        ${canManage() && sr.status !== 'done'
-            ? `<button class="btn-icon js-edit" data-id="${sr.id}" title="Редактировать">✏️</button>`
-            : ''}
-        ${canManage() && sr.status !== 'done'
-            ? `<button class="btn-icon js-delete" data-id="${sr.id}" title="Удалить" style="color:red;">🗑️</button>`
-            : ''}
-    </div>
-</td>
+                    <div class="sr-actions">
+                        ${canManage() && sr.status !== 'done'
+                            ? `<button class="btn-icon js-edit" data-id="${sr.id}" title="Редактировать">✏️</button>`
+                            : ''}
+                        ${canManage() && sr.status !== 'done'
+                            ? `<button class="btn-icon js-delete" data-id="${sr.id}" title="Удалить" style="color:red;">🗑️</button>`
+                            : ''}
+                    </div>
+                </td>
             </tr>
         `).join('');
 
@@ -116,8 +117,6 @@
                 openView(tr.dataset.id);
             });
         });
-        tbody.querySelectorAll('.js-view').forEach(b =>
-            b.addEventListener('click', () => openView(b.dataset.id)));
         tbody.querySelectorAll('.js-edit').forEach(b =>
             b.addEventListener('click', () => openForm(b.dataset.id)));
         tbody.querySelectorAll('.js-delete').forEach(b =>
@@ -215,6 +214,7 @@
     document.getElementById('srViewClose').addEventListener('click', () => {
         document.getElementById('srViewOverlay').classList.add('hidden');
         currentViewId = null;
+        currentViewData = null;
         selectedParts = [];
         selectedFiles = [];
     });
@@ -228,6 +228,8 @@
         if (!r.ok) { alert('Не удалось загрузить'); return; }
         const sr = await r.json();
 
+        currentViewData = sr;   // ← запоминаем снимок, чтобы renderPartsList знал статус
+
         await loadInventory();
 
         selectedParts = (sr.parts || []).map(p => ({
@@ -240,8 +242,7 @@
             item_name: p.item_name || p.inventory_code
         }));
 
-        // Файлы берём либо из sr.files (если бэкенд уже отдаёт их в /:id),
-        // либо отдельным запросом
+        // Файлы: либо уже в sr.files, либо отдельным запросом
         if (Array.isArray(sr.files)) {
             selectedFiles = sr.files;
         } else {
@@ -260,119 +261,119 @@
     }
 
     function renderView(sr) {
-    const t = document.getElementById('srViewTitle');
-    t.textContent = `ДЗ ${sr.number ? '№' + sr.number : '#' + sr.id}: ${sr.title}`;
+        const t = document.getElementById('srViewTitle');
+        t.textContent = `ДЗ ${sr.number ? '№' + sr.number : '#' + sr.id}: ${sr.title}`;
 
-    const statuses = ['draft','submitted','approved','in_progress','done','rejected','cancelled'];
-    const statusSel = canManage() && sr.status !== 'done'
-        ? `<select id="srStatusSelect" class="status-select">
-               ${statuses.map(s => `<option value="${s}" ${sr.status === s ? 'selected' : ''}>${statusLabel(s)}</option>`).join('')}
-           </select>
-           <button class="btn btn-primary btn-sm" id="srStatusApply" style="margin-left:0.5rem;">Применить</button>`
-        : `<span class="sr-badge ${sr.status}">${statusLabel(sr.status)}</span>`;
+        const statuses = ['draft','submitted','approved','in_progress','done','rejected','cancelled'];
+        const statusSel = canManage() && sr.status !== 'done'
+            ? `<select id="srStatusSelect" class="status-select">
+                   ${statuses.map(s => `<option value="${s}" ${sr.status === s ? 'selected' : ''}>${statusLabel(s)}</option>`).join('')}
+               </select>
+               <button class="btn btn-primary btn-sm" id="srStatusApply" style="margin-left:0.5rem;">Применить</button>`
+            : `<span class="sr-badge ${sr.status}">${statusLabel(sr.status)}</span>`;
 
-    const filesHtml = selectedFiles.length
-        ? selectedFiles.map(f => `
-            <div class="sr-file-row">
-                <a class="sr-file-link" href="/uploads/sr/${encodeURIComponent(f.filename)}" target="_blank">
-                    ${escapeHtml(f.original_name)}
-                </a>
-                <span class="sr-file-size">${formatSize(f.size)}</span>
-                ${canManage() && sr.status !== 'done'
-                    ? `<button class="btn-icon js-del-sr-file" data-file-id="${f.id}" style="color:red;">🗑️</button>`
-                    : ''}
-            </div>
-        `).join('')
-        : '<p style="color:var(--text-secondary); font-size:0.85rem;">Файлы не прикреплены</p>';
+        const filesHtml = selectedFiles.length
+            ? selectedFiles.map(f => `
+                <div class="sr-file-row">
+                    <a class="sr-file-link" href="/uploads/sr/${encodeURIComponent(f.filename)}" target="_blank">
+                        ${escapeHtml(f.original_name)}
+                    </a>
+                    <span class="sr-file-size">${formatSize(f.size)}</span>
+                    ${canManage() && sr.status !== 'done'
+                        ? `<button class="btn-icon js-del-sr-file" data-file-id="${f.id}" style="color:red;">🗑️</button>`
+                        : ''}
+                </div>
+            `).join('')
+            : '<p style="color:var(--text-secondary); font-size:0.85rem;">Файлы не прикреплены</p>';
 
-    document.getElementById('srViewContent').innerHTML = `
-        <div class="sr-view">
+        document.getElementById('srViewContent').innerHTML = `
+            <div class="sr-view">
 
-            <div class="sr-view-section">
-                <h3>Общие сведения</h3>
-                <div class="sr-view-row">
-                    <div class="sr-key">Статус</div>
-                    <div class="sr-val">${statusSel}</div>
-                </div>
-                <div class="sr-view-row">
-                    <div class="sr-key">Дата создания</div>
-                    <div class="sr-val">${new Date(sr.created_at).toLocaleString('ru')}</div>
-                </div>
-                <div class="sr-view-row">
-                    <div class="sr-key">Автор</div>
-                    <div class="sr-val">${escapeHtml(sr.author_name || sr.author_username || '—')}</div>
-                </div>
-                <div class="sr-view-row">
-                    <div class="sr-key">Вид работ</div>
-                    <div class="sr-val">${escapeHtml(sr.work_type || '—')}</div>
-                </div>
-            </div>
-
-            <div class="sr-view-section">
-                <h3>Место и оборудование</h3>
-                <div class="sr-view-row">
-                    <div class="sr-key">Место, участок</div>
-                    <div class="sr-val">${escapeHtml(sr.location || '—')}</div>
-                </div>
-                <div class="sr-view-row">
-                    <div class="sr-key">Оборудование</div>
-                    <div class="sr-val">${escapeHtml(sr.equipment_name || '—')}</div>
-                </div>
-            </div>
-
-            <div class="sr-view-section">
-                <h3>Содержание работы</h3>
-                <div style="font-size:0.88rem; white-space:pre-wrap;">${escapeHtml(sr.description || '—')}</div>
-            </div>
-
-            <div class="sr-view-section">
-                <h3>Ответственные и сроки</h3>
-                <div class="sr-view-row">
-                    <div class="sr-key">Ответственный</div>
-                    <div class="sr-val">${escapeHtml(sr.responsible || '—')}</div>
-                </div>
-                <div class="sr-view-row">
-                    <div class="sr-key">Нужно к</div>
-                    <div class="sr-val">${sr.needed_by ? new Date(sr.needed_by).toLocaleDateString('ru') : '—'}</div>
-                </div>
-            </div>
-
-            <div class="sr-view-section">
-                <h3>Запчасти (${selectedParts.length})</h3>
-                <div class="sr-parts-list" id="srPartsList"></div>
-                ${canManage() && sr.status !== 'done' ? `
-                    <div class="sr-add-part">
-                        <label>Добавить запчасть</label>
-                        <input type="text" id="srPartSearch" placeholder="Поиск по коду / названию / артикулу">
-                        <div class="sr-part-results" id="srPartResults"></div>
+                <div class="sr-view-section">
+                    <h3>Общие сведения</h3>
+                    <div class="sr-view-row">
+                        <div class="sr-key">Статус</div>
+                        <div class="sr-val">${statusSel}</div>
                     </div>
-                ` : ''}
-            </div>
-
-            <div class="sr-view-section">
-                <h3>Прикреплённые файлы (${selectedFiles.length})</h3>
-                <div class="sr-files-list">${filesHtml}</div>
-                ${canManage() && sr.status !== 'done' ? `
-                    <div style="margin-top:0.6rem;">
-                        <label class="sr-file-input-label">
-                            📎 Прикрепить файл
-                            <input type="file" id="srFileInput" multiple style="display:none;">
-                        </label>
-                        <span id="srFileStatus" style="margin-left:0.5rem; font-size:0.85rem;"></span>
+                    <div class="sr-view-row">
+                        <div class="sr-key">Дата создания</div>
+                        <div class="sr-val">${new Date(sr.created_at).toLocaleString('ru')}</div>
                     </div>
-                ` : ''}
+                    <div class="sr-view-row">
+                        <div class="sr-key">Автор</div>
+                        <div class="sr-val">${escapeHtml(sr.author_name || sr.author_username || '—')}</div>
+                    </div>
+                    <div class="sr-view-row">
+                        <div class="sr-key">Вид работ</div>
+                        <div class="sr-val">${escapeHtml(sr.work_type || '—')}</div>
+                    </div>
+                </div>
+
+                <div class="sr-view-section">
+                    <h3>Место и оборудование</h3>
+                    <div class="sr-view-row">
+                        <div class="sr-key">Место, участок</div>
+                        <div class="sr-val">${escapeHtml(sr.location || '—')}</div>
+                    </div>
+                    <div class="sr-view-row">
+                        <div class="sr-key">Оборудование</div>
+                        <div class="sr-val">${escapeHtml(sr.equipment_name || '—')}</div>
+                    </div>
+                </div>
+
+                <div class="sr-view-section">
+                    <h3>Содержание работы</h3>
+                    <div style="font-size:0.88rem; white-space:pre-wrap;">${escapeHtml(sr.description || '—')}</div>
+                </div>
+
+                <div class="sr-view-section">
+                    <h3>Ответственные и сроки</h3>
+                    <div class="sr-view-row">
+                        <div class="sr-key">Ответственный</div>
+                        <div class="sr-val">${escapeHtml(sr.responsible || '—')}</div>
+                    </div>
+                    <div class="sr-view-row">
+                        <div class="sr-key">Нужно к</div>
+                        <div class="sr-val">${sr.needed_by ? new Date(sr.needed_by).toLocaleDateString('ru') : '—'}</div>
+                    </div>
+                </div>
+
+                <div class="sr-view-section">
+                    <h3>Запчасти (${selectedParts.length})</h3>
+                    <div class="sr-parts-list" id="srPartsList"></div>
+                    ${canManage() && sr.status !== 'done' ? `
+                        <div class="sr-add-part">
+                            <label>Добавить запчасть</label>
+                            <input type="text" id="srPartSearch" placeholder="Поиск по коду / названию / артикулу">
+                            <div class="sr-part-results" id="srPartResults"></div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="sr-view-section">
+                    <h3>Прикреплённые файлы (${selectedFiles.length})</h3>
+                    <div class="sr-files-list">${filesHtml}</div>
+                    ${canManage() && sr.status !== 'done' ? `
+                        <div style="margin-top:0.6rem;">
+                            <label class="sr-file-input-label">
+                                📎 Прикрепить файл
+                                <input type="file" id="srFileInput" multiple style="display:none;">
+                            </label>
+                            <span id="srFileStatus" style="margin-left:0.5rem; font-size:0.85rem;"></span>
+                        </div>
+                    ` : ''}
+                </div>
+
             </div>
+        `;
 
-        </div>
-    `;
+        renderPartsList();
+        bindStatusHandler(sr);
+        bindPartSearch();
+        bindFilesHandlers(sr);
+    }
 
-    renderPartsList();
-    bindStatusHandler(sr);
-    bindPartSearch();
-    bindFilesHandlers(sr);
-}
-
-    // ---------- Обработчик смены статуса ----------
+    // ---------- Смена статуса ----------
     function bindStatusHandler(sr) {
         document.getElementById('srStatusApply')?.addEventListener('click', async () => {
             const newStatus = document.getElementById('srStatusSelect').value;
@@ -419,15 +420,15 @@
             ).slice(0, 30);
 
             partResults.innerHTML = list.map(i => `
-    <div class="sr-part-item"
-         data-code="${escapeHtml(i.code)}"
-         data-dept="${i.department_id}"
-         data-name="${escapeHtml(i.name)}"
-         data-unit="${escapeHtml(i.unit || '')}">
-        <b>${escapeHtml(i.code)}</b> — ${escapeHtml(i.name)}
-        ${i.model ? `<span class="sr-muted">[${escapeHtml(i.model)}]</span>` : ''}
-    </div>
-`).join('') || '<div style="padding:0.6rem; color:#888;">Ничего не найдено</div>';
+                <div class="sr-part-item"
+                     data-code="${escapeHtml(i.code)}"
+                     data-dept="${i.department_id}"
+                     data-name="${escapeHtml(i.name)}"
+                     data-unit="${escapeHtml(i.unit || '')}">
+                    <b>${escapeHtml(i.code)}</b> — ${escapeHtml(i.name)}
+                    ${i.model ? `<span class="sr-muted">[${escapeHtml(i.model)}]</span>` : ''}
+                </div>
+            `).join('') || '<div style="padding:0.6rem; color:#888;">Ничего не найдено</div>';
 
             partResults.querySelectorAll('.sr-part-item').forEach(el => {
                 el.addEventListener('click', () => addPartFromElement(el));
@@ -439,64 +440,64 @@
     }
 
     // ---------- Список запчастей ----------
-  function renderPartsList() {
-    const container = document.getElementById('srPartsList');
-    if (!container) return;
+    function renderPartsList() {
+        const container = document.getElementById('srPartsList');
+        if (!container) return;
 
-    const sr = currentViewData;                    // см. правку ниже
-    const locked = sr && sr.status === 'done';
+        // Заблокировано, если открытая ДЗ в статусе «Выполнено»
+        const locked = currentViewData && currentViewData.status === 'done';
 
-    if (!selectedParts.length) {
-        container.innerHTML = '<p style="color:var(--text-secondary); font-size:0.85rem;">Запчасти не добавлены</p>';
-        return;
-    }
+        if (!selectedParts.length) {
+            container.innerHTML = '<p style="color:var(--text-secondary); font-size:0.85rem;">Запчасти не добавлены</p>';
+            return;
+        }
 
-    container.innerHTML = selectedParts.map((p, idx) => `
-        <div class="sr-part-row">
-            <div class="sr-part-info">
-                <span class="sr-part-code">${escapeHtml(p.inventory_code)}</span> —
-                ${escapeHtml(p.item_name || '')}
-                ${p.note ? `<div class="sr-part-note">${escapeHtml(p.note)}</div>` : ''}
+        container.innerHTML = selectedParts.map((p, idx) => `
+            <div class="sr-part-row">
+                <div class="sr-part-info">
+                    <span class="sr-part-code">${escapeHtml(p.inventory_code)}</span> —
+                    ${escapeHtml(p.item_name || '')}
+                    ${p.note ? `<div class="sr-part-note">${escapeHtml(p.note)}</div>` : ''}
+                </div>
+                <input type="number" class="sr-part-qty" data-idx="${idx}"
+                       value="${p.quantity}" step="0.01" min="0.01"
+                       ${locked ? 'readonly' : ''}>
+                <span class="sr-part-unit">${escapeHtml(p.unit || '')}</span>
+                ${!locked
+                    ? `<button class="btn-icon js-del-part" data-idx="${idx}" style="color:red;">🗑️</button>`
+                    : ''}
             </div>
-            <input type="number" class="sr-part-qty" data-idx="${idx}"
-                   value="${p.quantity}" step="0.01" min="0.01"
-                   ${locked ? 'readonly' : ''}>
-            <span class="sr-part-unit">${escapeHtml(p.unit || '')}</span>
-            ${!locked
-                ? `<button class="btn-icon js-del-part" data-idx="${idx}" style="color:red;">🗑️</button>`
-                : ''}
-        </div>
-    `).join('');
+        `).join('');
 
-    if (locked) return;   // обработчики не нужны
+        if (locked) return;   // обработчики не нужны
 
-    container.querySelectorAll('.sr-part-qty').forEach(inp => {
-        inp.addEventListener('change', () => {
-            const i = +inp.dataset.idx;
-            selectedParts[i].quantity = parseFloat(inp.value) || 1;
+        container.querySelectorAll('.sr-part-qty').forEach(inp => {
+            inp.addEventListener('change', () => {
+                const i = +inp.dataset.idx;
+                selectedParts[i].quantity = parseFloat(inp.value) || 1;
+            });
         });
-    });
 
-    container.querySelectorAll('.js-del-part').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const i = +btn.dataset.idx;
-            const p = selectedParts[i];
-            if (p.id && currentViewId) {
-                const r = await fetch(`${API}/${currentViewId}/parts/${p.id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!r.ok) {
-                    const err = await r.json().catch(() => ({}));
-                    alert(err.error || 'Ошибка удаления');
-                    return;
+        container.querySelectorAll('.js-del-part').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const i = +btn.dataset.idx;
+                const p = selectedParts[i];
+                if (p.id && currentViewId) {
+                    const r = await fetch(`${API}/${currentViewId}/parts/${p.id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!r.ok) {
+                        const err = await r.json().catch(() => ({}));
+                        alert(err.error || 'Ошибка удаления');
+                        return;
+                    }
                 }
-            }
-            selectedParts.splice(i, 1);
-            if (currentViewId) openView(currentViewId);
+                selectedParts.splice(i, 1);
+                if (currentViewId) openView(currentViewId);
+            });
         });
-    });
-}
+    }
 
     async function addPartFromElement(el) {
         const code = el.dataset.code;
@@ -546,7 +547,7 @@
         openView(currentViewId);
     }
 
-   function formatSize(bytes) {
+    function formatSize(bytes) {
         if (!bytes) return '';
         const kb = bytes / 1024;
         return kb < 1024
@@ -600,29 +601,24 @@
         });
     }
 
-       // ---------- Фильтры ----------
+    // ---------- Фильтры ----------
     const filterStatus = document.getElementById('srFilterStatus');
     const filterSearch = document.getElementById('srSearch');
     const btnApply     = document.getElementById('srBtnApply');   // может уже не быть
     const btnReset     = document.getElementById('srBtnReset');
 
-    // Статус — сразу при изменении
     filterStatus?.addEventListener('change', () => {
-        console.log('[SR] status filter ->', filterStatus.value);
         loadList();
     });
 
-    // Поиск — с задержкой 300 мс
     let srSearchTimer = null;
     filterSearch?.addEventListener('input', () => {
         clearTimeout(srSearchTimer);
         srSearchTimer = setTimeout(() => loadList(), 300);
     });
 
-    // Если кнопка «Применить» где-то ещё осталась — навесим и её
     btnApply?.addEventListener('click', loadList);
 
-    // Сброс
     btnReset?.addEventListener('click', () => {
         if (filterStatus) filterStatus.value = '';
         if (filterSearch) filterSearch.value = '';
