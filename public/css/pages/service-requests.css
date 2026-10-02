@@ -46,24 +46,43 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.6rem;
-    align-items: center;
+    align-items: stretch;
     margin-bottom: 1rem;
 }
+
+/* Поля и кнопки — одна высота, по самому высокому элементу */
+.sr-filters .filter-select,
+.sr-filters input[type="text"],
+.sr-filters .btn {
+    min-height: 44px;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+}
+
 .sr-filters .filter-select,
 .sr-filters input[type="text"] {
-    padding: 0.5rem 0.8rem;
-    border: 2px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 0.85rem;
-    background: var(--card-bg);
-    color: var(--text);
-    min-height: 38px;
+    padding: 0 0.9rem;
 }
+
 .sr-filters input[type="text"] {
     flex: 1 1 260px;
     min-width: 200px;
+    justify-content: flex-start;
 }
-.sr-filters #srBtnCreate { margin-left: auto; }
+
+/* Кнопки — крупнее, текст по центру */
+.sr-filters .btn {
+    padding: 0 1.1rem;
+    font-size: 0.88rem;
+}
+
+.sr-filters #srBtnCreate {
+    margin-left: auto;
+}
 
 /* ---- Таблица ---- */
 .sr-table {
