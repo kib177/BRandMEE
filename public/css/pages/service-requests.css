@@ -313,3 +313,10 @@
 .sr-filters #srSearch::placeholder {
     color: #9aa3b2;
 }
+.sr-part-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.sr-part-item.disabled:hover {
+    background: transparent;
+}
