@@ -96,7 +96,7 @@
                 <td style="text-align:center;">${sr.parts_count || 0}</td>
                 <td>${escapeHtml(sr.responsible || '—')}</td>
                 <td>${sr.needed_by ? new Date(sr.needed_by).toLocaleDateString('ru') : '—'}</td>
-                <td><span class="status-badge ${sr.status}">${statusLabel(sr.status)}</span></td>
+                <td><span class="sr-badge ${sr.status}">${statusLabel(sr.status)}</span></td>
                 <td>
                     <button class="btn-icon js-view" data-id="${sr.id}" title="Открыть">👁️</button>
                     ${canManage() && sr.status !== 'done'
@@ -268,7 +268,7 @@
                    ${statuses.map(s => `<option value="${s}" ${sr.status === s ? 'selected' : ''}>${statusLabel(s)}</option>`).join('')}
                </select>
                <button class="btn btn-primary btn-sm" id="srStatusApply" style="margin-left:0.5rem;">Применить</button>`
-            : `<span class="status-badge ${sr.status}">${statusLabel(sr.status)}</span>`;
+            : `<span class="sr-badge ${sr.status}">${statusLabel(sr.status)}</span>`;
 
         document.getElementById('srViewContent').innerHTML = `
             <p><b>Статус:</b> ${statusSel}</p>
