@@ -1,7 +1,19 @@
+const express = require('express');
+const router = express.Router();
+const pool = require('../db');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { authMiddleware, requireRole } = require('../middleware/auth');
 
+router.use(authMiddleware);
+
+const ALLOWED_STATUSES   = ['draft', 'submitted', 'approved', 'in_progress', 'done', 'rejected', 'cancelled'];
+const ALLOWED_WORK_TYPES = ['Модернизация', 'Дооборудование', 'Новое изделие'];
+const CLOSING            = ['done'];
+const MANAGER_ROLES      = ['admin', 'moderator', 'storekeeper'];
+
+// ---------- Загрузка файлов ----------
 const srStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         const dir = path.join(__dirname, '..', 'public', 'uploads', 'sr');
@@ -16,20 +28,9 @@ const srStorage = multer.diskStorage({
 });
 const srUpload = multer({ storage: srStorage, limits: { fileSize: 20 * 1024 * 1024 } });
 
-const ALLOWED_WORK_TYPES = ['Модернизация', 'Дооборудование', 'Новое изделие'];
-
-const express = require('express');
-const router = express.Router();
-const pool = require('../db');
-const { authMiddleware, requireRole } = require('../middleware/auth');
-
-router.use(authMiddleware);
-
-const ALLOWED_STATUSES = ['draft', 'submitted', 'approved', 'in_progress', 'done', 'rejected', 'cancelled'];
-const CLOSING = ['done'];
-const MANAGER_ROLES = ['admin', 'moderator', 'storekeeper'];
-
-// ---------- GET /api/service-requests ----------
+// ============================================================
+// GET /api/service-requests — список
+// ============================================================
 router.get('/', async (req, res) => {
     try {
         const { status, search, from, to } = req.query;
@@ -52,6 +53,7 @@ router.get('/', async (req, res) => {
         if (from) { params.push(from); q += ` AND sr.created_at >= $${params.length}`; }
         if (to)   { params.push(to + ' 23:59:59'); q += ` AND sr.created_at <= $${params.length}`; }
         q += ' ORDER BY sr.created_at DESC';
+
         const r = await pool.query(q, params);
         res.json(r.rows);
     } catch (e) {
@@ -60,7 +62,9 @@ router.get('/', async (req, res) => {
     }
 });
 
-// ---------- GET /api/service-requests/:id ----------
+// ============================================================
+// GET /api/service-requests/:id — одна ДЗ с запчастями и файлами
+// ============================================================
 router.get('/:id', async (req, res) => {
     try {
         const r = await pool.query(`
@@ -82,13 +86,12 @@ router.get('/:id', async (req, res) => {
             ORDER BY p.id
         `, [req.params.id]);
 
-        const files = await pool.query(
-    `SELECT id, filename, original_name, mime_type, size, created_at
-     FROM service_request_files WHERE request_id = $1 ORDER BY created_at DESC`,
-    [req.params.id]
-);
-
-
+        const files = await pool.query(`
+            SELECT id, filename, original_name, mime_type, size, created_at
+            FROM service_request_files
+            WHERE request_id = $1
+            ORDER BY created_at DESC
+        `, [req.params.id]);
 
         res.json({ ...r.rows[0], parts: parts.rows, files: files.rows });
     } catch (e) {
@@ -97,7 +100,9 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// ---------- POST /api/service-requests ----------
+// ============================================================
+// POST /api/service-requests — создание
+// ============================================================
 router.post('/', requireRole(...MANAGER_ROLES), async (req, res) => {
     const { title, number, work_type, description, location, equipment_id,
             needed_by, responsible } = req.body;
@@ -128,7 +133,9 @@ router.post('/', requireRole(...MANAGER_ROLES), async (req, res) => {
     }
 });
 
-// ---------- PUT /api/service-requests/:id ----------
+// ============================================================
+// PUT /api/service-requests/:id — редактирование
+// ============================================================
 router.put('/:id', requireRole(...MANAGER_ROLES), async (req, res) => {
     try {
         const cur = await pool.query('SELECT status FROM service_requests WHERE id = $1', [req.params.id]);
@@ -153,6 +160,7 @@ router.put('/:id', requireRole(...MANAGER_ROLES), async (req, res) => {
         if (!sets.length) return res.status(400).json({ error: 'Нет данных для обновления' });
         sets.push('updated_at = CURRENT_TIMESTAMP');
         vals.push(req.params.id);
+
         await pool.query(`UPDATE service_requests SET ${sets.join(', ')} WHERE id = $${vals.length}`, vals);
         res.json({ ok: true });
     } catch (e) {
@@ -161,7 +169,9 @@ router.put('/:id', requireRole(...MANAGER_ROLES), async (req, res) => {
     }
 });
 
-// ---------- PATCH /api/service-requests/:id/status ----------
+// ============================================================
+// PATCH /api/service-requests/:id/status — смена статуса + автосписание при done
+// ============================================================
 router.patch('/:id/status', requireRole(...MANAGER_ROLES), async (req, res) => {
     const { status } = req.body;
     if (!ALLOWED_STATUSES.includes(status)) return res.status(400).json({ error: 'Недопустимый статус' });
@@ -171,13 +181,47 @@ router.patch('/:id/status', requireRole(...MANAGER_ROLES), async (req, res) => {
         await client.query('BEGIN');
 
         const cur = await client.query('SELECT * FROM service_requests WHERE id = $1 FOR UPDATE', [req.params.id]);
-        if (!cur.rows.length) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'ДЗ не найдена' }); }
+        if (!cur.rows.length) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'ДЗ не найдена' });
+        }
         const sr = cur.rows[0];
 
-        if (sr.status === 'done') { await client.query('ROLLBACK'); return res.status(400).json({ error: 'ДЗ уже закрыта' }); }
+        if (sr.status === 'done') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'ДЗ уже закрыта' });
+        }
 
-        // Обновляем статус
         const closingNow = CLOSING.includes(status);
+
+        // --- Проверка остатков перед закрытием ---
+        if (closingNow) {
+            const check = await client.query(`
+                SELECT p.inventory_code, p.quantity, i.name AS item_name, i.quantity AS stock
+                FROM service_request_parts p
+                LEFT JOIN inventory i ON i.code = p.inventory_code AND i.department_id = p.department_id
+                WHERE p.request_id = $1
+            `, [req.params.id]);
+
+            for (const p of check.rows) {
+                if (!p.item_name) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({
+                        error: `Запчасть ${p.inventory_code} отсутствует на складе — уберите её из ДЗ`
+                    });
+                }
+                const stock = Number(p.stock);
+                const need  = Number(p.quantity);
+                if (need > stock) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({
+                        error: `Недостаточно «${p.item_name}» на складе: нужно ${need}, доступно ${stock}`
+                    });
+                }
+            }
+        }
+
+        // --- Обновляем статус ---
         await client.query(`
             UPDATE service_requests
             SET status = $1, updated_at = CURRENT_TIMESTAMP,
@@ -185,47 +229,23 @@ router.patch('/:id/status', requireRole(...MANAGER_ROLES), async (req, res) => {
             WHERE id = $3
         `, [status, closingNow, req.params.id]);
 
-        // Если закрываем — создаём списания по запчастям ДЗ
+        // --- Создаём списания и уменьшаем остатки ---
         let writeoffsCreated = 0;
         if (closingNow) {
-    const parts = await client.query(`
-        SELECT p.*, i.name AS item_name, i.unit AS inv_unit, i.quantity AS stock
-        FROM service_request_parts p
-        LEFT JOIN inventory i ON i.code = p.inventory_code AND i.department_id = p.department_id
-        WHERE p.request_id = $1
-    `, [req.params.id]);
+            const parts = await client.query(`
+                SELECT p.*, i.name AS item_name, i.unit AS inv_unit
+                FROM service_request_parts p
+                LEFT JOIN inventory i ON i.code = p.inventory_code AND i.department_id = p.department_id
+                WHERE p.request_id = $1
+            `, [req.params.id]);
 
-    // Проверка остатков — нельзя закрыть ДЗ, если чего-то не хватает
-    for (const p of parts.rows) {
-        if (!p.item_name) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({
-                error: `Запчасть ${p.inventory_code} отсутствует на складе — уберите её из ДЗ`
-            });
-        }
-        const stock = Number(p.stock);
-        const need  = Number(p.quantity);
-        if (need > stock) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({
-                error: `Недостаточно «${p.item_name}» на складе: нужно ${need}, доступно ${stock}`
-            });
-        }
-    }
-
-    const author = await client.query(
-        'SELECT username, display_name FROM users WHERE id = $1', [sr.author_id]
-    );
-    const authorName = author.rows[0]?.display_name || author.rows[0]?.username || 'система';
-    const comment = `Списание по ДЗ №${sr.number || sr.id} от ${new Date(sr.created_at).toLocaleDateString('ru')}: ${sr.title}`;
-
-    for (const p of parts.rows) {
-        // ... существующий код вставки write_offs и обновления inventory ...
-    }
-}
+            const author = await client.query(
+                'SELECT username, display_name FROM users WHERE id = $1', [sr.author_id]
+            );
+            const authorName = author.rows[0]?.display_name || author.rows[0]?.username || 'система';
+            const comment = `Списание по ДЗ №${sr.number || sr.id} от ${new Date(sr.created_at).toLocaleDateString('ru')}: ${sr.title}`;
 
             for (const p of parts.rows) {
-                if (!p.item_name) continue; // запчасти нет на складе — пропуск
                 await client.query(`
                     INSERT INTO write_offs
                         (item_code, department_id, item_name, equipment_id, quantity, unit,
@@ -237,14 +257,12 @@ router.patch('/:id/status', requireRole(...MANAGER_ROLES), async (req, res) => {
                     authorName, comment
                 ]);
 
-                // Списываем со склада
                 await client.query(`
                     UPDATE inventory
                     SET quantity = GREATEST(quantity - $1, 0), updated_at = CURRENT_TIMESTAMP
                     WHERE code = $2 AND department_id = $3
                 `, [p.quantity, p.inventory_code, p.department_id]);
 
-                // Добавляем связь запчасть ↔ оборудование, если указано
                 if (sr.equipment_id) {
                     await client.query(`
                         INSERT INTO inventory_equipment (inventory_code, department_id, equipment_id)
@@ -258,7 +276,7 @@ router.patch('/:id/status', requireRole(...MANAGER_ROLES), async (req, res) => {
         await client.query('COMMIT');
         res.json({ ok: true, writeoffsCreated });
     } catch (e) {
-        await client.query('ROLLBACK');
+        try { await client.query('ROLLBACK'); } catch (_) {}
         console.error('SR status:', e);
         res.status(500).json({ error: 'Ошибка смены статуса' });
     } finally {
@@ -266,26 +284,27 @@ router.patch('/:id/status', requireRole(...MANAGER_ROLES), async (req, res) => {
     }
 });
 
-// ---------- DELETE /api/service-requests/:id ----------
-router.delete('/:id/parts/:partId', requireRole(...MANAGER_ROLES), async (req, res) => {
+// ============================================================
+// DELETE /api/service-requests/:id — удаление
+// ============================================================
+router.delete('/:id', requireRole('admin', 'moderator'), async (req, res) => {
     try {
-        const sr = await pool.query('SELECT status FROM service_requests WHERE id = $1', [req.params.id]);
-        if (!sr.rows.length) return res.status(404).json({ error: 'ДЗ не найдена' });
-        if (sr.rows[0].status === 'done')
-            return res.status(400).json({ error: 'ДЗ закрыта, запчасти удалять нельзя' });
+        const cur = await pool.query('SELECT status FROM service_requests WHERE id = $1', [req.params.id]);
+        if (!cur.rows.length) return res.status(404).json({ error: 'ДЗ не найдена' });
+        if (cur.rows[0].status === 'done')
+            return res.status(400).json({ error: 'Закрытую ДЗ удалять нельзя' });
 
-        await pool.query(
-            'DELETE FROM service_request_parts WHERE id = $1 AND request_id = $2',
-            [req.params.partId, req.params.id]
-        );
+        await pool.query('DELETE FROM service_requests WHERE id = $1', [req.params.id]);
         res.json({ ok: true });
     } catch (e) {
-        console.error('SR del part:', e);
+        console.error('SR delete:', e);
         res.status(500).json({ error: 'Ошибка удаления' });
     }
 });
 
-// ---------- POST /api/service-requests/:id/parts ----------
+// ============================================================
+// POST /api/service-requests/:id/parts — добавить запчасть (с проверкой остатка)
+// ============================================================
 router.post('/:id/parts', requireRole(...MANAGER_ROLES), async (req, res) => {
     const { inventory_code, department_id, quantity, unit, note } = req.body;
     if (!inventory_code || !department_id) return res.status(400).json({ error: 'Не указана запчасть' });
@@ -296,9 +315,9 @@ router.post('/:id/parts', requireRole(...MANAGER_ROLES), async (req, res) => {
     try {
         const sr = await pool.query('SELECT status FROM service_requests WHERE id = $1', [req.params.id]);
         if (!sr.rows.length) return res.status(404).json({ error: 'ДЗ не найдена' });
-        if (sr.rows[0].status === 'done') return res.status(400).json({ error: 'ДЗ уже закрыта' });
+        if (sr.rows[0].status === 'done')
+            return res.status(400).json({ error: 'ДЗ уже закрыта' });
 
-        // Проверка наличия на складе
         const inv = await pool.query(
             'SELECT quantity, unit, name FROM inventory WHERE code = $1 AND department_id = $2 LIMIT 1',
             [inventory_code, department_id]
@@ -307,7 +326,6 @@ router.post('/:id/parts', requireRole(...MANAGER_ROLES), async (req, res) => {
 
         const stock = Number(inv.rows[0].quantity);
 
-        // Учитываем уже добавленные в эту ДЗ позиции
         const existing = await pool.query(
             'SELECT COALESCE(SUM(quantity), 0) AS used FROM service_request_parts WHERE request_id = $1 AND inventory_code = $2 AND department_id = $3',
             [req.params.id, inventory_code, department_id]
@@ -331,9 +349,17 @@ router.post('/:id/parts', requireRole(...MANAGER_ROLES), async (req, res) => {
         res.status(500).json({ error: 'Ошибка добавления' });
     }
 });
-// ---------- DELETE /api/service-requests/:id/parts/:partId ----------
+
+// ============================================================
+// DELETE /api/service-requests/:id/parts/:partId — удалить запчасть
+// ============================================================
 router.delete('/:id/parts/:partId', requireRole(...MANAGER_ROLES), async (req, res) => {
     try {
+        const sr = await pool.query('SELECT status FROM service_requests WHERE id = $1', [req.params.id]);
+        if (!sr.rows.length) return res.status(404).json({ error: 'ДЗ не найдена' });
+        if (sr.rows[0].status === 'done')
+            return res.status(400).json({ error: 'ДЗ закрыта, запчасти удалять нельзя' });
+
         await pool.query(
             'DELETE FROM service_request_parts WHERE id = $1 AND request_id = $2',
             [req.params.partId, req.params.id]
@@ -345,12 +371,15 @@ router.delete('/:id/parts/:partId', requireRole(...MANAGER_ROLES), async (req, r
     }
 });
 
-// ---------- GET /api/service-requests/:id/files ----------
+// ============================================================
+// GET /api/service-requests/:id/files — список файлов
+// ============================================================
 router.get('/:id/files', async (req, res) => {
     try {
         const r = await pool.query(`
             SELECT id, filename, original_name, mime_type, size, created_at
-            FROM service_request_files WHERE request_id = $1
+            FROM service_request_files
+            WHERE request_id = $1
             ORDER BY created_at DESC
         `, [req.params.id]);
         res.json(r.rows);
@@ -360,7 +389,9 @@ router.get('/:id/files', async (req, res) => {
     }
 });
 
-// ---------- POST /api/service-requests/:id/files ----------
+// ============================================================
+// POST /api/service-requests/:id/files — загрузить файлы
+// ============================================================
 router.post('/:id/files', requireRole(...MANAGER_ROLES), srUpload.array('files', 10), async (req, res) => {
     try {
         const sr = await pool.query('SELECT status FROM service_requests WHERE id = $1', [req.params.id]);
@@ -384,9 +415,16 @@ router.post('/:id/files', requireRole(...MANAGER_ROLES), srUpload.array('files',
     }
 });
 
-// ---------- DELETE /api/service-requests/:id/files/:fileId ----------
+// ============================================================
+// DELETE /api/service-requests/:id/files/:fileId — удалить файл
+// ============================================================
 router.delete('/:id/files/:fileId', requireRole(...MANAGER_ROLES), async (req, res) => {
     try {
+        const sr = await pool.query('SELECT status FROM service_requests WHERE id = $1', [req.params.id]);
+        if (!sr.rows.length) return res.status(404).json({ error: 'ДЗ не найдена' });
+        if (sr.rows[0].status === 'done')
+            return res.status(400).json({ error: 'ДЗ закрыта, файлы удалять нельзя' });
+
         const r = await pool.query(
             'SELECT * FROM service_request_files WHERE id = $1 AND request_id = $2',
             [req.params.fileId, req.params.id]
