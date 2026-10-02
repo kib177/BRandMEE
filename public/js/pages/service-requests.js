@@ -7,10 +7,10 @@
 
     let currentData = [];
     let allInventory = [];
-    let selectedParts = [];     // {id?, inventory_code, department_id, quantity, unit, note, item_name}
-    let selectedFiles = [];     // {id, filename, original_name, mime_type, size}
+    let selectedParts = [];
+    let selectedFiles = [];
     let currentViewId = null;
-    let currentViewData = null; // снимок открытой ДЗ (для проверки статуса)
+    let currentViewData = null;
 
     const canManage = () =>
         currentUser && ['admin', 'moderator', 'storekeeper'].includes(currentUser.role);
@@ -25,7 +25,6 @@
         cancelled: 'Отменена'
     }[s] || s);
 
-    // ---------- Загрузка справочников ----------
     async function loadEquipment() {
         try {
             const r = await fetch('/api/directories/equipment', {
@@ -36,7 +35,7 @@
             const sel = document.getElementById('srEquipment');
             sel.innerHTML = '<option value="">— Не выбрано —</option>' +
                 eq.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-        } catch (e) { /* игнорируем */ }
+        } catch (e) {}
     }
 
     async function loadInventory() {
@@ -51,7 +50,6 @@
         }
     }
 
-    // ---------- Список ДЗ ----------
     async function loadList() {
         const params = new URLSearchParams();
         const st = document.getElementById('srFilterStatus').value;
@@ -131,7 +129,6 @@
             }));
     }
 
-    // ---------- Создание / редактирование ----------
     document.getElementById('srBtnCreate').addEventListener('click', () => openForm(null));
     document.getElementById('srFormClose').addEventListener('click', closeForm);
     document.getElementById('srFormCancel').addEventListener('click', closeForm);
@@ -210,7 +207,6 @@
         loadList();
     });
 
-    // ---------- Просмотр карточки ----------
     document.getElementById('srViewClose').addEventListener('click', () => {
         document.getElementById('srViewOverlay').classList.add('hidden');
         currentViewId = null;
@@ -228,7 +224,7 @@
         if (!r.ok) { alert('Не удалось загрузить'); return; }
         const sr = await r.json();
 
-        currentViewData = sr;   // ← запоминаем снимок, чтобы renderPartsList знал статус
+        currentViewData = sr;
 
         await loadInventory();
 
@@ -242,7 +238,6 @@
             item_name: p.item_name || p.inventory_code
         }));
 
-        // Файлы: либо уже в sr.files, либо отдельным запросом
         if (Array.isArray(sr.files)) {
             selectedFiles = sr.files;
         } else {
@@ -251,7 +246,7 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 selectedFiles = fr.ok ? await fr.json() : [];
-            } catch {
+            } catch (e) {
                 selectedFiles = [];
             }
         }
@@ -288,7 +283,6 @@
 
         document.getElementById('srViewContent').innerHTML = `
             <div class="sr-view">
-
                 <div class="sr-view-section">
                     <h3>Общие сведения</h3>
                     <div class="sr-view-row">
@@ -363,7 +357,6 @@
                         </div>
                     ` : ''}
                 </div>
-
             </div>
         `;
 
@@ -373,7 +366,6 @@
         bindFilesHandlers(sr);
     }
 
-    // ---------- Смена статуса ----------
     function bindStatusHandler(sr) {
         document.getElementById('srStatusApply')?.addEventListener('click', async () => {
             const newStatus = document.getElementById('srStatusSelect').value;
@@ -404,7 +396,6 @@
         });
     }
 
-    // ---------- Поиск запчастей ----------
     function bindPartSearch() {
         const partSearch  = document.getElementById('srPartSearch');
         const partResults = document.getElementById('srPartResults');
@@ -420,47 +411,46 @@
             ).slice(0, 30);
 
             partResults.innerHTML = list.map(i => {
-    const already = selectedParts
-        .filter(p => p.inventory_code === i.code && p.department_id === i.department_id)
-        .reduce((s, p) => s + Number(p.quantity || 0), 0);
-    const stock = Number(i.quantity) || 0;
-    const available = stock - already;
-    const cls = available <= 0 ? 'sr-part-item disabled' : 'sr-part-item';
-    const availLabel = available <= 0
-        ? `<span class="sr-muted" style="color:#c0392b;"> — нет в наличии</span>`
-        : `<span class="sr-muted"> — доступно: ${available} ${escapeHtml(i.unit || '')}</span>`;
+                const already = selectedParts
+                    .filter(p => p.inventory_code === i.code && p.department_id === i.department_id)
+                    .reduce((s, p) => s + Number(p.quantity || 0), 0);
+                const stock = Number(i.quantity) || 0;
+                const available = stock - already;
+                const cls = available <= 0 ? 'sr-part-item disabled' : 'sr-part-item';
+                const availLabel = available <= 0
+                    ? `<span class="sr-muted" style="color:#c0392b;"> — нет в наличии</span>`
+                    : `<span class="sr-muted"> — доступно: ${available} ${escapeHtml(i.unit || '')}</span>`;
 
-    return `
-        <div class="${cls}"
-             data-code="${escapeHtml(i.code)}"
-             data-dept="${i.department_id}"
-             data-name="${escapeHtml(i.name)}"
-             data-unit="${escapeHtml(i.unit || '')}"
-             ${available <= 0 ? 'data-disabled="1"' : ''}>
-            <b>${escapeHtml(i.code)}</b> — ${escapeHtml(i.name)}
-            ${i.model ? `<span class="sr-muted">[${escapeHtml(i.model)}]</span>` : ''}
-            ${availLabel}
-        </div>
-    `;
-}).join('') || '<div style="padding:0.6rem; color:#888;">Ничего не найдено</div>';
+                return `
+                    <div class="${cls}"
+                         data-code="${escapeHtml(i.code)}"
+                         data-dept="${i.department_id}"
+                         data-name="${escapeHtml(i.name)}"
+                         data-unit="${escapeHtml(i.unit || '')}"
+                         ${available <= 0 ? 'data-disabled="1"' : ''}>
+                        <b>${escapeHtml(i.code)}</b> — ${escapeHtml(i.name)}
+                        ${i.model ? `<span class="sr-muted">[${escapeHtml(i.model)}]</span>` : ''}
+                        ${availLabel}
+                    </div>
+                `;
+            }).join('') || '<div style="padding:0.6rem; color:#888;">Ничего не найдено</div>';
 
             partResults.querySelectorAll('.sr-part-item').forEach(el => {
-    el.addEventListener('click', () => {
-        if (el.dataset.disabled === '1') return;
-        addPartFromElement(el);
-    });
-});
+                el.addEventListener('click', () => {
+                    if (el.dataset.disabled === '1') return;
+                    addPartFromElement(el);
+                });
+            });
+        };
 
         renderResults('');
         partSearch.addEventListener('input', e => renderResults(e.target.value));
     }
 
-    // ---------- Список запчастей ----------
     function renderPartsList() {
         const container = document.getElementById('srPartsList');
         if (!container) return;
 
-        // Заблокировано, если открытая ДЗ в статусе «Выполнено»
         const locked = currentViewData && currentViewData.status === 'done';
 
         if (!selectedParts.length) {
@@ -485,7 +475,7 @@
             </div>
         `).join('');
 
-        if (locked) return;   // обработчики не нужны
+        if (locked) return;
 
         container.querySelectorAll('.sr-part-qty').forEach(inp => {
             inp.addEventListener('change', () => {
@@ -515,92 +505,139 @@
         });
     }
 
-   async function addPartFromElement(el) {
-    const code = el.dataset.code;
-    const dept = parseInt(el.dataset.dept);
-    const name = el.dataset.name;
-    const unit = el.dataset.unit || '';
+    async function addPartFromElement(el) {
+        const code = el.dataset.code;
+        const dept = parseInt(el.dataset.dept);
+        const name = el.dataset.name;
+        const unit = el.dataset.unit || '';
 
-    // Ищем позицию в уже загруженном allInventory
-    const inv = allInventory.find(i => i.code === code && i.department_id === dept);
-
-    // Сколько уже добавлено в ДЗ
-    const alreadyUsed = selectedParts
-        .filter(p => p.inventory_code === code && p.department_id === dept)
-        .reduce((s, p) => s + Number(p.quantity || 0), 0);
-
-    // Остаток на складе с учётом того, что уже в ДЗ
-    const stock = inv ? Number(inv.quantity) : 0;
-    const available = stock - alreadyUsed;
-
-    if (!inv) {
-        alert('Позиция не найдена на складе');
-        return;
-    }
-
-    if (available <= 0) {
-        alert(
-            `«${inv.name}» уже полностью распределена.\n` +
-            `На складе: ${stock} ${inv.unit || ''}, в ДЗ: ${alreadyUsed}`
-        );
-        return;
-    }
-
-    const qtyStr = prompt(
-        `«${inv.name}»\nНа складе: ${stock} ${inv.unit || ''}\n` +
-        `В ДЗ: ${alreadyUsed} ${inv.unit || ''}\n` +
-        `Доступно: ${available} ${inv.unit || ''}\n\nВведите количество:`,
-        String(available)
-    );
-    if (qtyStr === null) return;
-
-    const qty = parseFloat(qtyStr);
-    if (!qty || qty <= 0) return;
-
-    if (qty > available) {
-        alert(`Недостаточно на складе. Доступно: ${available} ${inv.unit || ''}`);
-        return;
-    }
-
-    const note = prompt('Примечание (необязательно):', '') || '';
-
-    if (currentViewId) {
-        const r = await fetch(`${API}/${currentViewId}/parts`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                inventory_code: code,
-                department_id: dept,
-                quantity: qty,
-                unit: unit || inv.unit || '',
-                note
-            })
-        });
-        if (!r.ok) {
-            const err = await r.json().catch(() => ({}));
-            alert(err.error || 'Ошибка');
+        const inv = allInventory.find(i => i.code === code && i.department_id === dept);
+        if (!inv) {
+            alert('Позиция не найдена на складе');
             return;
         }
+
+        const alreadyUsed = selectedParts
+            .filter(p => p.inventory_code === code && p.department_id === dept)
+            .reduce((s, p) => s + Number(p.quantity || 0), 0);
+
+        const stock = Number(inv.quantity);
+        const available = stock - alreadyUsed;
+
+        if (available <= 0) {
+            alert(`«${inv.name}» уже полностью распределена.\n` +
+                  `На складе: ${stock} ${inv.unit || ''}, в ДЗ: ${alreadyUsed}`);
+            return;
+        }
+
+        const qtyStr = prompt(
+            `«${inv.name}»\nНа складе: ${stock} ${inv.unit || ''}\n` +
+            `В ДЗ: ${alreadyUsed} ${inv.unit || ''}\n` +
+            `Доступно: ${available} ${inv.unit || ''}\n\nВведите количество:`,
+            String(available)
+        );
+        if (qtyStr === null) return;
+
+        const qty = parseFloat(qtyStr);
+        if (!qty || qty <= 0) return;
+
+        if (qty > available) {
+            alert(`Недостаточно на складе. Доступно: ${available} ${inv.unit || ''}`);
+            return;
+        }
+
+        const note = prompt('Примечание (необязательно):', '') || '';
+
+        if (currentViewId) {
+            const r = await fetch(`${API}/${currentViewId}/parts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    inventory_code: code,
+                    department_id: dept,
+                    quantity: qty,
+                    unit: unit || inv.unit || '',
+                    note
+                })
+            });
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                alert(err.error || 'Ошибка');
+                return;
+            }
+        }
+
+        selectedParts.push({
+            inventory_code: code,
+            department_id: dept,
+            quantity: qty,
+            unit: unit || inv.unit || '',
+            note,
+            item_name: name
+        });
+        openView(currentViewId);
     }
 
-    selectedParts.push({
-        inventory_code: code,
-        department_id: dept,
-        quantity: qty,
-        unit: unit || inv.unit || '',
-        note,
-        item_name: name
-    });
-    openView(currentViewId);
-}
+    function formatSize(bytes) {
+        if (!bytes) return '';
+        const kb = bytes / 1024;
+        return kb < 1024
+            ? `${kb.toFixed(1)} KB`
+            : `${(kb / 1024).toFixed(1)} MB`;
+    }
 
-    // ---------- Фильтры ----------
+    function bindFilesHandlers(sr) {
+        const fileInput = document.getElementById('srFileInput');
+        if (fileInput) {
+            fileInput.addEventListener('change', async (e) => {
+                const files = e.target.files;
+                if (!files.length) return;
+
+                const fd = new FormData();
+                for (const f of files) fd.append('files', f);
+
+                const status = document.getElementById('srFileStatus');
+                status.textContent = 'Загрузка…';
+
+                const r = await fetch(`${API}/${sr.id}/files`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: fd
+                });
+                if (!r.ok) {
+                    status.textContent = 'Ошибка';
+                    const err = await r.json().catch(() => ({}));
+                    alert(err.error || 'Ошибка загрузки');
+                    return;
+                }
+                status.textContent = 'Загружено';
+                openView(sr.id);
+            });
+        }
+
+        document.querySelectorAll('.js-del-sr-file').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Удалить файл?')) return;
+                const r = await fetch(`${API}/${sr.id}/files/${btn.dataset.fileId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!r.ok) {
+                    const err = await r.json().catch(() => ({}));
+                    alert(err.error || 'Ошибка');
+                    return;
+                }
+                openView(sr.id);
+            });
+        });
+    }
+
     const filterStatus = document.getElementById('srFilterStatus');
     const filterSearch = document.getElementById('srSearch');
-    const btnApply     = document.getElementById('srBtnApply');   // может уже не быть
+    const btnApply     = document.getElementById('srBtnApply');
     const btnReset     = document.getElementById('srBtnReset');
 
     filterStatus?.addEventListener('change', () => {
@@ -621,6 +658,5 @@
         loadList();
     });
 
-    // ---------- Init ----------
     loadList();
 })();
