@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Докладные записки</title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/utilities.css">
+    <link rel="stylesheet" href="/css/mobile.css">
+    <link rel="stylesheet" href="/css/burger.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a3c5e">
+</head>
+<body>
+
+<main style="max-width: 1400px; margin: 2rem auto; padding: 0 1rem;">
+    <div class="summary-row" id="srSummaryRow">
+        <div class="summary-card"><span>Всего</span><strong id="srSumTotal">0</strong></div>
+        <div class="summary-card pending"><span>Черновики</span><strong id="srSumDraft">0</strong></div>
+        <div class="summary-card in_progress"><span>В работе</span><strong id="srSumInProgress">0</strong></div>
+        <div class="summary-card approved"><span>Согласовано</span><strong id="srSumApproved">0</strong></div>
+        <div class="summary-card done"><span>Закрыто</span><strong id="srSumDone">0</strong></div>
+        <div class="summary-card rejected"><span>Отклонено</span><strong id="srSumRejected">0</strong></div>
+    </div>
+
+    <div class="filters">
+        <select id="srFilterStatus" class="filter-select">
+            <option value="">Все статусы</option>
+            <option value="draft">Черновик</option>
+            <option value="submitted">Подана</option>
+            <option value="approved">Согласована</option>
+            <option value="in_progress">В работе</option>
+            <option value="done">Закрыта</option>
+            <option value="rejected">Отклонена</option>
+            <option value="cancelled">Отменена</option>
+        </select>
+        <input type="text" id="srSearch" class="filter-select" placeholder="Поиск по №, заголовку, описанию">
+        <button class="btn btn-primary btn-sm" id="srBtnApply">Применить</button>
+        <button class="btn btn-outline btn-sm" id="srBtnReset">Сброс</button>
+        <button class="btn btn-primary btn-sm storekeeper-only" id="srBtnCreate" style="margin-left:auto;">➕ Создать ДЗ</button>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="purchases-table" id="srTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>№</th>
+                    <th>Дата</th>
+                    <th>Заголовок</th>
+                    <th>Вид работ</th>
+                    <th>Участок</th>
+                    <th>Запчасти</th>
+                    <th>Ответственный</th>
+                    <th>Нужно к</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</main>
+
+<!-- Модалка создания/редактирования -->
+<div class="modal-overlay hidden" id="srFormOverlay">
+    <div class="modal" style="max-width: 780px;">
+        <button class="btn-icon-info" id="srFormClose" style="position:absolute; top:10px; right:10px;">✕</button>
+        <h2 id="srFormTitle">Новая докладная записка</h2>
+        <form id="srForm">
+            <input type="hidden" id="srId">
+            <div class="form-row">
+                <div class="form-group"><label>Номер</label><input type="text" id="srNumber"></div>
+                <div class="form-group"><label>Вид работ</label>
+                    <input type="text" id="srWorkType" value="Модернизация">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Заголовок *</label>
+                <input type="text" id="srTitle" required maxlength="300">
+            </div>
+            <div class="form-group">
+                <label>Содержание работы (описание)</label>
+                <textarea id="srDescription" rows="3"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Место, участок</label><input type="text" id="srLocation"></div>
+                <div class="form-group"><label>Оборудование</label>
+                    <select id="srEquipment"><option value="">— Не выбрано —</option></select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Обоснование / ТЭО</label>
+                <textarea id="srJustification" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Техническое задание</label>
+                <textarea id="srTechTask" rows="2"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Ответственный</label><input type="text" id="srResponsible"></div>
+                <div class="form-group"><label>Необходимая дата</label><input type="date" id="srNeededBy"></div>
+            </div>
+            <div class="form-group">
+                <label>Ссылка на фото / файл</label>
+                <input type="text" id="srPhotoPath" placeholder="URL или путь">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="srFormCancel">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модалка просмотра + запчасти + статус -->
+<div class="modal-overlay hidden" id="srViewOverlay">
+    <div class="modal" style="max-width: 900px;">
+        <button class="btn-icon-info" id="srViewClose" style="position:absolute; top:10px; right:10px;">✕</button>
+        <h2 id="srViewTitle">Докладная записка</h2>
+        <div id="srViewContent" style="font-size:0.9rem;"></div>
+    </div>
+</div>
+
+<script src="/js/utils/dom.js"></script>
+<script src="/js/utils/auth.js"></script>
+<script src="/js/components/profile-ui.js"></script>
+<script src="/js/components/layout.js"></script>
+<script src="/js/pages/service-requests.js"></script>
+</body>
+</html>
