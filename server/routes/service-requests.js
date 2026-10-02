@@ -195,31 +195,50 @@ router.patch('/:id/status', requireRole(...MANAGER_ROLES), async (req, res) => {
         const closingNow = CLOSING.includes(status);
 
         // --- Проверка остатков перед закрытием ---
-        if (closingNow) {
-            const check = await client.query(`
-                SELECT p.inventory_code, p.quantity, i.name AS item_name, i.quantity AS stock
-                FROM service_request_parts p
-                LEFT JOIN inventory i ON i.code = p.inventory_code AND i.department_id = p.department_id
-                WHERE p.request_id = $1
-            `, [req.params.id]);
+        let writeoffsCreated = 0;
+if (closingNow) {
+    const parts = await client.query(`
+        SELECT p.*, i.name AS item_name, i.unit AS inv_unit
+        FROM service_request_parts p
+        LEFT JOIN inventory i
+          ON i.code = p.inventory_code AND i.department_id = p.department_id
+        WHERE p.request_id = $1
+    `, [req.params.id]);
 
-            for (const p of check.rows) {
-                if (!p.item_name) {
-                    await client.query('ROLLBACK');
-                    return res.status(400).json({
-                        error: `Запчасть ${p.inventory_code} отсутствует на складе — уберите её из ДЗ`
-                    });
-                }
-                const stock = Number(p.stock);
-                const need  = Number(p.quantity);
-                if (need > stock) {
-                    await client.query('ROLLBACK');
-                    return res.status(400).json({
-                        error: `Недостаточно «${p.item_name}» на складе: нужно ${need}, доступно ${stock}`
-                    });
-                }
-            }
+    const author = await client.query(
+        'SELECT username, display_name FROM users WHERE id = $1', [sr.author_id]
+    );
+    const authorName = author.rows[0]?.display_name || author.rows[0]?.username || 'система';
+    const comment = `ДЗ №${sr.number || sr.id} от ${new Date(sr.created_at).toLocaleDateString('ru')}: ${sr.title}`;
+
+    for (const p of parts.rows) {
+        if (!p.item_name) {
+            console.warn(`[SR close] пропуск ${p.inventory_code} — нет на складе (dept ${p.department_id})`);
+            continue;
         }
+
+        // Создаём заявку на списание в статусе pending — БЕЗ уменьшения остатка
+        await client.query(`
+            INSERT INTO write_offs
+                (item_code, department_id, item_name, equipment_id, quantity, unit,
+                 requested_by, comment, status, requested_at)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending', CURRENT_TIMESTAMP)
+        `, [
+            p.inventory_code,
+            p.department_id,
+            p.item_name,
+            sr.equipment_id || null,
+            p.quantity,
+            p.unit || p.inv_unit || 'ШТ',
+            authorName,
+            comment
+        ]);
+
+        // НЕ обновляем inventory.quantity и не создаём inventory_equipment —
+        // это произойдёт при подтверждении в admin_writeoffs.html.
+        writeoffsCreated++;
+    }
+}
 
         // --- Обновляем статус ---
         await client.query(`
