@@ -1,3 +1,23 @@
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const srStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = path.join(__dirname, '..', 'public', 'uploads', 'sr');
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = path.extname(file.originalname);
+        cb(null, 'sr-' + unique + ext);
+    }
+});
+const srUpload = multer({ storage: srStorage, limits: { fileSize: 20 * 1024 * 1024 } });
+
+const ALLOWED_WORK_TYPES = ['Модернизация', 'Дооборудование', 'Новое изделие'];
+
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
