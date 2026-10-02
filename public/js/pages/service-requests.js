@@ -499,107 +499,87 @@
         });
     }
 
-    async function addPartFromElement(el) {
-        const code = el.dataset.code;
-        const dept = parseInt(el.dataset.dept);
-        const name = el.dataset.name;
-        const unit = el.dataset.unit || '';
+   async function addPartFromElement(el) {
+    const code = el.dataset.code;
+    const dept = parseInt(el.dataset.dept);
+    const name = el.dataset.name;
+    const unit = el.dataset.unit || '';
 
-        if (selectedParts.some(p => p.inventory_code === code && p.department_id === dept)) {
-            alert('Такая запчасть уже добавлена');
+    // Ищем позицию в уже загруженном allInventory
+    const inv = allInventory.find(i => i.code === code && i.department_id === dept);
+
+    // Сколько уже добавлено в ДЗ
+    const alreadyUsed = selectedParts
+        .filter(p => p.inventory_code === code && p.department_id === dept)
+        .reduce((s, p) => s + Number(p.quantity || 0), 0);
+
+    // Остаток на складе с учётом того, что уже в ДЗ
+    const stock = inv ? Number(inv.quantity) : 0;
+    const available = stock - alreadyUsed;
+
+    if (!inv) {
+        alert('Позиция не найдена на складе');
+        return;
+    }
+
+    if (available <= 0) {
+        alert(
+            `«${inv.name}» уже полностью распределена.\n` +
+            `На складе: ${stock} ${inv.unit || ''}, в ДЗ: ${alreadyUsed}`
+        );
+        return;
+    }
+
+    const qtyStr = prompt(
+        `«${inv.name}»\nНа складе: ${stock} ${inv.unit || ''}\n` +
+        `В ДЗ: ${alreadyUsed} ${inv.unit || ''}\n` +
+        `Доступно: ${available} ${inv.unit || ''}\n\nВведите количество:`,
+        String(available)
+    );
+    if (qtyStr === null) return;
+
+    const qty = parseFloat(qtyStr);
+    if (!qty || qty <= 0) return;
+
+    if (qty > available) {
+        alert(`Недостаточно на складе. Доступно: ${available} ${inv.unit || ''}`);
+        return;
+    }
+
+    const note = prompt('Примечание (необязательно):', '') || '';
+
+    if (currentViewId) {
+        const r = await fetch(`${API}/${currentViewId}/parts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                inventory_code: code,
+                department_id: dept,
+                quantity: qty,
+                unit: unit || inv.unit || '',
+                note
+            })
+        });
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            alert(err.error || 'Ошибка');
             return;
         }
-
-        const qty = parseFloat(prompt('Количество:', '1'));
-        if (!qty || qty <= 0) return;
-
-        const note = prompt('Примечание (необязательно):', '') || '';
-
-        if (currentViewId) {
-            const r = await fetch(`${API}/${currentViewId}/parts`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    inventory_code: code,
-                    department_id: dept,
-                    quantity: qty,
-                    unit,
-                    note
-                })
-            });
-            if (!r.ok) {
-                alert((await r.json()).error || 'Ошибка');
-                return;
-            }
-        }
-
-        selectedParts.push({
-            inventory_code: code,
-            department_id: dept,
-            quantity: qty,
-            unit,
-            note,
-            item_name: name
-        });
-        openView(currentViewId);
     }
 
-    function formatSize(bytes) {
-        if (!bytes) return '';
-        const kb = bytes / 1024;
-        return kb < 1024
-            ? `${kb.toFixed(1)} KB`
-            : `${(kb / 1024).toFixed(1)} MB`;
-    }
-
-    function bindFilesHandlers(sr) {
-        const fileInput = document.getElementById('srFileInput');
-        if (fileInput) {
-            fileInput.addEventListener('change', async (e) => {
-                const files = e.target.files;
-                if (!files.length) return;
-
-                const fd = new FormData();
-                for (const f of files) fd.append('files', f);
-
-                const status = document.getElementById('srFileStatus');
-                status.textContent = 'Загрузка…';
-
-                const r = await fetch(`${API}/${sr.id}/files`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: fd
-                });
-                if (!r.ok) {
-                    status.textContent = 'Ошибка';
-                    const err = await r.json().catch(() => ({}));
-                    alert(err.error || 'Ошибка загрузки');
-                    return;
-                }
-                status.textContent = 'Загружено';
-                openView(sr.id);
-            });
-        }
-
-        document.querySelectorAll('.js-del-sr-file').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                if (!confirm('Удалить файл?')) return;
-                const r = await fetch(`${API}/${sr.id}/files/${btn.dataset.fileId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!r.ok) {
-                    const err = await r.json().catch(() => ({}));
-                    alert(err.error || 'Ошибка');
-                    return;
-                }
-                openView(sr.id);
-            });
-        });
-    }
+    selectedParts.push({
+        inventory_code: code,
+        department_id: dept,
+        quantity: qty,
+        unit: unit || inv.unit || '',
+        note,
+        item_name: name
+    });
+    openView(currentViewId);
+}
 
     // ---------- Фильтры ----------
     const filterStatus = document.getElementById('srFilterStatus');
