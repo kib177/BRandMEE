@@ -188,18 +188,41 @@ router.patch('/:id/status', requireRole(...MANAGER_ROLES), async (req, res) => {
         // Если закрываем — создаём списания по запчастям ДЗ
         let writeoffsCreated = 0;
         if (closingNow) {
-            const parts = await client.query(`
-                SELECT p.*, i.name AS item_name, i.unit AS inv_unit, i.quantity AS stock
-                FROM service_request_parts p
-                LEFT JOIN inventory i ON i.code = p.inventory_code AND i.department_id = p.department_id
-                WHERE p.request_id = $1
-            `, [req.params.id]);
+    const parts = await client.query(`
+        SELECT p.*, i.name AS item_name, i.unit AS inv_unit, i.quantity AS stock
+        FROM service_request_parts p
+        LEFT JOIN inventory i ON i.code = p.inventory_code AND i.department_id = p.department_id
+        WHERE p.request_id = $1
+    `, [req.params.id]);
 
-            const author = await client.query(
-                'SELECT username, display_name FROM users WHERE id = $1', [sr.author_id]
-            );
-            const authorName = author.rows[0]?.display_name || author.rows[0]?.username || 'система';
-            const comment = `Списание по ДЗ №${sr.number || sr.id} от ${new Date(sr.created_at).toLocaleDateString('ru')}: ${sr.title}`;
+    // Проверка остатков — нельзя закрыть ДЗ, если чего-то не хватает
+    for (const p of parts.rows) {
+        if (!p.item_name) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                error: `Запчасть ${p.inventory_code} отсутствует на складе — уберите её из ДЗ`
+            });
+        }
+        const stock = Number(p.stock);
+        const need  = Number(p.quantity);
+        if (need > stock) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                error: `Недостаточно «${p.item_name}» на складе: нужно ${need}, доступно ${stock}`
+            });
+        }
+    }
+
+    const author = await client.query(
+        'SELECT username, display_name FROM users WHERE id = $1', [sr.author_id]
+    );
+    const authorName = author.rows[0]?.display_name || author.rows[0]?.username || 'система';
+    const comment = `Списание по ДЗ №${sr.number || sr.id} от ${new Date(sr.created_at).toLocaleDateString('ru')}: ${sr.title}`;
+
+    for (const p of parts.rows) {
+        // ... существующий код вставки write_offs и обновления inventory ...
+    }
+}
 
             for (const p of parts.rows) {
                 if (!p.item_name) continue; // запчасти нет на складе — пропуск
@@ -267,22 +290,47 @@ router.post('/:id/parts', requireRole(...MANAGER_ROLES), async (req, res) => {
     const { inventory_code, department_id, quantity, unit, note } = req.body;
     if (!inventory_code || !department_id) return res.status(400).json({ error: 'Не указана запчасть' });
 
+    const qty = Number(quantity) || 1;
+    if (qty <= 0) return res.status(400).json({ error: 'Некорректное количество' });
+
     try {
         const sr = await pool.query('SELECT status FROM service_requests WHERE id = $1', [req.params.id]);
         if (!sr.rows.length) return res.status(404).json({ error: 'ДЗ не найдена' });
         if (sr.rows[0].status === 'done') return res.status(400).json({ error: 'ДЗ уже закрыта' });
 
+        // Проверка наличия на складе
+        const inv = await pool.query(
+            'SELECT quantity, unit, name FROM inventory WHERE code = $1 AND department_id = $2 LIMIT 1',
+            [inventory_code, department_id]
+        );
+        if (!inv.rows.length) return res.status(404).json({ error: 'Запчасть не найдена на складе' });
+
+        const stock = Number(inv.rows[0].quantity);
+
+        // Учитываем уже добавленные в эту ДЗ позиции
+        const existing = await pool.query(
+            'SELECT COALESCE(SUM(quantity), 0) AS used FROM service_request_parts WHERE request_id = $1 AND inventory_code = $2 AND department_id = $3',
+            [req.params.id, inventory_code, department_id]
+        );
+        const alreadyUsed = Number(existing.rows[0].used) || 0;
+
+        if (alreadyUsed + qty > stock) {
+            return res.status(400).json({
+                error: `Недостаточно на складе. Доступно: ${stock} ${inv.rows[0].unit || ''}, уже в ДЗ: ${alreadyUsed}`
+            });
+        }
+
         const r = await pool.query(`
             INSERT INTO service_request_parts (request_id, inventory_code, department_id, quantity, unit, note)
             VALUES ($1,$2,$3,$4,$5,$6) RETURNING id
-        `, [req.params.id, inventory_code, department_id, quantity || 1, unit || null, note || null]);
+        `, [req.params.id, inventory_code, department_id, qty, unit || inv.rows[0].unit || null, note || null]);
+
         res.json({ ok: true, id: r.rows[0].id });
     } catch (e) {
         console.error('SR add part:', e);
         res.status(500).json({ error: 'Ошибка добавления' });
     }
 });
-
 // ---------- DELETE /api/service-requests/:id/parts/:partId ----------
 router.delete('/:id/parts/:partId', requireRole(...MANAGER_ROLES), async (req, res) => {
     try {
