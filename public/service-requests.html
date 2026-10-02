@@ -72,11 +72,16 @@
         <form id="srForm">
             <input type="hidden" id="srId">
             <div class="form-row">
-                <div class="form-group"><label>Номер</label><input type="text" id="srNumber"></div>
-                <div class="form-group"><label>Вид работ</label>
-                    <input type="text" id="srWorkType" value="Модернизация">
-                </div>
-            </div>
+    <div class="form-group"><label>Номер *</label><input type="text" id="srNumber" required maxlength="50"></div>
+    <div class="form-group"><label>Вид работ *</label>
+        <select id="srWorkType" required>
+            <option value="">— Выберите —</option>
+            <option value="Модернизация">Модернизация</option>
+            <option value="Дооборудование">Дооборудование</option>
+            <option value="Новое изделие">Новое изделие</option>
+        </select>
+    </div>
+</div>
             <div class="form-group">
                 <label>Заголовок *</label>
                 <input type="text" id="srTitle" required maxlength="300">
@@ -91,21 +96,9 @@
                     <select id="srEquipment"><option value="">— Не выбрано —</option></select>
                 </div>
             </div>
-            <div class="form-group">
-                <label>Обоснование / ТЭО</label>
-                <textarea id="srJustification" rows="2"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Техническое задание</label>
-                <textarea id="srTechTask" rows="2"></textarea>
-            </div>
             <div class="form-row">
                 <div class="form-group"><label>Ответственный</label><input type="text" id="srResponsible"></div>
                 <div class="form-group"><label>Необходимая дата</label><input type="date" id="srNeededBy"></div>
-            </div>
-            <div class="form-group">
-                <label>Ссылка на фото / файл</label>
-                <input type="text" id="srPhotoPath" placeholder="URL или путь">
             </div>
             <div class="form-actions">
                 <button type="button" class="btn btn-outline" id="srFormCancel">Отмена</button>
