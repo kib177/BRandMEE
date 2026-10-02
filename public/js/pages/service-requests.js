@@ -587,12 +587,10 @@
     }
 
     // ---------- Фильтры ----------
-    document.getElementById('srBtnApply').addEventListener('click', loadList);
-    document.getElementById('srBtnReset').addEventListener('click', () => {
-        document.getElementById('srFilterStatus').value = '';
-        document.getElementById('srSearch').value = '';
-        loadList();
-    });
+     document.getElementById('srSearch').addEventListener(
+    'input',
+    debounce(loadList, 300)
+);
 
     // ---------- Init ----------
     loadList();
