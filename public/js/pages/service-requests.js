@@ -586,11 +586,34 @@
         });
     }
 
-    // ---------- Фильтры ----------
-     document.getElementById('srSearch').addEventListener(
-    'input',
-    debounce(loadList, 300)
-);
+       // ---------- Фильтры ----------
+    const filterStatus = document.getElementById('srFilterStatus');
+    const filterSearch = document.getElementById('srSearch');
+    const btnApply     = document.getElementById('srBtnApply');   // может уже не быть
+    const btnReset     = document.getElementById('srBtnReset');
+
+    // Статус — сразу при изменении
+    filterStatus?.addEventListener('change', () => {
+        console.log('[SR] status filter ->', filterStatus.value);
+        loadList();
+    });
+
+    // Поиск — с задержкой 300 мс
+    let srSearchTimer = null;
+    filterSearch?.addEventListener('input', () => {
+        clearTimeout(srSearchTimer);
+        srSearchTimer = setTimeout(() => loadList(), 300);
+    });
+
+    // Если кнопка «Применить» где-то ещё осталась — навесим и её
+    btnApply?.addEventListener('click', loadList);
+
+    // Сброс
+    btnReset?.addEventListener('click', () => {
+        if (filterStatus) filterStatus.value = '';
+        if (filterSearch) filterSearch.value = '';
+        loadList();
+    });
 
     // ---------- Init ----------
     loadList();
