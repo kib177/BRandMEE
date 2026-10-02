@@ -50,12 +50,12 @@
     margin-bottom: 1rem;
 }
 
-/* Поля и кнопки — одна высота, по самому высокому элементу */
+/* Поля и кнопки — одна высота */
 .sr-filters .filter-select,
 .sr-filters input[type="text"],
 .sr-filters .btn {
-    min-height: 44px;
-    font-size: 0.9rem;
+    min-height: 36px;
+    font-size: 0.85rem;
     box-sizing: border-box;
     display: inline-flex;
     align-items: center;
@@ -65,7 +65,7 @@
 
 .sr-filters .filter-select,
 .sr-filters input[type="text"] {
-    padding: 0 0.9rem;
+    padding: 0 0.8rem;
 }
 
 .sr-filters input[type="text"] {
@@ -74,10 +74,9 @@
     justify-content: flex-start;
 }
 
-/* Кнопки — крупнее, текст по центру */
 .sr-filters .btn {
-    padding: 0 1.1rem;
-    font-size: 0.88rem;
+    padding: 0 0.9rem;
+    font-size: 0.85rem;
 }
 
 .sr-filters #srBtnCreate {
