@@ -10,36 +10,46 @@
     <link rel="stylesheet" href="/css/utilities.css">
     <link rel="stylesheet" href="/css/mobile.css">
     <link rel="stylesheet" href="/css/burger.css">
+    <link rel="stylesheet" href="/css/pages/service-requests.css">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1a3c5e">
 </head>
 <body>
 
-<main style="max-width: 1400px; margin: 2rem auto; padding: 0 1rem;">
-    <div class="summary-row" id="srSummaryRow">
-        <div class="summary-card"><span>Всего</span><strong id="srSumTotal">0</strong></div>
-        <div class="summary-card pending"><span>Черновики</span><strong id="srSumDraft">0</strong></div>
-        <div class="summary-card in_progress"><span>В работе</span><strong id="srSumInProgress">0</strong></div>
-        <div class="summary-card approved"><span>Согласовано</span><strong id="srSumApproved">0</strong></div>
-        <div class="summary-card done"><span>Закрыто</span><strong id="srSumDone">0</strong></div>
-        <div class="summary-card rejected"><span>Отклонено</span><strong id="srSumRejected">0</strong></div>
+<main class="sr-page">
+    <div class="sr-summary">
+        <div class="sr-summary-card">
+            <span class="sr-label">Всего</span>
+            <span class="sr-value" id="srSumTotal">0</span>
+        </div>
+        <div class="sr-summary-card draft">
+            <span class="sr-label">Черновики</span>
+            <span class="sr-value" id="srSumDraft">0</span>
+        </div>
+        <div class="sr-summary-card in_progress">
+            <span class="sr-label">В работе</span>
+            <span class="sr-value" id="srSumInProgress">0</span>
+        </div>
+        <div class="sr-summary-card approved">
+            <span class="sr-label">Согласовано</span>
+            <span class="sr-value" id="srSumApproved">0</span>
+        </div>
+        <div class="sr-summary-card done">
+            <span class="sr-label">Закрыто</span>
+            <span class="sr-value" id="srSumDone">0</span>
+        </div>
+        <div class="sr-summary-card rejected">
+            <span class="sr-label">Отклонено</span>
+            <span class="sr-value" id="srSumRejected">0</span>
+        </div>
     </div>
 
-    <div class="filters">
-        <select id="srFilterStatus" class="filter-select">
-            <option value="">Все статусы</option>
-            <option value="draft">Черновик</option>
-            <option value="submitted">Подана</option>
-            <option value="approved">Согласована</option>
-            <option value="in_progress">В работе</option>
-            <option value="done">Закрыта</option>
-            <option value="rejected">Отклонена</option>
-            <option value="cancelled">Отменена</option>
-        </select>
-        <input type="text" id="srSearch" class="filter-select" placeholder="Поиск по №, заголовку, описанию">
+    <div class="sr-filters">
+        <select id="srFilterStatus" class="filter-select"> ... </select>
+        <input type="text" id="srSearch" placeholder="Поиск по №, заголовку, описанию">
         <button class="btn btn-primary btn-sm" id="srBtnApply">Применить</button>
         <button class="btn btn-outline btn-sm" id="srBtnReset">Сброс</button>
-        <button class="btn btn-primary btn-sm storekeeper-only" id="srBtnCreate" style="margin-left:auto;">➕ Создать ДЗ</button>
+        <button class="btn btn-primary btn-sm storekeeper-only" id="srBtnCreate">➕ Создать ДЗ</button>
     </div>
 
     <div class="table-wrapper">
