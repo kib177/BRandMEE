@@ -82,7 +82,15 @@ router.get('/:id', async (req, res) => {
             ORDER BY p.id
         `, [req.params.id]);
 
-        res.json({ ...r.rows[0], parts: parts.rows });
+        const files = await pool.query(
+    `SELECT id, filename, original_name, mime_type, size, created_at
+     FROM service_request_files WHERE request_id = $1 ORDER BY created_at DESC`,
+    [req.params.id]
+);
+
+
+
+        res.json({ ...r.rows[0], parts: parts.rows, files: files.rows });
     } catch (e) {
         console.error('SR get:', e);
         res.status(500).json({ error: 'Ошибка' });
@@ -91,27 +99,26 @@ router.get('/:id', async (req, res) => {
 
 // ---------- POST /api/service-requests ----------
 router.post('/', requireRole(...MANAGER_ROLES), async (req, res) => {
-    const {
-        title, number, work_type, description, location, equipment_id,
-        justification, tech_task, needed_by, responsible, photo_path
-    } = req.body;
+    const { title, number, work_type, description, location, equipment_id,
+            needed_by, responsible } = req.body;
 
     if (!title || !title.trim()) return res.status(400).json({ error: 'Введите заголовок' });
+    if (!number || !number.trim()) return res.status(400).json({ error: 'Введите номер ДЗ' });
+    if (!ALLOWED_WORK_TYPES.includes(work_type))
+        return res.status(400).json({ error: 'Выберите вид работ' });
 
     try {
-        let deptId = req.user.department_id || 1;
+        const deptId = req.user.department_id || 1;
         const r = await pool.query(`
             INSERT INTO service_requests
                 (number, title, work_type, description, location, equipment_id,
-                 justification, tech_task, needed_by, responsible, photo_path,
-                 author_id, department_id, status)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'draft')
+                 needed_by, responsible, author_id, department_id, status)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'draft')
             RETURNING id
         `, [
-            number || null, title.trim(), work_type || 'Модернизация',
+            number.trim(), title.trim(), work_type,
             description || null, location || null, equipment_id || null,
-            justification || null, tech_task || null, needed_by || null,
-            responsible || null, photo_path || null,
+            needed_by || null, responsible || null,
             req.user.id, deptId
         ]);
         res.json({ ok: true, id: r.rows[0].id });
@@ -129,8 +136,13 @@ router.put('/:id', requireRole(...MANAGER_ROLES), async (req, res) => {
         if (cur.rows[0].status === 'done')
             return res.status(400).json({ error: 'ДЗ закрыта, редактирование запрещено' });
 
-        const fields = ['title','number','work_type','description','location','equipment_id',
-                        'justification','tech_task','needed_by','responsible','photo_path'];
+        if (req.body.work_type !== undefined && !ALLOWED_WORK_TYPES.includes(req.body.work_type))
+            return res.status(400).json({ error: 'Недопустимый вид работ' });
+        if (req.body.number !== undefined && (!req.body.number || !req.body.number.trim()))
+            return res.status(400).json({ error: 'Номер обязателен' });
+
+        const fields = ['title','number','work_type','description','location',
+                        'equipment_id','needed_by','responsible'];
         const sets = [], vals = [];
         fields.forEach(f => {
             if (req.body[f] !== undefined) {
@@ -139,7 +151,7 @@ router.put('/:id', requireRole(...MANAGER_ROLES), async (req, res) => {
             }
         });
         if (!sets.length) return res.status(400).json({ error: 'Нет данных для обновления' });
-        sets.push(`updated_at = CURRENT_TIMESTAMP`);
+        sets.push('updated_at = CURRENT_TIMESTAMP');
         vals.push(req.params.id);
         await pool.query(`UPDATE service_requests SET ${sets.join(', ')} WHERE id = $${vals.length}`, vals);
         res.json({ ok: true });
@@ -278,6 +290,65 @@ router.delete('/:id/parts/:partId', requireRole(...MANAGER_ROLES), async (req, r
     } catch (e) {
         console.error('SR del part:', e);
         res.status(500).json({ error: 'Ошибка удаления' });
+    }
+});
+
+// ---------- GET /api/service-requests/:id/files ----------
+router.get('/:id/files', async (req, res) => {
+    try {
+        const r = await pool.query(`
+            SELECT id, filename, original_name, mime_type, size, created_at
+            FROM service_request_files WHERE request_id = $1
+            ORDER BY created_at DESC
+        `, [req.params.id]);
+        res.json(r.rows);
+    } catch (e) {
+        console.error('SR list files:', e);
+        res.status(500).json({ error: 'Ошибка загрузки списка файлов' });
+    }
+});
+
+// ---------- POST /api/service-requests/:id/files ----------
+router.post('/:id/files', requireRole(...MANAGER_ROLES), srUpload.array('files', 10), async (req, res) => {
+    try {
+        const sr = await pool.query('SELECT status FROM service_requests WHERE id = $1', [req.params.id]);
+        if (!sr.rows.length) return res.status(404).json({ error: 'ДЗ не найдена' });
+        if (sr.rows[0].status === 'done') return res.status(400).json({ error: 'ДЗ закрыта' });
+        if (!req.files || !req.files.length) return res.status(400).json({ error: 'Файлы не выбраны' });
+
+        const results = [];
+        for (const f of req.files) {
+            const r = await pool.query(`
+                INSERT INTO service_request_files
+                    (request_id, filename, original_name, mime_type, size, uploaded_by)
+                VALUES ($1,$2,$3,$4,$5,$6) RETURNING id
+            `, [req.params.id, f.filename, f.originalname, f.mimetype, f.size, req.user.id]);
+            results.push({ id: r.rows[0].id, filename: f.filename, original_name: f.originalname });
+        }
+        res.json({ ok: true, files: results });
+    } catch (e) {
+        console.error('SR upload files:', e);
+        res.status(500).json({ error: 'Ошибка загрузки файлов' });
+    }
+});
+
+// ---------- DELETE /api/service-requests/:id/files/:fileId ----------
+router.delete('/:id/files/:fileId', requireRole(...MANAGER_ROLES), async (req, res) => {
+    try {
+        const r = await pool.query(
+            'SELECT * FROM service_request_files WHERE id = $1 AND request_id = $2',
+            [req.params.fileId, req.params.id]
+        );
+        if (!r.rows.length) return res.status(404).json({ error: 'Файл не найден' });
+
+        const filePath = path.join(__dirname, '..', 'public', 'uploads', 'sr', r.rows[0].filename);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+        await pool.query('DELETE FROM service_request_files WHERE id = $1', [req.params.fileId]);
+        res.json({ ok: true });
+    } catch (e) {
+        console.error('SR del file:', e);
+        res.status(500).json({ error: 'Ошибка удаления файла' });
     }
 });
 
