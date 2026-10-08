@@ -164,6 +164,25 @@ function showItemDetails(code) {
         };
     }
 
+    const btnEditFromView = document.getElementById('btnEditFromView');
+if (btnEditFromView) {
+    const canEditItem = currentUser && (
+        currentUser.role === 'admin' ||
+        currentUser.role === 'moderator' ||
+        currentUser.role === 'storekeeper'
+    );
+    if (canEditItem) {
+        btnEditFromView.style.display = 'inline-flex';
+        btnEditFromView.onclick = () => {
+            // Закрываем карточку просмотра и открываем модалку редактирования
+            document.getElementById('viewModalOverlay').classList.add('hidden');
+            openEditModal(code);
+        };
+    } else {
+        btnEditFromView.style.display = 'none';
+    }
+}
+
     // Загружаем список файлов с учётом прав
     loadFilesList(item.code, canManageFiles);
 
